@@ -160,13 +160,20 @@ Notes:
 
 ## 0.8 Audit trail base
 
-- [ ] Install `spatie/laravel-activitylog`. Log only dirty attributes, and log old values.
-- [ ] A trait `Auditable` that every money, contract and permission model uses.
-- [ ] Mask sensitive fields: password, remember token. Salary fields are logged, but the audit log screen is owner-only.
-- [ ] Mark the log table as append-only in code (no update or delete from the app).
-- [ ] Reason capture: a way to attach a reason to the change being logged (a request-scoped value read by the logging hook).
+- [x] Install `spatie/laravel-activitylog`. Log only dirty attributes, and log old values.
+- [x] A trait `Auditable` that every money, contract and permission model uses.
+- [x] Mask sensitive fields: password, remember token. Salary fields are logged, but the audit log screen is owner-only.
+- [x] Mark the log table as append-only in code (no update or delete from the app).
+- [x] Reason capture: a way to attach a reason to the change being logged (a request-scoped value read by the logging hook).
 
 ---
+
+Notes:
+- `App\Models\Concerns\Auditable` uses `logFillable`, `logOnlyDirty`, old values, and excludes password and token fields.
+- `App\Models\Activity` throws on update and delete, so the table is append-only from application code.
+- `App\Support\AuditContext` is request-scoped; `Auditable::beforeActivityLogged()` copies its reason into the activity properties.
+- The `view-audit-log` gate is owner-only. The screen itself arrives with the feature that needs it.
+- Salary attributes are not excluded, so they are logged; access to the log screen is what stays restricted.
 
 ## 0.9 Quality gates and CI
 

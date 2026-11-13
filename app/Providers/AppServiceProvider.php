@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Support\AuditContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
@@ -18,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(AuditContext::class);
     }
 
     /**
@@ -29,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Gate::define('view-salaries', fn (User $user): bool => $user->canViewSalaries());
+        Gate::define('view-audit-log', fn (User $user): bool => $user->isOwner());
     }
 
     /**
