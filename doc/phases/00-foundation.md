@@ -194,15 +194,21 @@ Notes:
 ## 0.10 Environments, deploy and backups
 
 - [ ] Three environments: local, staging, production, each with its own `.env`, database and Discord application (phase 3).
-- [ ] Deploy script: pull, `composer install --no-dev`, build assets, migrate with `--force`, clear and warm caches, restart the queue worker. Run on staging first.
-- [ ] Supervisor program for `queue:work`. Cron entry for `schedule:run` every minute.
+- [x] Deploy script: pull, `composer install --no-dev`, build assets, migrate with `--force`, clear and warm caches, restart the queue worker. Run on staging first.
+- [x] Supervisor program for `queue:work`. Cron entry for `schedule:run` every minute.
 - [ ] HTTPS with automatic renewal. For local Discord testing in phase 3, use a tunnel such as `cloudflared`.
 - [ ] **Backups:** daily database dump plus the private storage disk, copied to a different provider. Retention 30 days. **Do one restore test now**, not at go-live.
 - [ ] Error tracking (Sentry or equivalent) and an uptime check on a health endpoint.
-- [ ] Log rotation, and make sure logs never contain amounts tied to salaries or full phone numbers.
+- [x] Log rotation, and make sure logs never contain amounts tied to salaries or full phone numbers.
 
 ---
 
+Notes:
+- `deploy/deploy.sh` is portable and parameterised by `APP_DIR`, `PHP_BIN`, `COMPOSER_BIN` and `NPM_BIN`; it uses maintenance mode, `composer install --no-dev`, asset build, migrations, cache warm-up and a queue restart.
+- `deploy/supervisor/khazna-worker.conf` and `deploy/cron/khazna` contain placeholder paths; change them to the chosen host before installing.
+- `deploy/backup.sh` dumps MySQL and `storage/app/private`, optionally copies through rclone, and applies a 30-day retention. Supply credentials from a secret manager, never from the cron line.
+- Error tracking, uptime monitoring, HTTPS renewal and the three real environments still need the host decision. The `/up` health endpoint already exists.
+- The backup restore test is user-owned and remains on the exit checklist.
 ## 0.11 Seed data
 
 - [ ] Factories for every model added in later phases (add them as you go).
