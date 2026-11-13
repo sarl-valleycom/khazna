@@ -26,12 +26,13 @@
 
 The folder already holds the docs, so do not scaffold into it directly.
 
-- [ ] Scaffold in a temporary sibling folder with the Laravel installer and the **Vue starter kit** (check `laravel new --help` for the flags).
-- [ ] Move everything, including dotfiles, into `khazna/` next to `doc/` and the SRS files. Never commit `.env`.
-- [ ] `git init` and a first commit.
-- [ ] Check what the starter kit ships. Recent kits include login, password reset, profile and optional two-factor. Keep those, and **remove public registration**. Accounts are created by the owner.
-- [ ] Set `APP_TIMEZONE=UTC`, add `config/khazna.php` with `display_timezone = Africa/Algiers`, `week_starts_on = saturday`, and the default locale `en`.
-- [ ] In non-production environments turn on `Model::shouldBeStrict()` (lazy loading, missing attributes and silently discarded attributes all throw).
+- [x] Scaffold in a temporary sibling folder with the Laravel installer and the **Vue starter kit** (check `laravel new --help` for the flags).
+- [x] Move everything, including dotfiles, into `khazna/` next to `doc/` and the SRS files. Never commit `.env`.
+- [x] `git init` and a first commit.
+- [x] Check what the starter kit ships. Recent kits include login, password reset, profile and optional two-factor. Keep those, and **remove public registration**. Accounts are created by the owner.
+  Notes: Laravel 13.17 / Inertia 3 / Fortify 1.37 / Wayfinder / passkeys. Registration feature disabled, register page and registration test removed.
+- [x] Set `APP_TIMEZONE=UTC`, add `config/khazna.php` with `display_timezone = Africa/Algiers`, `week_starts_on = saturday`, and the default locale `en`.
+- [x] In non-production environments turn on `Model::shouldBeStrict()` (lazy loading, missing attributes and silently discarded attributes all throw).
 - [ ] Use Inertia partial reloads and deferred props where a page has heavy parts (dashboard cards in phase 2).
 
 ---
