@@ -2,6 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Data\AuthData;
+use App\Data\FlashData;
+use App\Data\SettingsData;
+use App\Data\UserData;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,12 +39,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = UserData::fromUser($request->user());
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'auth' => [
-                'user' => $request->user(),
-            ],
+            'auth' => new AuthData(
+                user: $user,
+                role: $user?->role,
+            ),
+            'flash' => FlashData::fromSession($request->session()),
+            'settings' => SettingsData::fromConfig(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
