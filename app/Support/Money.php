@@ -186,7 +186,7 @@ final class Money implements JsonSerializable, Stringable
      * Split the amount into exact parts. The total is always preserved; any
      * remaining centimes go to the later parts, one each at a time.
      *
-     * @param  array<int|float>  $ratios
+     * @param  array<int|float|string>  $ratios
      * @return list<self>
      */
     public function allocate(array $ratios): array
@@ -199,16 +199,18 @@ final class Money implements JsonSerializable, Stringable
         $totalRatio = 0;
 
         foreach ($ratios as $ratio) {
-            if (! is_int($ratio) && ! is_float($ratio)) {
+            if (! is_numeric($ratio)) {
                 throw new InvalidArgumentException('Ratios must be numbers.');
             }
 
-            if ($ratio <= 0) {
+            $scaled = (int) round((float) $ratio * 1000);
+
+            if ($scaled <= 0) {
                 throw new InvalidArgumentException('Ratios must be greater than zero.');
             }
 
-            $normalized[] = (int) round($ratio * 1000);
-            $totalRatio += (int) round($ratio * 1000);
+            $normalized[] = $scaled;
+            $totalRatio += $scaled;
         }
 
         $remaining = $this->cents;

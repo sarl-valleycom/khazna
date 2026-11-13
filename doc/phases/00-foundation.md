@@ -177,14 +177,20 @@ Notes:
 
 ## 0.9 Quality gates and CI
 
-- [ ] Pest with an in-memory or dedicated test database that matches production (MySQL, not SQLite, because of generated columns and locking in later phases).
-- [ ] Larastan at a strict level, Pint for formatting, ESLint and Prettier, `tsc --noEmit`.
-- [ ] CI pipeline (GitHub Actions or equivalent): install, build assets, lint, static analysis, tests. Fails the pull request.
+- [x] Pest with an in-memory or dedicated test database that matches production (MySQL, not SQLite, because of generated columns and locking in later phases).
+- [x] Larastan at a strict level, Pint for formatting, ESLint and Prettier, `tsc --noEmit`.
+- [x] CI pipeline (GitHub Actions or equivalent): install, build assets, lint, static analysis, tests. Fails the pull request.
 - [ ] Optional pre-commit hook running Pint and ESLint on staged files.
 - [ ] A Playwright smoke test (login → open triage) that runs against staging after deploy.
 
 ---
 
+Notes:
+- Pest uses MySQL `khazna_test`; locally via `.env.testing`, in CI via `phpunit.xml` and a MySQL 8.4 service.
+- Larastan runs at level 8. `vp check` covers formatting and linting, and `vue-tsc --noEmit` covers TypeScript.
+- `composer ci:check` is the single CI command: format/lint, TypeScript, Pint, PHPStan, then Pest.
+- The optional pre-commit hook is not installed; `composer lint:check` is the manual substitute.
+- Playwright has a login-to-dashboard smoke test. The triage step is `fixme` because `/triage` belongs to phase 1, so this box stays open until that route exists.
 ## 0.10 Environments, deploy and backups
 
 - [ ] Three environments: local, staging, production, each with its own `.env`, database and Discord application (phase 3).
@@ -208,10 +214,10 @@ Notes:
 
 - [ ] Staging is online over HTTPS, login works, registration is closed.
 - [ ] The demo page and the shared UI kit are reviewed.
-- [ ] Helper tests pass with hand-computed values.
+- [x] Helper tests pass with hand-computed values.
 - [ ] CI is green and blocks merging when red.
 - [ ] A backup was taken and restored successfully.
-- [ ] The role matrix test exists, even if nearly empty.
+- [x] The role matrix test exists, even if nearly empty.
 
 ## Risks
 

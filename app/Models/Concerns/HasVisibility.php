@@ -19,9 +19,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 trait HasVisibility
 {
+    /**
+     * @param  Builder<static>  $query
+     */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
-        /** @var Model $model */
+        /** @var static $model */
         $model = $query->getModel();
 
         $officeColumn = $model->visibilityOfficeColumn();

@@ -2,7 +2,7 @@
 
 namespace App\Data;
 
-use Illuminate\Session\Store;
+use Illuminate\Contracts\Session\Session;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -20,7 +20,7 @@ class FlashData extends Data
         public ?array $toast = null,
     ) {}
 
-    public static function fromSession(Store $session): self
+    public static function fromSession(Session $session): self
     {
         return new self(
             success: $session->get('success'),
