@@ -148,6 +148,14 @@ Build these once, with a phone layout and Storybook-free demo pages:
 
 Exit check: a demo page uses every component, in light and dark if dark mode is kept, on desktop and a 375 px phone.
 
+Notes:
+- `AppLayout` is the starter kit layout; the sidebar now filters items by `roles`, and the UI kit entry is owner-only and dev-build-only.
+- `DataTable` uses TanStack Table v9 `useTable` in manual mode and writes `page`, `per_page`, `sort` and `direction` to the URL with a partial reload of the `page` prop.
+- `FilterBar`, `OfficeSwitcher` and `AccountSelect` share the same URL helpers, so filters survive reloads and are shareable.
+- `/dev/ui` is local/staging only and demonstrates all 0.7 components, including loading, empty, dialog, file and toast states.
+- Money input parsing treats a trailing separator with one or two digits as decimals; a three-digit group is thousands. Automated JS tests arrive with the 0.9 tooling.
+- Review the demo at 375 px and in dark mode before the phase exit; that manual review is still on the exit checklist.
+
 ---
 
 ## 0.8 Audit trail base

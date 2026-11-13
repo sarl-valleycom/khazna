@@ -35,6 +35,18 @@ declare namespace App {
             rows: App.Data.DemoDueRowData[];
             forecast: App.Data.ForecastPointData[];
             statuses: Record<string, string>;
+            tabCounts: Record<string, number>;
+            total: number;
+            currentPage: number;
+            perPage: number;
+            sort: string | null;
+            direction: string;
+            search: string;
+            statusFilter: string | null;
+            activeTab: string;
+            officeFilter: string | null;
+            from: string | null;
+            to: string | null;
         };
         export type FlashData = {
             success: string | null;
@@ -81,6 +93,6 @@ declare namespace App {
         };
     }
     namespace Enums {
-        export type Role = "owner" | "finance" | "account_manager";
+        export type Role = 'owner' | 'finance' | 'account_manager';
     }
 }
