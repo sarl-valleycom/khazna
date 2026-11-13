@@ -70,8 +70,8 @@ Effort is a rough guess for one developer. Revise it after phase 1.
 | # | Phase | SRS phase | Depends on | Effort | You can then |
 |---|---|---|---|---|---|
 | 0 | Foundation | none | none | 4 to 6 days | Log in, see the app shell, deploy to staging |
-| 1 | MVP receivables | 1 | 0 | 3 to 4 weeks | Run all receivables without a spreadsheet |
-| 2 | Money out | 2 | 1 | 3 weeks | See the cash picture and close a month's salaries |
+| 1 | MVP receivables, offices and accounts | 1 | 0 | 4 to 5 weeks | Run all receivables without a spreadsheet and see each office's account balances |
+| 2 | Money out | 2 | 1 | 4 weeks | See the cash picture of each office and close a month's salaries |
 | 3 | Attendance | 3 | 2 | 2 to 3 weeks | Team uses `/check-in` daily |
 | 4 | Automation and payroll link | 4 | 2, 3 | 3 weeks | Prepare salaries from approved hours, automate reminders |
 | 5 | Profitability and leave | 5 | 3, 4 | 2 weeks | See which contracts make money |
@@ -91,6 +91,7 @@ Phases 1 and 2 can overlap slightly (the employees table can start during phase 
 - Stored as integer centimes in `bigint` columns and handled through the `Money` value object. Never floats.
 - **The server computes every total.** The browser displays amounts, it never adds them. Props carry both the raw integer and the formatted text.
 - Every operation that changes money runs in a database transaction and locks the rows it changes.
+- **Every movement of money is one ledger entry on one account**, written in the same transaction as the payment, advance, transfer or manual entry that caused it. Entries are never edited or deleted. A mistake is fixed with an opposite entry. An account's balance is computed from its entries and is never typed in.
 
 ### Time
 - Timestamps are stored in UTC. Calendar dates (`due_on`, `paid_on`, `month`) are `DATE` columns that mean an **Algiers calendar date**, with no time and no timezone shift.
@@ -102,6 +103,7 @@ Phases 1 and 2 can overlap slightly (the employees table can start during phase 
 - Every controller action authorizes through a policy. The frontend receives an `abilities` map to show or hide buttons, but only the server decides.
 - Receipts and attachments live on a private disk and are served through an authorized route.
 - Secrets in `.env` only.
+- **Office scope:** a user restricted to an office sees only that office's data. It uses the same `visibleTo($user)` scope as the account-manager rule, and a test checks every list and direct link.
 
 ### Code
 - Controllers are thin. Business logic lives in single-purpose **Action** classes (`RecordPayment`, `GenerateDues`, `CloseMonth`) that can be called from a controller, a command or a Discord handler.

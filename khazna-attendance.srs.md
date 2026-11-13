@@ -175,7 +175,7 @@ State transitions:
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-ADM-01 | The panel lists all sessions with filters by employee, date range and status | M | 1 |
+| FR-ADM-01 | The panel lists all sessions with filters by employee, office, date range and status | M | 1 |
 | FR-ADM-02 | The owner can create, edit or delete a session, with a mandatory reason | M | 1 |
 | FR-ADM-03 | Every edit is stored in an audit log (who, when, old values, new values, reason) | M | 1 |
 | FR-ADM-04 | A "Needs review" view shows auto-closed sessions, sessions over 12 hours and sessions with overlapping times | M | 1 |
@@ -186,7 +186,7 @@ State transitions:
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-RPT-01 | A daily digest is posted to a private owner channel: who is in, late, absent, away and forgotten, plus the end-of-day reports | S | 2 |
+| FR-RPT-01 | A daily digest is posted to a private owner channel: who is in, late, absent, away and forgotten, plus the end-of-day reports, grouped by office | S | 2 |
 | FR-RPT-02 | A weekly summary is posted every Sunday: hours per employee against expected hours, lateness count, overtime | S | 2 |
 | FR-RPT-03 | `/my-hours [period]` shows an employee their own totals privately | S | 2 |
 | FR-RPT-04 | A live "who is online" message in a chosen channel is edited in place when the state changes | C | 2 |
@@ -246,7 +246,7 @@ New tables are added to the Khazna database. All use soft deletes. Timestamps ar
 
 | Entity | Main fields |
 |---|---|
-| `employees` (existing, extended) | `discord_user_id` (unique, nullable), `contract_type`, `hourly_rate`, `expected_minutes_per_day`, `work_days`, `schedule_start`, `schedule_end`, `late_grace_minutes`, `reminders_enabled` |
+| `employees` (existing, extended) | `office_id`, `discord_user_id` (unique, nullable), `contract_type`, `hourly_rate`, `expected_minutes_per_day`, `work_days`, `schedule_start`, `schedule_end`, `late_grace_minutes`, `reminders_enabled` |
 | `attendance_sessions` | `employee_id`, `started_at`, `ended_at`, `status` (open, closed, auto_closed), `review_status` (ok, needs_review, approved), `report`, `blockers`, `source` (discord, admin), `closed_by` |
 | `attendance_breaks` | `session_id`, `started_at`, `ended_at`, `reason`, `paid` (value copied at creation) |
 | `attendance_segments` (phase 4) | `session_id`, `contract_id` (nullable), `started_at`, `ended_at` |
@@ -254,7 +254,7 @@ New tables are added to the Khazna database. All use soft deletes. Timestamps ar
 | `correction_requests` | `session_id`, `employee_id`, `proposed_ended_at`, `note`, `status`, `decided_by` |
 | `holidays` | `date`, `label` |
 | `leave_requests` (phase 5) | `employee_id`, `type`, `from`, `to`, `reason`, `status`, `decided_by` |
-| `attendance_settings` | auto-close time, digest time, channel IDs, reminder limits, paid break allowance |
+| `attendance_settings` | auto-close time, digest time, channel IDs (per office), reminder limits, paid break allowance |
 
 ---
 

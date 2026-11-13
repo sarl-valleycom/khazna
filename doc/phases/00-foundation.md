@@ -106,6 +106,7 @@ Port the CRM helpers `Money`, `AlgerianDate`, `Period`, `Phone` and the `Metrics
 - [ ] `Role` enum: `owner`, `finance`, `account_manager`. One role per user.
 - [ ] `users` has `role` and `active`. A deactivated user cannot sign in, and a signed-in session of a deactivated user is ended on the next request.
 - [ ] Base policy class and a `Gate` for `view-salaries` (owner only, configurable later).
+- [ ] `users.office_id` (nullable, empty means all offices). One `visibleTo($user)` pattern covers both the account-manager scope and the office scope, so no controller invents its own rule.
 - [ ] Shared Inertia props: `auth.user`, `auth.role`, flash messages, and a small public settings subset.
 - [ ] `useAbilities()` composable that reads the `abilities` prop.
 - [ ] Test helper `actingAsRole(Role::…)` for feature tests.
@@ -132,6 +133,8 @@ Build these once, with a phone layout and Storybook-free demo pages:
 | `StatusBadge` | One place that maps statuses to colors and labels |
 | `FileInput` | Upload with type and size checks, preview for images |
 | `Toast` | Reads the flash messages |
+| `OfficeSwitcher` | "All offices" or one office, kept in the URL. Hidden for users restricted to one office |
+| `AccountSelect` | Select grouped by office, showing the balance. Only lists accounts the user may see |
 | `EmptyState` | Message plus a call to action |
 
 Exit check: a demo page uses every component, in light and dark if dark mode is kept, on desktop and a 375 px phone.
@@ -173,7 +176,7 @@ Exit check: a demo page uses every component, in light and dark if dark mode is 
 ## 0.11 Seed data
 
 - [ ] Factories for every model added in later phases (add them as you go).
-- [ ] A `DemoSeeder` with realistic Algerian names, phone numbers, amounts in DA, paid and unpaid dues across months. Used for UI work and for the staging demo. Never run it in production.
+- [ ] A `DemoSeeder` with two offices in different cities, their accounts, realistic Algerian names, phone numbers, amounts in DA, paid and unpaid dues across months. Used for UI work and for the staging demo. Never run it in production.
 
 ---
 
