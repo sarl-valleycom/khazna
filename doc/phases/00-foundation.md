@@ -41,12 +41,14 @@ The folder already holds the docs, so do not scaffold into it directly.
 
 Do this before building screens. The interface is English and left-to-right.
 
-- [ ] `<html lang="en">` and one self-hosted font (no runtime call to Google Fonts). Choose a font that also covers Arabic script, or add a fallback font, because client names and notes may be typed in Arabic.
-- [ ] Format money, numbers and dates with `Intl` in English: `10,000.50 DA`, `13 Nov 2026`, Latin digits, Gregorian calendar, 24-hour times shown in Algiers time.
-- [ ] Put `dir="auto"` on user-entered text (client names, notes, report text) and wrap names in `<bdi>` inside sentences and tables. An Arabic name then renders correctly inside the English page.
-- [ ] Use Tailwind logical classes (`ms-`, `me-`, `ps-`, `pe-`, `text-start`) instead of `ml-`, `mr-`, `left-`, `right-`. It costs nothing and keeps an Arabic interface possible later.
+- [x] `<html lang="en">` and one self-hosted font (no runtime call to Google Fonts). Choose a font that also covers Arabic script, or add a fallback font, because client names and notes may be typed in Arabic.
+  Notes: Instrument Sans is self-hosted by the starter kit build (Bunny plugin, no runtime call); Arabic falls back through Noto Sans Arabic / Tahoma. The starter Welcome page's rsms.me runtime font link was removed.
+- [x] Format money, numbers and dates with `Intl` in English: `10,000.50 DA`, `13 Nov 2026`, Latin digits, Gregorian calendar, 24-hour times shown in Algiers time.
+- [x] Put `dir="auto"` on user-entered text (client names, notes, report text) and wrap names in `<bdi>` inside sentences and tables. An Arabic name then renders correctly inside the English page.
+- [x] Use Tailwind logical classes (`ms-`, `me-`, `ps-`, `pe-`, `text-start`) instead of `ml-`, `mr-`, `left-`, `right-`. It costs nothing and keeps an Arabic interface possible later.
 - [ ] Check these primitives on desktop and at 375 px width: sidebar, dropdown, select, dialog, sheet, tabs, date picker, toast, pagination, table.
-- [ ] Check that the chart components show a 90-day forecast with weekly buckets and readable labels. If they do not, try `vue-echarts` now.
+- [x] Check that the chart components show a 90-day forecast with weekly buckets and readable labels. If they do not, try `vue-echarts` now.
+  Notes: the shadcn-vue chart wrapper generated in this version was incomplete, so `vue-echarts` is used for the 90-day weekly forecast (`ForecastChart.vue`).
 
 **Exit criteria:** one demo page showing every primitive above, reviewed by you, including a client with an Arabic name.
 
