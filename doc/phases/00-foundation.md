@@ -106,16 +106,22 @@ Port the CRM helpers `Money`, `AlgerianDate`, `Period`, `Phone` and the `Metrics
 
 ## 0.6 Auth and roles
 
-- [ ] `Role` enum: `owner`, `finance`, `account_manager`. One role per user.
-- [ ] `users` has `role` and `active`. A deactivated user cannot sign in, and a signed-in session of a deactivated user is ended on the next request.
-- [ ] Base policy class and a `Gate` for `view-salaries` (owner only, configurable later).
-- [ ] `users.office_id` (nullable, empty means all offices). One `visibleTo($user)` pattern covers both the account-manager scope and the office scope, so no controller invents its own rule.
-- [ ] Shared Inertia props: `auth.user`, `auth.role`, flash messages, and a small public settings subset.
-- [ ] `useAbilities()` composable that reads the `abilities` prop.
-- [ ] Test helper `actingAsRole(Role::…)` for feature tests.
-- [ ] A **role matrix test** file that grows with every phase: for each route, which roles get 200 and which get 403.
+- [x] `Role` enum: `owner`, `finance`, `account_manager`. One role per user.
+- [x] `users` has `role` and `active`. A deactivated user cannot sign in, and a signed-in session of a deactivated user is ended on the next request.
+- [x] Base policy class and a `Gate` for `view-salaries` (owner only, configurable later).
+- [x] `users.office_id` (nullable, empty means all offices). One `visibleTo($user)` pattern covers both the account-manager scope and the office scope, so no controller invents its own rule.
+- [x] Shared Inertia props: `auth.user`, `auth.role`, flash messages, and a small public settings subset.
+- [x] `useAbilities()` composable that reads the `abilities` prop.
+- [x] Test helper `actingAsRole(Role::…)` for feature tests.
+- [x] A **role matrix test** file that grows with every phase: for each route, which roles get 200 and which get 403.
 
 ---
+
+Notes:
+- `RoleAccessTest` covers inactive sign-in, session termination, the salary gate, and role casts.
+- `VisibilityScopeTest` uses a fixture model to prove the office and owner scopes, including their intersection.
+- `RoleMatrixTest` starts with the dashboard and guest redirect; add a row for every route added in later phases.
+- `spatie/laravel-activitylog` is installed and its migration exists locally, but 0.8 owns and commits that migration.
 
 ## 0.7 Shared UI kit
 

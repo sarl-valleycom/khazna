@@ -39,14 +39,20 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $user = UserData::fromUser($request->user());
+        $user = $request->user();
+
+        $abilities = [
+            'view-salaries' => $user?->can('view-salaries') ?? false,
+        ];
+
+        $userData = UserData::fromUser($user, $abilities);
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => new AuthData(
-                user: $user,
-                role: $user?->role,
+                user: $userData,
+                role: $userData?->role,
             ),
             'flash' => FlashData::fromSession($request->session()),
             'settings' => SettingsData::fromConfig(),

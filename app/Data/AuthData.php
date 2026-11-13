@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\Role;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -10,6 +11,6 @@ class AuthData extends Data
 {
     public function __construct(
         public ?UserData $user,
-        public ?string $role,
+        public ?Role $role,
     ) {}
 }

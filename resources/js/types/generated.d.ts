@@ -11,7 +11,7 @@ declare namespace App {
         };
         export type AuthData = {
             user: App.Data.UserData | null;
-            role: string | null;
+            role: App.Enums.Role | null;
         };
         export type DemoDueRowData = {
             id: number;
@@ -69,7 +69,7 @@ declare namespace App {
             id: number;
             name: string;
             email: string;
-            role: string | null;
+            role: App.Enums.Role | null;
             officeId: number | null;
             active: boolean;
             avatar: string | null;
@@ -79,5 +79,8 @@ declare namespace App {
             twoFactorEnabled: boolean;
             abilities: Record<string, boolean>;
         };
+    }
+    namespace Enums {
+        export type Role = "owner" | "finance" | "account_manager";
     }
 }
