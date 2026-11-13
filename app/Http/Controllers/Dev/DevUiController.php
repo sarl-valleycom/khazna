@@ -8,6 +8,7 @@ use App\Data\DevUiData;
 use App\Data\ForecastPointData;
 use App\Data\OfficeOptionData;
 use App\Http\Controllers\Controller;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +19,7 @@ class DevUiController extends Controller
     {
         abort_unless(app()->environment(['local', 'staging']), 404);
 
-        $money = fn (int $cents): string => number_format($cents / 100, 2, '.', ',').' DA';
+        $money = fn (int $cents): string => Money::fromCents($cents)->format();
 
         $offices = [
             new OfficeOptionData(1, 'Algiers HQ', 'Algiers'),
