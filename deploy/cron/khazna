@@ -1,0 +1,12 @@
+# Install as /etc/cron.d/khazna. Change the user and paths to match the host.
+# Format: minute hour day month weekday user command
+SHELL=/bin/bash
+
+# Laravel scheduler.
+* * * * * www-data cd /var/www/khazna && php artisan schedule:run >> /dev/null 2>&1
+
+# Daily backup at 02:30. backup.sh reads DB_*, BACKUP_DIR and BACKUP_REMOTE from
+# the app .env itself (without executing it), so no password appears here.
+# The cron user must be able to write both the backup directory and the log:
+#   install -d -o www-data -g www-data -m 700 /var/backups/khazna
+30 2 * * * www-data cd /var/www/khazna && deploy/backup.sh >> storage/logs/backup.log 2>&1

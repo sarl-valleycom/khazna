@@ -3,25 +3,28 @@
 | | |
 |---|---|
 | SRS phase | 1 |
-| Effort | 3 to 4 weeks |
+| Effort | 4 to 5 weeks (about one week of it is offices, accounts and the ledger) |
 | Depends on | Phase 0 |
-| Outcome | All money coming in is tracked in Khazna instead of a spreadsheet |
-| Requirements | FR-AUTH-01..06, FR-PTY-01..03, 06, 07, FR-CON-01..04, 06, 08, FR-DUE-01..09, FR-PAY-01..06, FR-TRI-01, 02, 04..07, 09, 10, FR-REM-01..03, FR-CRM-01, FR-AUD-01..04 |
+| Outcome | All money coming in is tracked in Khazna instead of a spreadsheet, and you see the balance of every account in each office |
+| Requirements | FR-AUTH-01..06, 08, FR-OFF-01..04, FR-ACC-01..06, FR-PTY-01..03, 06, 07, FR-CON-01..04, 06, 08, FR-DUE-01..09, FR-PAY-01..06, FR-TRI-01, 02, 04..07, 09, 10, FR-REM-01..03, FR-CRM-01, FR-AUD-01..04 |
 
 Scope note: in this phase the contract form offers only the **SaaS renewal** type. The other types exist in the enum but appear in phase 2.
 
 ---
 
-## 1.1 Users and settings
+## 1.1 Users, offices and settings
 
-- [ ] Migration: `users` (role, active), `settings` (key, value).
+- [ ] Migration: `offices` (name, city, active), `users` (role, active, `office_id` nullable), `settings` (key, value).
+- [ ] Offices screen (owner only): create and deactivate. At least one office must exist. Seed the two real offices (FR-OFF-01).
+- [ ] The user form has an optional office. A user with an office sees only that office's data (FR-OFF-02, FR-AUTH-08). The check lives in the shared `visibleTo($user)` scope from phase 0.
+- [ ] Office switcher in the app layout for unrestricted users (FR-OFF-04).
 - [ ] Users screen (owner only): create, edit role, deactivate, reset password link.
 - [ ] Settings screen (owner only): week start, reminder template, default currency label, salary due day (stored now, used in phase 2). Setting changes are audited (FR-AUD-04).
 - [ ] Audit log screen (owner only): filter by user, entity, date. Read-only.
 
 ## 1.2 Clients
 
-- [ ] Migration: `clients` (name, contact, phone, email, address, notes, account_manager_id, `crm_lead_id` nullable unique), soft deletes.
+- [ ] Migration: `clients` (name, contact, phone, email, address, notes, account_manager_id, `office_id` nullable, `crm_lead_id` nullable unique), soft deletes.
 - [ ] CRUD with a `ClientIndexQuery` (search by name or phone, filter by account manager).
 - [ ] Phone normalized on save through `Phone`. Invalid numbers are refused with a clear message.
 - [ ] Soft delete only. A client with history cannot be hard-deleted (FR-PTY-06).
@@ -34,7 +37,7 @@ Scope note: in this phase the contract form offers only the **SaaS renewal** typ
 
 ## 1.3 Contracts
 
-- [ ] Migration: `contracts` (type, direction, client_id, amount, cycle, starts_on, ends_on, status, auto_renew, notes), soft deletes. Attachment stored on the private disk.
+- [ ] Migration: `contracts` (type, direction, client_id, `office_id` required, amount, cycle, starts_on, ends_on, status, auto_renew, notes), soft deletes. Attachment stored on the private disk.
 - [ ] Form for a SaaS renewal: client, amount, cycle (monthly, quarterly, yearly), start date, end date (optional), auto-renew.
 - [ ] Status transitions: active ↔ paused → canceled. Cancelling or pausing cancels open future dues with a reason (FR-CON-03).
 - [ ] Changing the amount affects only dues generated afterwards (FR-CON-04). Show a notice on the form saying so.
@@ -57,17 +60,29 @@ Scope note: in this phase the contract form offers only the **SaaS renewal** typ
 - [ ] Manual due (one-off, without a contract) (FR-DUE-06).
 - [ ] `PostponeDue` action (new date + reason, history row) and `CancelDue` action (reason).
 
-## 1.5 Payments
+## 1.5 Accounts, ledger and payments
 
-- [ ] Migration: `payments` (due_id, amount, paid_on, method, reference, receipt_path, notes, recorded_by, reversed_at, reversal_reason), soft deletes.
+**Accounts and ledger** (FR-ACC-01..06)
+
+- [ ] Migration: `accounts` (office_id, name, type: cash, ccp, bank, other, currency, opening_balance, opening_date, active).
+- [ ] Migration: `account_entries` (account_id, direction, amount, entry_date, source_type, source_id, category_id nullable, description, created_by). Append only: no update or delete route, and the model refuses both.
+- [ ] A `LedgerWriter` service is the **only** code that inserts entries. Actions call it inside their own transaction. It refuses an entry dated before the account's opening date (FR-ACC-05).
+- [ ] Balance = opening balance + sum of entries, calculated by a query. Nothing stores a balance by hand.
+- [ ] Accounts screen: balances grouped by office, plus a per-account statement with running balance and a date filter (FR-ACC-06). Excel export arrives in phase 4.
+- [ ] Method (cash, CCP, BaridiMob, bank transfer, other) stays on the payment as the way the money moved. The **account** says where it went.
+
+**Payments**
+
+- [ ] Migration: `payments` (due_id, `account_id` required, amount, paid_on, method, reference, receipt_path, notes, recorded_by, reversed_at, reversal_reason), soft deletes.
 - [ ] `RecordPayment` action, in one transaction:
   1. Lock the due (`lockForUpdate`).
   2. Validate the amount (positive, date not in the future).
   3. If it exceeds the remaining amount, require `confirm_overpayment`. The UI asks the user to confirm and resubmits.
-  4. Insert the payment, recompute `amount_paid` from the sum of non-reversed payments, set the status.
-- [ ] `ReversePayment` action (owner or finance, reason required). Recomputes the due.
+  4. Insert the payment and its ledger entry on the chosen account, recompute `amount_paid` from the sum of non-reversed payments, set the status.
+- [ ] `ReversePayment` action (owner or finance, reason required). Recomputes the due and adds an **opposite ledger entry**. The original entry stays.
 - [ ] Receipts: image or PDF only, size limit, stored with a random name on the private disk. Served by `GET /payments/{payment}/receipt`, which checks the policy and streams the file with `Content-Type` fixed from the stored type, `X-Content-Type-Options: nosniff` and `Cache-Control: private` (FR-PAY-04).
 - [ ] Invariant test: `amount_paid` always equals the sum of non-reversed payments, even after reversals.
+- [ ] Invariant test: every payment has exactly one ledger entry, and an account's balance equals its opening balance plus its entries, including after reversals.
 
 ## 1.6 Triage page (the home screen)
 
@@ -84,9 +99,9 @@ Query object `DueTriageQuery`, with `today = AlgerianDate::today()`:
 The tabs are **mutually exclusive** so their counts add up. Confirm this reading of the SRS (see open questions).
 
 - [ ] Counts and totals for all tabs from one grouped query.
-- [ ] Filters: direction, kind, client, assignee. Stored in the URL.
+- [ ] Filters: direction, kind, client, office, assignee. Stored in the URL.
 - [ ] Row actions:
-  - **Pay**: a dialog with the remaining amount prefilled and editable, method, date (today by default), reference, receipt.
+  - **Pay**: a dialog with the remaining amount prefilled and editable, **account** (defaults to the last account used for this client, and only lists accounts the user may see), method, date (today by default), reference, receipt.
   - **Postpone**: new date, reason.
   - **WhatsApp**: calls `POST /dues/{due}/reminders`, which logs the reminder and returns a `wa.me` link built from the normalized phone digits and the template. The browser then opens the link.
 - [ ] Default template, editable in settings:
@@ -98,12 +113,14 @@ The tabs are **mutually exclusive** so their counts add up. Confirm this reading
 
 - [ ] `visibleTo($user)` scope on every query that returns clients, contracts, dues or payments. A test loops over every list route as an account manager and asserts no foreign record appears.
 - [ ] Policy tests for every role × resource × action.
+- [ ] Office scope test: as a user restricted to office 1, open every list and try direct links to office 2 accounts, contracts, clients, dues and payments. All must be hidden or denied.
 - [ ] Lazy-loading and N+1 check on triage, client page and contract page.
 - [ ] Copy review of every message, label and validation error.
 - [ ] Accessibility pass: keyboard focus in dialogs, labels on inputs, contrast.
 
 ## 1.8 Go-live
 
+- [ ] Create the offices and every real account. **Count the cash and read each CCP and bank balance on one chosen date**, and enter them as opening balances with that date.
 - [ ] Import the real client list from CSV.
 - [ ] Enter the active SaaS contracts.
 - [ ] Run **in parallel with the spreadsheet for two weeks**. Compare outstanding and overdue totals weekly.
@@ -124,17 +141,21 @@ The tabs are **mutually exclusive** so their counts add up. Confirm this reading
 | `POST /dues/{due}/reminders` | returns link | all (scoped) |
 | `POST /payments/{payment}/reverse` | dialog | owner, finance |
 | `GET /payments/{payment}/receipt` | file | by policy |
-| `GET /users`, `/settings`, `/audit-log` | admin pages | owner |
+| `GET /users`, `/settings`, `/audit-log`, `/offices` | admin pages | owner |
+| `GET /accounts`, `/accounts/{id}` | `accounts/index`, `show` (statement) | owner, finance (scoped by office) |
 
 ## Test plan
 
-Feature tests for the SRS scenarios **1, 2, 3, 4, 5, 6, 11, 12**, plus:
+Feature tests for the SRS scenarios **1, 2, 3, 4, 5, 6, 11, 12, 17, 18, 21**, plus:
 
 - Generating dues for a contract that is paused, ended, or has `auto_renew = false`.
 - Two concurrent payments on one due do not both succeed past the remaining amount.
 - An overpayment is refused without confirmation and accepted with it.
 - CSV import: bad encoding, duplicate phones, a missing header, a row with an unknown account manager.
 - A reversed payment returns the due to `pending` or `partial`.
+- A payment dated before the account's opening date is refused.
+- A payment into an account the user cannot see is refused.
+- Trying to update or delete a ledger entry through the model fails.
 
 ## Exit checklist
 
@@ -142,6 +163,7 @@ Feature tests for the SRS scenarios **1, 2, 3, 4, 5, 6, 11, 12**, plus:
 - [ ] Role matrix and scoping tests green.
 - [ ] Two weeks of parallel run with matching totals.
 - [ ] Backup restored on staging with production-like data.
+- [ ] After two weeks, each account's balance in Khazna matches a real cash count or bank statement.
 - [ ] Real time spent compared with the estimate. Decision recorded about continuing with Inertia (see `README.md` section 1).
 
 ## Open questions
@@ -149,3 +171,5 @@ Feature tests for the SRS scenarios **1, 2, 3, 4, 5, 6, 11, 12**, plus:
 1. Are the triage tabs mutually exclusive (recommended), or does "This month" include today and this week?
 2. Who is the "assignee" in the filter: the client's account manager, or a separate field on the due?
 3. Should the WhatsApp template be set per client, since some clients may prefer Arabic or French? The template is editable text, so this is a settings question, not a code one.
+4. Which accounts exist in each office today (cash box, CCP, bank, others), and does each office have a default account for incoming payments?
+5. Do contracts always belong to the office that sold them, or can an office collect money for the other office's contract? (The design allows both: a payment's office comes from its account, and a contract's office is where revenue is attributed.)

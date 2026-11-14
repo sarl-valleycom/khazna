@@ -1,0 +1,8 @@
+doc/
+*.md
+public/build/
+resources/js/actions/
+resources/js/routes/
+resources/js/wayfinder/
+vendor/
+node_modules/

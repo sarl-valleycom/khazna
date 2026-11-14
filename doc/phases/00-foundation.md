@@ -26,12 +26,13 @@
 
 The folder already holds the docs, so do not scaffold into it directly.
 
-- [ ] Scaffold in a temporary sibling folder with the Laravel installer and the **Vue starter kit** (check `laravel new --help` for the flags).
-- [ ] Move everything, including dotfiles, into `khazna/` next to `doc/` and the SRS files. Never commit `.env`.
-- [ ] `git init` and a first commit.
-- [ ] Check what the starter kit ships. Recent kits include login, password reset, profile and optional two-factor. Keep those, and **remove public registration**. Accounts are created by the owner.
-- [ ] Set `APP_TIMEZONE=UTC`, add `config/khazna.php` with `display_timezone = Africa/Algiers`, `week_starts_on = saturday`, and the default locale `en`.
-- [ ] In non-production environments turn on `Model::shouldBeStrict()` (lazy loading, missing attributes and silently discarded attributes all throw).
+- [x] Scaffold in a temporary sibling folder with the Laravel installer and the **Vue starter kit** (check `laravel new --help` for the flags).
+- [x] Move everything, including dotfiles, into `khazna/` next to `doc/` and the SRS files. Never commit `.env`.
+- [x] `git init` and a first commit.
+- [x] Check what the starter kit ships. Recent kits include login, password reset, profile and optional two-factor. Keep those, and **remove public registration**. Accounts are created by the owner.
+  Notes: Laravel 13.17 / Inertia 3 / Fortify 1.37 / Wayfinder / passkeys. Registration feature disabled, register page and registration test removed.
+- [x] Set `APP_TIMEZONE=UTC`, add `config/khazna.php` with `display_timezone = Africa/Algiers`, `week_starts_on = saturday`, and the default locale `en`.
+- [x] In non-production environments turn on `Model::shouldBeStrict()` (lazy loading, missing attributes and silently discarded attributes all throw).
 - [ ] Use Inertia partial reloads and deferred props where a page has heavy parts (dashboard cards in phase 2).
 
 ---
@@ -40,12 +41,14 @@ The folder already holds the docs, so do not scaffold into it directly.
 
 Do this before building screens. The interface is English and left-to-right.
 
-- [ ] `<html lang="en">` and one self-hosted font (no runtime call to Google Fonts). Choose a font that also covers Arabic script, or add a fallback font, because client names and notes may be typed in Arabic.
-- [ ] Format money, numbers and dates with `Intl` in English: `10,000.50 DA`, `13 Nov 2026`, Latin digits, Gregorian calendar, 24-hour times shown in Algiers time.
-- [ ] Put `dir="auto"` on user-entered text (client names, notes, report text) and wrap names in `<bdi>` inside sentences and tables. An Arabic name then renders correctly inside the English page.
-- [ ] Use Tailwind logical classes (`ms-`, `me-`, `ps-`, `pe-`, `text-start`) instead of `ml-`, `mr-`, `left-`, `right-`. It costs nothing and keeps an Arabic interface possible later.
+- [x] `<html lang="en">` and one self-hosted font (no runtime call to Google Fonts). Choose a font that also covers Arabic script, or add a fallback font, because client names and notes may be typed in Arabic.
+  Notes: Instrument Sans is self-hosted by the starter kit build (Bunny plugin, no runtime call); Arabic falls back through Noto Sans Arabic / Tahoma. The starter Welcome page's rsms.me runtime font link was removed.
+- [x] Format money, numbers and dates with `Intl` in English: `10,000.50 DA`, `13 Nov 2026`, Latin digits, Gregorian calendar, 24-hour times shown in Algiers time.
+- [x] Put `dir="auto"` on user-entered text (client names, notes, report text) and wrap names in `<bdi>` inside sentences and tables. An Arabic name then renders correctly inside the English page.
+- [x] Use Tailwind logical classes (`ms-`, `me-`, `ps-`, `pe-`, `text-start`) instead of `ml-`, `mr-`, `left-`, `right-`. It costs nothing and keeps an Arabic interface possible later.
 - [ ] Check these primitives on desktop and at 375 px width: sidebar, dropdown, select, dialog, sheet, tabs, date picker, toast, pagination, table.
-- [ ] Check that the chart components show a 90-day forecast with weekly buckets and readable labels. If they do not, try `vue-echarts` now.
+- [x] Check that the chart components show a 90-day forecast with weekly buckets and readable labels. If they do not, try `vue-echarts` now.
+  Notes: the shadcn-vue chart wrapper generated in this version was incomplete, so `vue-echarts` is used for the 90-day weekly forecast (`ForecastChart.vue`).
 
 **Exit criteria:** one demo page showing every primitive above, reviewed by you, including a client with an Arabic name.
 
@@ -103,15 +106,22 @@ Port the CRM helpers `Money`, `AlgerianDate`, `Period`, `Phone` and the `Metrics
 
 ## 0.6 Auth and roles
 
-- [ ] `Role` enum: `owner`, `finance`, `account_manager`. One role per user.
-- [ ] `users` has `role` and `active`. A deactivated user cannot sign in, and a signed-in session of a deactivated user is ended on the next request.
-- [ ] Base policy class and a `Gate` for `view-salaries` (owner only, configurable later).
-- [ ] Shared Inertia props: `auth.user`, `auth.role`, flash messages, and a small public settings subset.
-- [ ] `useAbilities()` composable that reads the `abilities` prop.
-- [ ] Test helper `actingAsRole(Role::…)` for feature tests.
-- [ ] A **role matrix test** file that grows with every phase: for each route, which roles get 200 and which get 403.
+- [x] `Role` enum: `owner`, `finance`, `account_manager`. One role per user.
+- [x] `users` has `role` and `active`. A deactivated user cannot sign in, and a signed-in session of a deactivated user is ended on the next request.
+- [x] Base policy class and a `Gate` for `view-salaries` (owner only, configurable later).
+- [x] `users.office_id` (nullable, empty means all offices). One `visibleTo($user)` pattern covers both the account-manager scope and the office scope, so no controller invents its own rule.
+- [x] Shared Inertia props: `auth.user`, `auth.role`, flash messages, and a small public settings subset.
+- [x] `useAbilities()` composable that reads the `abilities` prop.
+- [x] Test helper `actingAsRole(Role::…)` for feature tests.
+- [x] A **role matrix test** file that grows with every phase: for each route, which roles get 200 and which get 403.
 
 ---
+
+Notes:
+- `RoleAccessTest` covers inactive sign-in, session termination, the salary gate, and role casts.
+- `VisibilityScopeTest` uses a fixture model to prove the office and owner scopes, including their intersection.
+- `RoleMatrixTest` starts with the dashboard and guest redirect; add a row for every route added in later phases.
+- `spatie/laravel-activitylog` is installed and its migration exists locally, but 0.8 owns and commits that migration.
 
 ## 0.7 Shared UI kit
 
@@ -132,59 +142,93 @@ Build these once, with a phone layout and Storybook-free demo pages:
 | `StatusBadge` | One place that maps statuses to colors and labels |
 | `FileInput` | Upload with type and size checks, preview for images |
 | `Toast` | Reads the flash messages |
+| `OfficeSwitcher` | "All offices" or one office, kept in the URL. Hidden for users restricted to one office |
+| `AccountSelect` | Select grouped by office, showing the balance. Only lists accounts the user may see |
 | `EmptyState` | Message plus a call to action |
 
 Exit check: a demo page uses every component, in light and dark if dark mode is kept, on desktop and a 375 px phone.
+
+Notes:
+- `AppLayout` is the starter kit layout; the sidebar now filters items by `roles`, and the UI kit entry is owner-only and dev-build-only.
+- `DataTable` uses TanStack Table v9 `useTable` in manual mode and writes `page`, `per_page`, `sort` and `direction` to the URL with a partial reload of the `page` prop.
+- `FilterBar`, `OfficeSwitcher` and `AccountSelect` share the same URL helpers, so filters survive reloads and are shareable.
+- `/dev/ui` is local/staging only and demonstrates all 0.7 components, including loading, empty, dialog, file and toast states.
+- Money input parsing treats a trailing separator with one or two digits as decimals; a three-digit group is thousands. Automated JS tests arrive with the 0.9 tooling.
+- Review the demo at 375 px and in dark mode before the phase exit; that manual review is still on the exit checklist.
 
 ---
 
 ## 0.8 Audit trail base
 
-- [ ] Install `spatie/laravel-activitylog`. Log only dirty attributes, and log old values.
-- [ ] A trait `Auditable` that every money, contract and permission model uses.
-- [ ] Mask sensitive fields: password, remember token. Salary fields are logged, but the audit log screen is owner-only.
-- [ ] Mark the log table as append-only in code (no update or delete from the app).
-- [ ] Reason capture: a way to attach a reason to the change being logged (a request-scoped value read by the logging hook).
+- [x] Install `spatie/laravel-activitylog`. Log only dirty attributes, and log old values.
+- [x] A trait `Auditable` that every money, contract and permission model uses.
+- [x] Mask sensitive fields: password, remember token. Salary fields are logged, but the audit log screen is owner-only.
+- [x] Mark the log table as append-only in code (no update or delete from the app).
+- [x] Reason capture: a way to attach a reason to the change being logged (a request-scoped value read by the logging hook).
 
 ---
 
+Notes:
+- `App\Models\Concerns\Auditable` uses `logFillable`, `logOnlyDirty`, old values, and excludes password and token fields.
+- `App\Models\Activity` throws on update and delete, so the table is append-only from application code.
+- `App\Support\AuditContext` is request-scoped; `Auditable::beforeActivityLogged()` copies its reason into the activity properties.
+- The `view-audit-log` gate is owner-only. The screen itself arrives with the feature that needs it.
+- Salary attributes are not excluded, so they are logged; access to the log screen is what stays restricted.
+
 ## 0.9 Quality gates and CI
 
-- [ ] Pest with an in-memory or dedicated test database that matches production (MySQL, not SQLite, because of generated columns and locking in later phases).
-- [ ] Larastan at a strict level, Pint for formatting, ESLint and Prettier, `tsc --noEmit`.
-- [ ] CI pipeline (GitHub Actions or equivalent): install, build assets, lint, static analysis, tests. Fails the pull request.
+- [x] Pest with an in-memory or dedicated test database that matches production (MySQL, not SQLite, because of generated columns and locking in later phases).
+- [x] Larastan at a strict level, Pint for formatting, ESLint and Prettier, `tsc --noEmit`.
+- [x] CI pipeline (GitHub Actions or equivalent): install, build assets, lint, static analysis, tests. Fails the pull request.
 - [ ] Optional pre-commit hook running Pint and ESLint on staged files.
 - [ ] A Playwright smoke test (login → open triage) that runs against staging after deploy.
 
 ---
 
+Notes:
+- Pest uses MySQL `khazna_test`; locally via `.env.testing`, in CI via `phpunit.xml` and a MySQL 8.4 service.
+- Larastan runs at level 8. `vp check` covers formatting and linting, and `vue-tsc --noEmit` covers TypeScript.
+- `composer ci:check` is the single CI command: format/lint, TypeScript, Pint, PHPStan, then Pest.
+- The optional pre-commit hook is not installed; `composer lint:check` is the manual substitute.
+- Playwright has a login-to-dashboard smoke test. The triage step is `fixme` because `/triage` belongs to phase 1, so this box stays open until that route exists.
 ## 0.10 Environments, deploy and backups
 
 - [ ] Three environments: local, staging, production, each with its own `.env`, database and Discord application (phase 3).
-- [ ] Deploy script: pull, `composer install --no-dev`, build assets, migrate with `--force`, clear and warm caches, restart the queue worker. Run on staging first.
-- [ ] Supervisor program for `queue:work`. Cron entry for `schedule:run` every minute.
+- [x] Deploy script: pull, `composer install --no-dev`, build assets, migrate with `--force`, clear and warm caches, restart the queue worker. Run on staging first.
+- [x] Supervisor program for `queue:work`. Cron entry for `schedule:run` every minute.
 - [ ] HTTPS with automatic renewal. For local Discord testing in phase 3, use a tunnel such as `cloudflared`.
 - [ ] **Backups:** daily database dump plus the private storage disk, copied to a different provider. Retention 30 days. **Do one restore test now**, not at go-live.
 - [ ] Error tracking (Sentry or equivalent) and an uptime check on a health endpoint.
-- [ ] Log rotation, and make sure logs never contain amounts tied to salaries or full phone numbers.
+- [x] Log rotation, and make sure logs never contain amounts tied to salaries or full phone numbers.
 
 ---
 
+Notes:
+- `deploy/deploy.sh` is portable and parameterised by `APP_DIR`, `PHP_BIN`, `COMPOSER_BIN` and `NPM_BIN`; it uses maintenance mode, `composer install --no-dev`, asset build, migrations, cache warm-up and a queue restart.
+- `deploy/supervisor/khazna-worker.conf` and `deploy/cron/khazna` contain placeholder paths; change them to the chosen host before installing.
+- `deploy/backup.sh` dumps MySQL and `storage/app/private`, optionally copies through rclone, and applies a 30-day retention. Supply credentials from a secret manager, never from the cron line. `deploy/cron/khazna` is a ready `/etc/cron.d` file (user column included) that runs the scheduler every minute and the backup daily at 02:30, reading `DB_*` from the app `.env`. A failed deploy leaves the app in maintenance mode on purpose.
+- Error tracking, uptime monitoring, HTTPS renewal and the three real environments still need the host decision. The `/up` health endpoint already exists.
+- The backup restore test is user-owned and remains on the exit checklist.
 ## 0.11 Seed data
 
-- [ ] Factories for every model added in later phases (add them as you go).
-- [ ] A `DemoSeeder` with realistic Algerian names, phone numbers, amounts in DA, paid and unpaid dues across months. Used for UI work and for the staging demo. Never run it in production.
+- [x] Factories for every model added in later phases (add them as you go).
+- [ ] A `DemoSeeder` with two offices in different cities, their accounts, realistic Algerian names, phone numbers, amounts in DA, paid and unpaid dues across months. Used for UI work and for the staging demo. Never run it in production.
 
 ---
 
+Notes:
+- `UserFactory` is the only factory needed in phase 0; add one factory with each model in later phases.
+- `DemoSeeder` creates the owner, finance, and two account-manager accounts, with office ids 1 (Algiers) and 2 (Oran).
+- Offices, accounts, and dues are deferred to phase 1 because those tables do not exist yet; this follows the decision to defer office rows.
+- `DatabaseSeeder` calls `DemoSeeder` outside production, and `DemoSeeder` throws in production. The demo password defaults to `password`; override it with `DEMO_PASSWORD`.
 ## Exit checklist
 
 - [ ] Staging is online over HTTPS, login works, registration is closed.
 - [ ] The demo page and the shared UI kit are reviewed.
-- [ ] Helper tests pass with hand-computed values.
+- [x] Helper tests pass with hand-computed values.
 - [ ] CI is green and blocks merging when red.
 - [ ] A backup was taken and restored successfully.
-- [ ] The role matrix test exists, even if nearly empty.
+- [x] The role matrix test exists, even if nearly empty.
 
 ## Risks
 

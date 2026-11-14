@@ -18,7 +18,7 @@ Do this per environment (local, staging, production each get their own applicati
 
 - [ ] Create the application in the Discord developer portal. Note the **Application ID**, **Public Key** and **Bot Token**.
 - [ ] Invite the bot to the company server with the `applications.commands` and `bot` scopes. Permissions: view channels, send messages. No privileged intents are needed because the app uses HTTP interactions and no gateway connection.
-- [ ] Note the **Guild ID** and create three channels: attendance feed, private owner digest, reports.
+- [ ] Note the **Guild ID** and create the channels: one attendance feed **per office**, a private owner digest, and reports. Both offices share one Discord server (open question 4).
 - [ ] Store the values in `.env` and `config/discord.php`. Nothing about Discord is hardcoded.
 - [ ] Set the **Interactions Endpoint URL** to `https://<domain>/discord/interactions`. Discord verifies it by sending a signed ping and an invalid-signature probe, so the endpoint must already work.
 - [ ] For local work, expose the dev server with a tunnel such as `cloudflared`.
@@ -67,7 +67,7 @@ Tables: `attendance_sessions`, `attendance_breaks`, `attendance_settings` (annex
 
 ## 3.6 Admin pages (Vue)
 
-- [ ] **Sessions** list with filters (employee, date range, status), using `DataTable` and a `SessionIndexQuery` (FR-ADM-01).
+- [ ] **Sessions** list with filters (employee, office, date range, status), using `DataTable` and a `SessionIndexQuery` (FR-ADM-01).
 - [ ] **Needs review** view: auto-closed sessions, sessions over 12 hours, overlapping sessions. Approve, edit or delete (FR-ADM-04).
 - [ ] **Edit session** dialog: every change needs a reason and writes an audit row (FR-ADM-02, 03).
 - [ ] **Who is working now** page (working, away, offline), refreshed every 30 seconds with Inertia's polling helper and a partial reload of one prop (FR-ADM-06).
@@ -88,7 +88,7 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 - [ ] `DiscordClient` service: sends channel messages and DMs through the REST API. Handles rate limits (honors the retry-after delay), retries with backoff, and logs failures.
 - [ ] **DMs can fail** when the employee has DMs from server members turned off. Fall back to a mention in the attendance channel and log it.
 - [ ] `attendance:remind`, every 5 minutes: not checked in 30 minutes after the scheduled start (not on weekends, holidays or leave), away longer than the limit. Respect `reminders_enabled` globally and per employee (FR-REM-01..03).
-- [ ] `attendance:digest-daily` at the configured time. Content: who is in, late, absent, away, forgotten, plus the end-of-day reports (FR-RPT-01).
+- [ ] `attendance:digest-daily` at the configured time. Content, **grouped by office**: who is in, late, absent, away, forgotten, plus the end-of-day reports (FR-RPT-01). An employee's check-in events go to the feed of their own office.
 - [ ] `attendance:digest-weekly`, every Sunday morning, summarizing the previous work week (Sunday to Thursday): hours against expected, late count, overtime (FR-RPT-02).
 - [ ] Optional live "who is online" message, edited in place on every state change (FR-RPT-04).
 - [ ] Use embeds with English text and real mentions (`<@id>`).
@@ -145,3 +145,4 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 1. May an employee fix their own forgotten check-out within 24 hours, or must the owner approve every correction?
 2. Which channels are visible to all employees, and which are owner-only?
 3. Daily digest time, auto-close time and late grace period (defaults: 18:00, 23:59, 15 minutes).
+4. Do both offices share one Discord server (assumed), with a separate attendance feed per office? Do the offices have different working hours or work days? The employee schedule already supports this per person.

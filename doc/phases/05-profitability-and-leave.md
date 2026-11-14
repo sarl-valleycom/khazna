@@ -39,7 +39,7 @@ Per contract (FR-PRJ-04), with a period filter:
 | Revenue | Switch between **contracted** (the contract or milestone amounts in the period) and **collected** (payments received) |
 | Margin | Revenue − labor cost, and as a percentage |
 
-- [ ] Views: by contract, by client, by month, and by employee (which contracts they spend time on).
+- [ ] Views: by contract, by client, by month, by office, and by employee (which contracts they spend time on). Labor cost goes to the employee's office and revenue to the contract's office, so a project sold by one office and built by the other shows up honestly in both.
 - [ ] Recurring SaaS contracts show a monthly margin trend. Custom projects show cumulative margin against the budget, with a warning when hours already cost more than the amount collected.
 - [ ] Optional: link a supplier cost contract (for example hosting) to the SaaS contract it serves, to show **direct cost** in the margin (open question).
 - [ ] Hand-computed test: a 100 000 DA project, 120 h at 340,91 DA gives a margin of 59 090,91 DA (59.1%).

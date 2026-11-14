@@ -91,6 +91,7 @@ Test with a wrong secret (rejected) and the same payload twice (one client).
 - [ ] Monthly summary PDF: money in, money out, outstanding, salary total (owner only for the salary line) (FR-EXP-03).
 - [ ] **Payslip PDF** per employee per month: salary, adjustments, attendance summary, net (FR-SAL-08). Generated on demand from stored data, with the same permissions as the salary pages.
 - [ ] Attendance monthly export per employee (annex FR-RPT-05).
+- [ ] **Ledger exports:** an account statement (Excel and PDF) for a date range, and the cash reports from phase 2 (money in and out by month and category, office report) as Excel. These exports are what an accountant will ask for. Payroll lines follow the same masking rule as the screens.
 
 ## 4.7 Two-factor authentication
 
