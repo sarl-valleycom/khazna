@@ -26,6 +26,7 @@ type Row = {
 };
 
 type Props = {
+    includesPayroll: boolean;
     from: string;
     to: string;
     months: string[];
@@ -171,6 +172,10 @@ function monthLabel(month: string): string {
                 </SelectContent>
             </Select>
         </div>
+
+        <p v-if="!props.includesPayroll" class="text-sm text-muted-foreground">
+            Payroll is not included in this view.
+        </p>
 
         <div class="grid gap-4 sm:grid-cols-3">
             <StatCard label="Money in" :value="money(props.totals.inCents)" />

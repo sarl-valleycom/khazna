@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Reconciliation;
 use App\Models\User;
 use App\Support\AlgerianDate;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -73,6 +74,18 @@ class SaveReconciliation
 
             if ($reconciliation->adjustment_entry_id !== null || $reconciliation->difference_cents === 0) {
                 throw ValidationException::withMessages(['reason' => __('There is no open difference to record.')]);
+            }
+
+            // The ledger may have moved since the count (a backdated entry, a reversal). Only
+            // record the difference if the balance on that day still disagrees by the same amount.
+            $now = $reconciliation->counted_balance_cents - $account->balanceOn($reconciliation->as_of);
+
+            if ($now !== $reconciliation->difference_cents) {
+                throw ValidationException::withMessages([
+                    'reason' => __('The ledger changed after this count, so the difference is no longer :old. Count the account again.', [
+                        'old' => Money::fromCents(abs($reconciliation->difference_cents))->format(),
+                    ]),
+                ]);
             }
 
             $this->adjust($actor, $account, $reconciliation, $reason);

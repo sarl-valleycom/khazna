@@ -27,6 +27,17 @@ class Category extends Model
 
     public const SALARIES = 'Salaries';
 
+    /** @return list<string> Categories the system posts to by name: they cannot be renamed or switched off. */
+    public static function systemNames(): array
+    {
+        return [self::BANK_FEES, self::RECONCILIATION, self::SALARIES];
+    }
+
+    public function isSystem(): bool
+    {
+        return $this->kind === CategoryKind::Cost && in_array($this->name, self::systemNames(), true);
+    }
+
     protected function casts(): array
     {
         return [

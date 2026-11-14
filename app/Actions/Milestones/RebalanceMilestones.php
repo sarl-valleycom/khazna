@@ -25,6 +25,30 @@ class RebalanceMilestones
      */
     public function handle(Contract $contract, array $rows, bool $apply): array
     {
+        // Saving locks every milestone's due first and works out the plan only after that,
+        // so a payment recorded in the meantime is seen and cannot be overwritten. A preview
+        // writes nothing and needs no lock.
+        if (! $apply) {
+            return $this->plan($contract, $rows, false);
+        }
+
+        return DB::transaction(function () use ($contract, $rows): array {
+            Due::query()
+                ->whereIn('milestone_id', $contract->milestones()->pluck('id'))
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            return $this->plan($contract, $rows, true);
+        });
+    }
+
+    /**
+     * @param  list<array{id: int, label?: string, mode?: string, value: int|float|string|null, due_on?: string|null}>  $rows
+     * @return array<int, array{id: int, label: string, oldCents: int, newCents: int, locked: bool}>
+     */
+    private function plan(Contract $contract, array $rows, bool $apply): array
+    {
         $milestones = $contract->milestones()->with('due')->get()->keyBy('id');
         $find = fn (int $id): Milestone => $milestones->get($id) ?? throw ValidationException::withMessages([
             'milestones' => __('That milestone does not belong to this contract.'),
@@ -68,25 +92,24 @@ class RebalanceMilestones
             return $ordered;
         }
 
-        DB::transaction(function () use ($rows, $find, $plan): void {
-            foreach ($rows as $row) {
-                $milestone = $find((int) $row['id']);
-                $due = Due::query()->lockForUpdate()->where('milestone_id', $milestone->id)->firstOrFail();
-                $newCents = $plan[$milestone->id]['newCents'];
-                $label = $plan[$milestone->id]['label'];
+        // Already inside the caller's transaction, with every milestone's due locked.
+        foreach ($rows as $row) {
+            $milestone = $find((int) $row['id']);
+            $due = Due::query()->where('milestone_id', $milestone->id)->firstOrFail();
+            $newCents = $plan[$milestone->id]['newCents'];
+            $label = $plan[$milestone->id]['label'];
 
-                app(AuditContext::class)->withReason(__('Milestones rebalanced'), function () use ($milestone, $due, $newCents, $label, $row): void {
-                    $milestone->update(['amount_cents' => $newCents, 'label' => $label]);
-                    $due->update(['amount_due_cents' => $newCents, 'description' => $label]);
+            app(AuditContext::class)->withReason(__('Milestones rebalanced'), function () use ($milestone, $due, $newCents, $label, $row): void {
+                $milestone->update(['amount_cents' => $newCents, 'label' => $label]);
+                $due->update(['amount_due_cents' => $newCents, 'description' => $label]);
 
-                    // A dated milestone may also move; a delivered or delivery-triggered one keeps its date.
-                    if (array_key_exists('due_on', $row) && $row['due_on'] !== null && $milestone->delivered_at === null && $milestone->trigger->value === 'date') {
-                        $milestone->update(['due_on' => $row['due_on']]);
-                        $due->update(['due_on' => $row['due_on']]);
-                    }
-                });
-            }
-        });
+                // A dated milestone may also move; a delivered or delivery-triggered one keeps its date.
+                if (array_key_exists('due_on', $row) && $row['due_on'] !== null && $milestone->delivered_at === null && $milestone->trigger->value === 'date') {
+                    $milestone->update(['due_on' => $row['due_on']]);
+                    $due->update(['due_on' => $row['due_on']]);
+                }
+            });
+        }
 
         return $ordered;
     }

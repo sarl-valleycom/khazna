@@ -28,8 +28,9 @@ use LogicException;
  * @property string|null $title
  * @property CarbonImmutable|null $hire_date
  * @property EmployeeStatus $status
+ * @property CarbonImmutable|null $left_on
  */
-#[Fillable(['office_id', 'name', 'phone', 'title', 'hire_date', 'status'])]
+#[Fillable(['office_id', 'name', 'phone', 'title', 'hire_date', 'status', 'left_on'])]
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
@@ -40,6 +41,7 @@ class Employee extends Model
         return [
             'office_id' => 'integer',
             'hire_date' => 'immutable_date',
+            'left_on' => 'immutable_date',
             'status' => EmployeeStatus::class,
         ];
     }

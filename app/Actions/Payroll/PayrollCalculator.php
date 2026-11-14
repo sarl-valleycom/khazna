@@ -54,17 +54,23 @@ class PayrollCalculator
     }
 
     /**
-     * Who is on the payroll for a month: active people who had joined by its last day.
+     * Who is on the payroll for a month: people who had joined by its last day and were
+     * still on the team during it. Someone deactivated mid-month is still paid for that
+     * month (the owner adds a deduction if it should be less); someone who left before
+     * it began is not.
      *
      * @return Collection<int, Employee>
      */
     public function payableEmployees(CarbonImmutable $month): Collection
     {
+        $first = $month->startOfMonth()->toDateString();
         $last = $month->startOfMonth()->endOfMonth()->toDateString();
 
         return Employee::query()
             ->with('office:id,name')
-            ->where('status', EmployeeStatus::Active)
+            ->where(fn ($query) => $query
+                ->where('status', EmployeeStatus::Active)
+                ->orWhereDate('left_on', '>=', $first))
             ->where(fn ($query) => $query->whereNull('hire_date')->orWhereDate('hire_date', '<=', $last))
             ->orderBy('name')
             ->get();

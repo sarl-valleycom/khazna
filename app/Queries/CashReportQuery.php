@@ -17,6 +17,8 @@ use Illuminate\Support\Collection;
  * a payment that was reversed does not count as money in and money out.
  *
  * The "cash result" is money in minus money out. It is not an accounting profit.
+ *
+ * Without the salary permission, payroll entries are left out entirely (see `includesPayroll`).
  */
 class CashReportQuery
 {
@@ -43,6 +45,9 @@ class CashReportQuery
             ->leftJoin('categories', 'categories.id', '=', 'account_entries.category_id')
             ->whereIn('account_entries.account_id', $accounts->modelKeys())
             ->where('account_entries.is_transfer', false)
+            // Payroll is out of this report for anyone without the salary permission, as it is
+            // out of their forecast, dues and statements. The totals simply leave it out.
+            ->when(! $user->can('view-salaries'), fn ($query) => $query->where('account_entries.is_payroll', false))
             ->whereDate('account_entries.entry_date', '>=', $from->toDateString())
             ->whereDate('account_entries.entry_date', '<=', $to->toDateString())
             ->selectRaw("
@@ -94,6 +99,7 @@ class CashReportQuery
         $outTotal = array_sum($totals['out']);
 
         return [
+            'includesPayroll' => $user->can('view-salaries'),
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'months' => $months,

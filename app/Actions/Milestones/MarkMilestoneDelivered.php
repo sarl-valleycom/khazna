@@ -2,6 +2,7 @@
 
 namespace App\Actions\Milestones;
 
+use App\Enums\DueStatus;
 use App\Enums\MilestoneTrigger;
 use App\Models\Due;
 use App\Models\Milestone;
@@ -29,9 +30,10 @@ class MarkMilestoneDelivered
                 ]);
             }
 
-            if (! $due->status->isOpen()) {
+            // A milestone the client paid in advance can still be delivered; only a canceled one cannot.
+            if ($due->status === DueStatus::Canceled) {
                 throw ValidationException::withMessages([
-                    'milestone' => __('This milestone is already settled or canceled.'),
+                    'milestone' => __('This milestone was canceled.'),
                 ]);
             }
 
@@ -44,7 +46,11 @@ class MarkMilestoneDelivered
                 if ($milestone->trigger === MilestoneTrigger::Delivery) {
                     $dueOn = $delivered->addDays($term)->toDateString();
                     $milestone->update(['due_on' => $dueOn]);
-                    $due->update(['due_on' => $dueOn]);
+
+                    // An already-settled due keeps no date to chase: only an open one is dated.
+                    if ($due->status->isOpen()) {
+                        $due->update(['due_on' => $dueOn]);
+                    }
                 }
             });
 

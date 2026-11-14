@@ -27,7 +27,7 @@ class CategoryController extends Controller
                     'kind' => $category->kind->value,
                     'kindLabel' => $category->kind->label(),
                     'active' => $category->active,
-                    'system' => in_array($category->name, [Category::BANK_FEES, Category::RECONCILIATION, Category::SALARIES], true),
+                    'system' => $category->isSystem(),
                 ])
                 ->all(),
             'kinds' => collect(CategoryKind::cases())
@@ -48,6 +48,14 @@ class CategoryController extends Controller
     public function update(CategoryRequest $request, Category $category): RedirectResponse
     {
         $this->authorize('update', $category);
+
+        if ($category->isSystem()) {
+            $data = $request->validated();
+
+            if (($data['name'] ?? $category->name) !== $category->name || ($data['active'] ?? true) === false) {
+                return back(303)->with('error', __('This category is used by the system. It cannot be renamed or deactivated.'));
+            }
+        }
 
         $category->update($request->validated());
 

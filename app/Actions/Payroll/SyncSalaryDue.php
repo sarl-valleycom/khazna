@@ -39,7 +39,14 @@ class SyncSalaryDue
 
         $line = $this->calculator->forEmployee($employee, $month);
 
-        if ($line === null || $line['net'] === $due->amount_due_cents) {
+        if ($line === null) {
+            return $due;
+        }
+
+        // Nothing is owed once advances and deductions cover the salary: never a negative due.
+        $net = max(0, $line['net']);
+
+        if ($net === $due->amount_due_cents) {
             return $due;
         }
 
@@ -52,8 +59,19 @@ class SyncSalaryDue
         }
 
         // The status recalculation is part of the same correction, so it carries the same reason.
-        app(AuditContext::class)->withReason($reason !== '' ? $reason : __('Salary adjusted'), function () use ($due, $line): void {
-            $due->update(['amount_due_cents' => max(0, $line['net'])]);
+        app(AuditContext::class)->withReason($reason !== '' ? $reason : __('Salary adjusted'), function () use ($due, $net): void {
+            // Nothing paid and nothing owed: the due is withdrawn rather than left at zero forever.
+            if ($net === 0 && $due->amount_paid_cents === 0) {
+                $due->update([
+                    'amount_due_cents' => 0,
+                    'status' => DueStatus::Canceled,
+                    'canceled_reason' => __('Advances and deductions cover the whole salary.'),
+                ]);
+
+                return;
+            }
+
+            $due->update(['amount_due_cents' => $net]);
             $this->recalculate->handle($due);
         });
 

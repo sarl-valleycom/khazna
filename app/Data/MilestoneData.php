@@ -47,7 +47,7 @@ class MilestoneData extends Data
             dueStatus: $due?->status,
             waitingForDelivery: $milestone->trigger === MilestoneTrigger::Delivery && $milestone->delivered_at === null,
             locked: ($due->amount_paid_cents ?? 0) > 0,
-            canDeliver: $mayManage && $open && $milestone->delivered_at === null,
+            canDeliver: $mayManage && $due !== null && $due->status !== DueStatus::Canceled && $milestone->delivered_at === null,
             canRequest: $mayManage && $open && $milestone->requested_at === null,
         );
     }

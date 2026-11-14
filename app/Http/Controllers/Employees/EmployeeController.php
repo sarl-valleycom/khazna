@@ -119,8 +119,17 @@ class EmployeeController extends Controller
         $validated = $request->validated();
         $this->assertOfficeAllowed($actor, (int) $validated['office_id']);
 
+        $data = collect($validated)->except(['salary_cents', 'salary_from'])->all();
+
+        // The day someone leaves is kept, so a month they worked part of can still be closed.
+        if (($data['status'] ?? null) === EmployeeStatus::Inactive->value) {
+            $data['left_on'] = $employee->left_on?->toDateString() ?? AlgerianDate::todayString();
+        } elseif (($data['status'] ?? null) === EmployeeStatus::Active->value) {
+            $data['left_on'] = null;
+        }
+
         // A salary is never changed by editing the person: raises go through setSalary().
-        $employee->update(collect($validated)->except(['salary_cents', 'salary_from'])->all());
+        $employee->update($data);
 
         return back(303)->with('success', __('Employee updated.'));
     }

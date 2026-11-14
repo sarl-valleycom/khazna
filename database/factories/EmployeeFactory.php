@@ -34,7 +34,7 @@ class EmployeeFactory extends Factory
 
     public function inactive(): static
     {
-        return $this->state(fn (): array => ['status' => EmployeeStatus::Inactive]);
+        return $this->state(fn (): array => ['status' => EmployeeStatus::Inactive, 'left_on' => '2025-12-31']);
     }
 
     /** Give the employee a starting salary (in centimes) from a date. */
