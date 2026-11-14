@@ -45,6 +45,12 @@ class Reconciliation extends Model
         return $this->belongsTo(Account::class);
     }
 
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     /** @return BelongsTo<AccountEntry, $this> */
     public function adjustmentEntry(): BelongsTo
     {

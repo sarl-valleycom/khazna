@@ -60,6 +60,9 @@ function openEdit(account: App.Data.AccountRowData) {
         >
             <template #actions>
                 <Button variant="outline" as-child>
+                    <Link href="/accounts/reconcile">Reconcile</Link>
+                </Button>
+                <Button variant="outline" as-child>
                     <Link href="/accounts/transfers">Transfers</Link>
                 </Button>
                 <Button variant="outline" as-child>

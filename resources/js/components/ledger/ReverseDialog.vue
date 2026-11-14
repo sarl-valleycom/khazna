@@ -9,9 +9,10 @@ type Props = {
     action: string;
     title: string;
     description: string;
+    submitLabel?: string;
 };
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { submitLabel: 'Reverse' });
 const open = defineModel<boolean>('open', { default: false });
 const form = useForm({ reason: '' });
 
@@ -35,7 +36,7 @@ function submit() {
         v-model:open="open"
         :title="props.title"
         :description="props.description"
-        submit-label="Reverse"
+        :submit-label="props.submitLabel"
         :processing="form.processing"
         :errors="form.errors"
         @submit="submit"

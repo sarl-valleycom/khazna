@@ -128,10 +128,10 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 ## 2.10 Reconciliation
 
-- [ ] Screen: choose an account and a date, enter the counted cash or the statement balance. Khazna shows its own balance at the end of that date and the difference (FR-ACC-11).
-- [ ] Saving with a difference offers two choices: **record the difference** (an adjustment entry with a required reason, category "Reconciliation difference") or **leave it open** to investigate.
-- [ ] History per account, and a reminder when an account has not been reconciled for 30 days (cash accounts: weekly is better).
-- [ ] `ledger:verify` runs daily: every payment, advance, transfer and manual entry has exactly one set of entries, and every entry has one source. A mismatch alerts the owner (FR-ACC-14, NFR-15).
+- [x] Screen: choose an account and a date, enter the counted cash or the statement balance. Khazna shows its own balance at the end of that date and the difference (FR-ACC-11).
+- [x] Saving with a difference offers two choices: **record the difference** (an adjustment entry with a required reason, category "Reconciliation difference") or **leave it open** to investigate.
+- [x] History per account, and a reminder when an account has not been reconciled for 30 days (cash accounts: weekly is better).
+- [x] `ledger:verify` runs daily: every payment, advance, transfer and manual entry has exactly one set of entries, and every entry has one source. A mismatch alerts the owner (FR-ACC-14, NFR-15).
 
 ## 2.11 Cash reports
 

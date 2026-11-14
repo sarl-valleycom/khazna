@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\User;
 use App\Support\Metrics\DashboardMetrics;
 use Illuminate\Http\Request;
@@ -11,6 +12,19 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    /**
+     * @return array{checkedAt: string|null, problems: array<int, string>}|null
+     */
+    private function ledgerCheck(): ?array
+    {
+        $raw = Setting::current(Setting::LEDGER_CHECK);
+        $data = $raw === null ? null : json_decode($raw, true);
+
+        return is_array($data)
+            ? ['checkedAt' => $data['checked_at'] ?? null, 'problems' => array_values($data['problems'] ?? [])]
+            : null;
+    }
+
     public function __invoke(Request $request): Response
     {
         $actor = $request->user();
@@ -35,6 +49,8 @@ class DashboardController extends Controller
                 'mrrCents' => $metrics->mrr(),
                 'renewals' => $metrics->upcomingRenewals(),
             ], 'kpis'),
+            // The latest ledger:verify result, for the owner only.
+            'ledgerCheck' => $actor->isOwner() ? $this->ledgerCheck() : null,
             'balances' => Inertia::defer(fn (): array => $metrics->accountBalances(), 'balances'),
             // The salary card exists only for someone with the permission: for anyone else it
             // is not deferred, not built and not named in the response.

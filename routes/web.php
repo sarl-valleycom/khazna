@@ -22,6 +22,7 @@ use App\Http\Controllers\Ledger\TransferController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Payroll\AdjustmentController;
 use App\Http\Controllers\Payroll\CloseController;
+use App\Http\Controllers\Reconciliation\ReconciliationController;
 use App\Http\Controllers\Suppliers\SupplierController;
 use App\Http\Controllers\Triage\TriageController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
@@ -69,6 +70,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('accounts/transfers', [TransferController::class, 'index'])->name('transfers.index');
     Route::post('accounts/transfers', [TransferController::class, 'store'])->name('transfers.store');
     Route::post('accounts/transfers/{transfer}/reverse', [TransferController::class, 'reverse'])->whereNumber('transfer')->name('transfers.reverse');
+    Route::get('accounts/reconcile', [ReconciliationController::class, 'index'])->name('reconciliations.index');
+    Route::post('accounts/reconcile', [ReconciliationController::class, 'store'])->name('reconciliations.store');
+    Route::post('accounts/reconcile/{reconciliation}/adjust', [ReconciliationController::class, 'adjust'])->whereNumber('reconciliation')->name('reconciliations.adjust');
     Route::get('accounts/entries', [ManualEntryController::class, 'index'])->name('entries.index');
     Route::post('accounts/entries', [ManualEntryController::class, 'store'])->name('entries.store');
     Route::post('accounts/entries/{entry}/reverse', [ManualEntryController::class, 'reverse'])->whereNumber('entry')->name('entries.reverse');

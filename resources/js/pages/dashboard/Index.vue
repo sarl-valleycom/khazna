@@ -38,6 +38,7 @@ type Props = {
     kpis?: Kpis;
     balances?: OfficeBalances[];
     salary?: { billCents: number | null };
+    ledgerCheck?: { checkedAt: string | null; problems: string[] } | null;
 };
 
 const props = defineProps<Props>();
@@ -55,6 +56,30 @@ function money(cents: number): string {
             title="Dashboard"
             :description="`${props.monthLabel}${props.officeId ? ' · one office' : ' · all offices'}. Use the office switcher to narrow every card.`"
         />
+
+        <div
+            v-if="props.ledgerCheck && props.ledgerCheck.problems.length > 0"
+            class="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+            role="alert"
+        >
+            <p class="font-medium">
+                The daily ledger check found
+                {{ props.ledgerCheck.problems.length }}
+                {{
+                    props.ledgerCheck.problems.length === 1
+                        ? 'problem'
+                        : 'problems'
+                }}.
+            </p>
+            <ul class="mt-1 list-disc pl-5">
+                <li
+                    v-for="problem in props.ledgerCheck.problems.slice(0, 5)"
+                    :key="problem"
+                >
+                    {{ problem }}
+                </li>
+            </ul>
+        </div>
 
         <Deferred data="kpis">
             <template #fallback>

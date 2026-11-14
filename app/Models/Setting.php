@@ -27,6 +27,9 @@ class Setting extends Model
 
     public const MILESTONE_PAYMENT_TERM_DAYS = 'milestone_payment_term_days';
 
+    /** The last ledger:verify result (JSON), shown to the owner on the dashboard. */
+    public const LEDGER_CHECK = 'ledger_check';
+
     public static function current(string $key, ?string $default = null): ?string
     {
         return app(SettingsStore::class)->get($key, $default);

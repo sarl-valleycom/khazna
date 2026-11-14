@@ -82,6 +82,25 @@ class Account extends Model
         );
     }
 
+    /** The balance at the end of a day: opening balance plus every entry dated on or before it. */
+    public function balanceOn(CarbonImmutable|string $date): int
+    {
+        $day = $date instanceof CarbonImmutable ? $date->toDateString() : $date;
+
+        $net = (int) $this->entries()
+            ->whereDate('entry_date', '<=', $day)
+            ->selectRaw("COALESCE(SUM(CASE WHEN direction = 'in' THEN amount_cents ELSE -amount_cents END), 0) AS net")
+            ->value('net');
+
+        return $this->opening_balance_cents + $net;
+    }
+
+    /** @return HasMany<Reconciliation, $this> */
+    public function reconciliations(): HasMany
+    {
+        return $this->hasMany(Reconciliation::class);
+    }
+
     public function balanceCents(): int
     {
         return (int) static::query()->withBalance()->whereKey($this->getKey())->value('balance_cents');
