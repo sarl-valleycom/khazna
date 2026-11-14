@@ -17,6 +17,8 @@ use App\Http\Controllers\Dues\DueReminderController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
 use App\Http\Controllers\Forecast\ForecastController;
+use App\Http\Controllers\Ledger\ManualEntryController;
+use App\Http\Controllers\Ledger\TransferController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Payroll\AdjustmentController;
 use App\Http\Controllers\Payroll\CloseController;
@@ -62,6 +64,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('dues/{due}/payments', [PaymentController::class, 'store'])->whereNumber('due')->name('payments.store');
     Route::post('payments/{payment}/reverse', [PaymentController::class, 'reverse'])->whereNumber('payment')->name('payments.reverse');
     Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->whereNumber('payment')->name('payments.receipt');
+
+    // Literal paths first, so "transfers" and "entries" are never read as an account id.
+    Route::get('accounts/transfers', [TransferController::class, 'index'])->name('transfers.index');
+    Route::post('accounts/transfers', [TransferController::class, 'store'])->name('transfers.store');
+    Route::post('accounts/transfers/{transfer}/reverse', [TransferController::class, 'reverse'])->whereNumber('transfer')->name('transfers.reverse');
+    Route::get('accounts/entries', [ManualEntryController::class, 'index'])->name('entries.index');
+    Route::post('accounts/entries', [ManualEntryController::class, 'store'])->name('entries.store');
+    Route::post('accounts/entries/{entry}/reverse', [ManualEntryController::class, 'reverse'])->whereNumber('entry')->name('entries.reverse');
+    Route::get('accounts/entries/{entry}/receipt', [ManualEntryController::class, 'receipt'])->whereNumber('entry')->name('entries.receipt');
 
     Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
     Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');

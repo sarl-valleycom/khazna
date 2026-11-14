@@ -59,6 +59,12 @@ function openEdit(account: App.Data.AccountRowData) {
             description="Where the money is. Each balance is the opening balance plus every ledger entry."
         >
             <template #actions>
+                <Button variant="outline" as-child>
+                    <Link href="/accounts/transfers">Transfers</Link>
+                </Button>
+                <Button variant="outline" as-child>
+                    <Link href="/accounts/entries">Manual entries</Link>
+                </Button>
                 <Button v-if="props.canCreate" @click="openCreate">
                     <Plus class="mr-1 size-4" /> New account
                 </Button>

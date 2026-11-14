@@ -32,6 +32,7 @@ class LedgerWriter
         string $dateField = 'entry_date',
         ?int $categoryId = null,
         bool $isPayroll = false,
+        bool $isTransfer = false,
     ): AccountEntry {
         if ($amountCents <= 0) {
             throw new InvalidArgumentException('A ledger entry needs a positive amount.');
@@ -55,6 +56,7 @@ class LedgerWriter
             'description' => $description,
             'category_id' => $categoryId,
             'is_payroll' => $isPayroll,
+            'is_transfer' => $isTransfer,
             'created_by' => $by?->id,
         ]);
     }

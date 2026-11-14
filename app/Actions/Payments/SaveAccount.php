@@ -41,6 +41,13 @@ class SaveAccount
                 ]);
             }
 
+            // An account that still holds money (or owes it) cannot be switched off (FR-ACC-12).
+            if (($data['active'] ?? true) === false && $account->active && $account->balanceCents() !== 0) {
+                throw ValidationException::withMessages([
+                    'active' => __('This account still has a balance. Move it elsewhere before deactivating the account.'),
+                ]);
+            }
+
             $account->update($data);
 
             return $account->refresh();

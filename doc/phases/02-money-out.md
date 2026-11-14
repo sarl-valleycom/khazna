@@ -119,12 +119,12 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 ## 2.9 Transfers and manual entries
 
-- [ ] `RecordTransfer` action, in one transaction: an out entry on the source account, an in entry on the destination, and an out entry for the fee on the source (category "Bank fees") when there is one (FR-ACC-07). Transfers are not income or expense (BR-17).
-- [ ] A transfer between accounts of different offices is shown as **inter-office** in lists and in the office report (FR-ACC-08).
-- [ ] `RecordManualEntry` action for money with no due: bank fees, taxes, petty cash, owner draws and injections. It needs an account, a direction, a category and a description, with an optional receipt (FR-ACC-09).
-- [ ] Reversal of a transfer or a manual entry adds opposite entries with a reason. Owner and finance only.
-- [ ] Pages: transfers (list and create), manual entries (list and create). Both also appear in the account statement.
-- [ ] Deactivating an account requires a zero balance (FR-ACC-12).
+- [x] `RecordTransfer` action, in one transaction: an out entry on the source account, an in entry on the destination, and an out entry for the fee on the source (category "Bank fees") when there is one (FR-ACC-07). Transfers are not income or expense (BR-17).
+- [x] A transfer between accounts of different offices is shown as **inter-office** in lists and in the office report (FR-ACC-08).
+- [x] `RecordManualEntry` action for money with no due: bank fees, taxes, petty cash, owner draws and injections. It needs an account, a direction, a category and a description, with an optional receipt (FR-ACC-09).
+- [x] Reversal of a transfer or a manual entry adds opposite entries with a reason. Owner and finance only.
+- [x] Pages: transfers (list and create), manual entries (list and create). Both also appear in the account statement.
+- [x] Deactivating an account requires a zero balance (FR-ACC-12).
 
 ## 2.10 Reconciliation
 
