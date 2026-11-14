@@ -46,16 +46,26 @@ Notes:
 - Phones are stored as `213XXXXXXXXX` and shown as `0XXX XX XX XX`. `ClientIndexQuery` supports name/phone search, account-manager filter, the shared office filter and whitelisted sorting.
 - An account manager creates clients for themselves and their office; a client's office must match its manager's office. Duplicate phones are not unique at the database level but are flagged and skipped during import.
 - Import is owner/finance only. The preview is cached for 30 minutes and bound to the user; confirm inserts valid rows in one transaction. Duplicates against existing (including soft-deleted) clients and within the file are skipped. Commas, semicolons and tabs are accepted; UTF-8 BOM is accepted.
-- The client page currently shows the profile plus empty history sections. Contracts, open dues, payments and total collected are wired when those models arrive in 1.3 to 1.5 (FR-PTY-07 remains open).
+- The client page currently shows the profile and its contracts. Open dues, payments and total collected are wired when those models arrive in 1.4 and 1.5 (FR-PTY-07 remains open).
 - Covered by `tests/Feature/Phase1/ClientsTest.php` and the client Playwright import-preview smoke test. `DemoSeeder` adds three demo clients.
 
 ## 1.3 Contracts
 
-- [ ] Migration: `contracts` (type, direction, client_id, `office_id` required, amount, cycle, starts_on, ends_on, status, auto_renew, notes), soft deletes. Attachment stored on the private disk.
-- [ ] Form for a SaaS renewal: client, amount, cycle (monthly, quarterly, yearly), start date, end date (optional), auto-renew.
-- [ ] Status transitions: active ↔ paused → canceled. Cancelling or pausing cancels open future dues with a reason (FR-CON-03).
-- [ ] Changing the amount affects only dues generated afterwards (FR-CON-04). Show a notice on the form saying so.
-- [ ] Every change goes to the audit log (FR-CON-08).
+- [x] Migration: `contracts` (type, direction, client_id, `office_id` required, amount, cycle, starts_on, ends_on, status, auto_renew, notes), soft deletes. Attachment stored on the private disk.
+- [x] Form for a SaaS renewal: client, amount, cycle (monthly, quarterly, yearly), start date, end date (optional), auto-renew.
+- [x] Status transitions: active ↔ paused → canceled, with a required reason for pause/cancel and an audit trail.
+- [ ] Cancelling or pausing cancels open future dues with a reason (FR-CON-03). Wired in 1.4 when dues exist.
+- [x] Changing the amount affects only dues generated afterwards (FR-CON-04). Show a notice on the form saying so.
+- [x] Every change goes to the audit log (FR-CON-08).
+
+Notes:
+- Phase 1 stores only SaaS renewals with direction `in`; the form fixes type and direction, and creates contracts as `active`. The other contract types remain Phase 2.
+- Clients are immutable on an existing contract. Contract offices are required; an unrestricted owner/finance user chooses one, everyone else is fixed to their own office. The client's office is the default.
+- Account managers see contracts only for their own clients and their office. Office-restricted owner/finance users see contracts attributed to their office.
+- A contract attachment accepts PDF, JPG, PNG or WebP up to 10 MB. It is stored on the private `local` disk and streamed with a fixed content type and `nosniff`.
+- Amount updates never touch existing dues (none exist yet); the 1.4 generator will read the current amount for future periods only.
+- The client page lists its visible contracts. Open dues, payment history and total collected remain for 1.4/1.5.
+- Covered by `tests/Feature/Phase1/ContractsTest.php`, the client-page contract test and the contract Playwright create flow. `DemoSeeder` adds three demo contracts.
 
 ## 1.4 Dues engine
 

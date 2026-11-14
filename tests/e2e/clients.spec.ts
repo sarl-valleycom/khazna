@@ -9,12 +9,6 @@ test.skip(
 );
 
 test('the owner can preview a client CSV import', async ({ page }) => {
-    await page.goto('/login');
-    await page.getByLabel('Email address').fill(email!);
-    await page.getByLabel('Password', { exact: true }).fill(password!);
-    await page.getByRole('button', { name: 'Log in' }).click();
-    await expect(page).toHaveURL(/\/dashboard$/);
-
     await page.goto('/clients/import');
     await expect(
         page.getByRole('heading', { name: 'Import clients' }),
@@ -45,12 +39,6 @@ test('the owner can preview a client CSV import', async ({ page }) => {
 });
 
 test('the owner can create a client from the list', async ({ page }) => {
-    await page.goto('/login');
-    await page.getByLabel('Email address').fill(email!);
-    await page.getByLabel('Password', { exact: true }).fill(password!);
-    await page.getByRole('button', { name: 'Log in' }).click();
-    await expect(page).toHaveURL(/\/dashboard$/);
-
     await page.goto('/clients');
     await page.getByRole('button', { name: 'New client' }).click();
 

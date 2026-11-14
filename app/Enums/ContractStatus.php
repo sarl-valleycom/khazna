@@ -16,6 +16,15 @@ enum ContractStatus: string
         return ucfirst($this->value);
     }
 
+    public function canTransitionTo(self $target): bool
+    {
+        return match ($this) {
+            self::Active => in_array($target, [self::Paused, self::Canceled], true),
+            self::Paused => in_array($target, [self::Active, self::Canceled], true),
+            self::Canceled => false,
+        };
+    }
+
     /** @return list<string> */
     public static function values(): array
     {

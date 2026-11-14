@@ -17,6 +17,7 @@ type Props = {
     processing?: boolean;
     errors?: Record<string, string>;
     submitDisabled?: boolean;
+    wide?: boolean;
 };
 
 const props = withDefaults(defineProps<Props>(), {
@@ -26,6 +27,7 @@ const props = withDefaults(defineProps<Props>(), {
     processing: false,
     errors: () => ({}),
     submitDisabled: false,
+    wide: false,
 });
 
 const open = defineModel<boolean>('open', { default: false });
@@ -42,7 +44,7 @@ function onSubmit() {
 
 <template>
     <Dialog v-model:open="open">
-        <DialogContent class="sm:max-w-lg">
+        <DialogContent :class="wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'">
             <form class="space-y-4" @submit.prevent="onSubmit">
                 <DialogHeader>
                     <DialogTitle>{{ title }}</DialogTitle>

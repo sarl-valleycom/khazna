@@ -2,6 +2,7 @@
 
 use App\Enums\Role;
 use App\Models\Client;
+use App\Models\Contract;
 use App\Models\Office;
 use App\Models\User;
 use Database\Seeders\DemoSeeder;
@@ -26,6 +27,7 @@ test('the demo seeder creates the four role/office accounts', function () {
         ->and($oranOffice->city)->toBe('Oran')
         ->and(User::query()->count())->toBe(4)
         ->and(Client::query()->count())->toBe(3)
+        ->and(Contract::query()->count())->toBe(3)
         ->and($owner->role)->toBe(Role::Owner)
         ->and($owner->office_id)->toBeNull()
         ->and($finance->role)->toBe(Role::Finance)
@@ -35,7 +37,9 @@ test('the demo seeder creates the four role/office accounts', function () {
         ->and($oran->role)->toBe(Role::AccountManager)
         ->and($oran->office_id)->toBe($oranOffice->id)
         ->and(Client::query()->where('office_id', $algiersOffice->id)->count())->toBe(2)
-        ->and(Client::query()->where('office_id', $oranOffice->id)->count())->toBe(1);
+        ->and(Client::query()->where('office_id', $oranOffice->id)->count())->toBe(1)
+        ->and(Contract::query()->where('office_id', $algiersOffice->id)->count())->toBe(2)
+        ->and(Contract::query()->where('office_id', $oranOffice->id)->count())->toBe(1);
 });
 
 test('the demo seeder refuses to run in production', function () {

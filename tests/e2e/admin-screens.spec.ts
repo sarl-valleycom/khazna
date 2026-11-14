@@ -8,17 +8,12 @@ test.skip(
     'Set E2E_EMAIL and E2E_PASSWORD to run the admin smoke test.',
 );
 
-test('the owner can open the offices, users, settings and audit screens', async ({
+test('the owner can open the main admin and client screens', async ({
     page,
 }) => {
-    await page.goto('/login');
-    await page.getByLabel('Email address').fill(email!);
-    await page.getByLabel('Password', { exact: true }).fill(password!);
-    await page.getByRole('button', { name: 'Log in' }).click();
-    await expect(page).toHaveURL(/\/dashboard$/);
-
     for (const [path, heading] of [
         ['/clients', 'Clients'],
+        ['/contracts', 'Contracts'],
         ['/offices', 'Offices'],
         ['/users', 'Users'],
         ['/settings', 'Settings'],

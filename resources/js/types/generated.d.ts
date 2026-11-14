@@ -98,6 +98,49 @@ declare namespace App {
                 delete: boolean;
             };
         };
+        export type ContractClientOptionData = {
+            id: number;
+            name: string;
+            officeId: number | null;
+            officeName: string | null;
+        };
+        export type ContractData = {
+            id: number;
+            clientId: number;
+            clientName: string;
+            officeId: number;
+            officeName: string;
+            type: App.Enums.ContractType;
+            typeLabel: string;
+            direction: App.Enums.Direction;
+            directionLabel: string;
+            amountCents: number;
+            cycle: App.Enums.Cycle;
+            cycleLabel: string;
+            startsOn: string;
+            endsOn: string | null;
+            status: App.Enums.ContractStatus;
+            statusLabel: string;
+            autoRenew: boolean;
+            notes: string | null;
+            attachmentName: string | null;
+            createdAt: string;
+            abilities: {
+                view: boolean;
+                update: boolean;
+                changeStatus: boolean;
+                downloadAttachment: boolean;
+            };
+        };
+        export type ContractFiltersData = {
+            q: string;
+            status: string;
+            client: number | null;
+            office: number | null;
+            sort: string;
+            direction: string;
+            perPage: number;
+        };
         export type DemoDueRowData = {
             id: number;
             client: string;

@@ -4,6 +4,7 @@ import {
     BookOpen,
     Building2,
     ClipboardList,
+    FileText,
     FolderGit2,
     LayoutGrid,
     Palette,
@@ -58,6 +59,11 @@ const mainNavItems: NavItem[] = [
         title: 'Clients',
         href: '/clients',
         icon: Users,
+    },
+    {
+        title: 'Contracts',
+        href: '/contracts',
+        icon: FileText,
     },
     {
         title: 'Users',

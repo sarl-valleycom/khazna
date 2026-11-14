@@ -7,9 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import EmptyState from '@/components/kit/EmptyState.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
+import { formatDate } from '@/lib/format';
 
 type Props = {
     client: App.Data.ClientShowData;
+    contracts: App.Data.ContractData[];
 };
 
 const props = defineProps<Props>();
@@ -129,7 +131,36 @@ const page = usePage();
                 <CardHeader>
                     <CardTitle>Contracts</CardTitle>
                 </CardHeader>
-                <CardContent class="p-0">
+                <CardContent v-if="props.contracts.length > 0" class="p-0">
+                    <div class="divide-y">
+                        <Link
+                            v-for="contract in props.contracts"
+                            :key="contract.id"
+                            :href="`/contracts/${contract.id}`"
+                            class="flex items-center justify-between gap-4 p-4 hover:bg-muted/50"
+                        >
+                            <div>
+                                <p class="font-medium">
+                                    {{ contract.cycleLabel }} ·
+                                    {{ formatDate(contract.startsOn) }}
+                                </p>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ contract.statusLabel }}
+                                    <template v-if="contract.endsOn">
+                                        · ends
+                                        {{ formatDate(contract.endsOn) }}
+                                    </template>
+                                </p>
+                            </div>
+                            <MoneyText
+                                :cents="contract.amountCents"
+                                :symbol="page.props.settings.currencySymbol"
+                                direction="in"
+                            />
+                        </Link>
+                    </div>
+                </CardContent>
+                <CardContent v-else class="p-0">
                     <EmptyState
                         title="No contracts yet"
                         description="Contracts for this client will appear here."

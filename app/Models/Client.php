@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use LogicException;
 
@@ -58,6 +59,12 @@ class Client extends Model
     public function office(): BelongsTo
     {
         return $this->belongsTo(Office::class);
+    }
+
+    /** @return HasMany<Contract, $this> */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class);
     }
 
     public function visibilityOwnerColumn(): ?string

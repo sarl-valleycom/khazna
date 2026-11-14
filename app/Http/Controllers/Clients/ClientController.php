@@ -6,11 +6,13 @@ use App\Data\AccountManagerOptionData;
 use App\Data\ClientFiltersData;
 use App\Data\ClientRowData;
 use App\Data\ClientShowData;
+use App\Data\ContractData;
 use App\Data\OfficeOptionData;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Clients\ClientRequest;
 use App\Models\Client;
+use App\Models\Contract;
 use App\Models\Office;
 use App\Models\User;
 use App\Queries\ClientIndexQuery;
@@ -67,8 +69,18 @@ class ClientController extends Controller
 
         $client->load(['accountManager:id,name,email,office_id', 'office:id,name']);
 
+        $contracts = $client->contracts()
+            ->visibleTo($actor)
+            ->with(['client:id,name,account_manager_id', 'office:id,name'])
+            ->orderByDesc('starts_on')
+            ->get();
+
         return Inertia::render('clients/Show', [
             'client' => ClientShowData::fromClient($client, $actor),
+            'contracts' => $contracts
+                ->map(fn (Contract $contract): ContractData => ContractData::fromContract($contract, $actor))
+                ->values()
+                ->all(),
         ]);
     }
 

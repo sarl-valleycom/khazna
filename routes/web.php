@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Clients\ClientImportController;
+use App\Http\Controllers\Contracts\ContractController;
 use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('clients/{client}', [ClientController::class, 'show'])->whereNumber('client')->name('clients.show');
     Route::patch('clients/{client}', [ClientController::class, 'update'])->whereNumber('client')->name('clients.update');
     Route::delete('clients/{client}', [ClientController::class, 'destroy'])->whereNumber('client')->name('clients.destroy');
+
+    Route::get('contracts', [ContractController::class, 'index'])->name('contracts.index');
+    Route::post('contracts', [ContractController::class, 'store'])->name('contracts.store');
+    Route::get('contracts/{contract}/attachment', [ContractController::class, 'attachment'])->whereNumber('contract')->name('contracts.attachment');
+    Route::patch('contracts/{contract}/status', [ContractController::class, 'status'])->whereNumber('contract')->name('contracts.status');
+    Route::get('contracts/{contract}', [ContractController::class, 'show'])->whereNumber('contract')->name('contracts.show');
+    Route::patch('contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
 
     Route::get('offices', [OfficeController::class, 'index'])->name('offices.index');
     Route::post('offices', [OfficeController::class, 'store'])->name('offices.store');
