@@ -49,10 +49,16 @@ const search = ref(props.search);
 const from = ref(props.dateRange?.from ?? null);
 const to = ref(props.dateRange?.to ?? null);
 
+// True from the first keystroke until the debounced search is sent. While it
+// is set, an echoed value from an earlier request must not overwrite the text.
+let typing = false;
+
 watch(
     () => props.search,
     (value) => {
-        search.value = value;
+        if (!typing) {
+            search.value = value;
+        }
     },
 );
 
@@ -69,10 +75,16 @@ function apply(params: Record<string, string | null>) {
     updateQuery(params, props.reloadProps);
 }
 
-const commitSearch = useDebounceFn(() => {
+const sendSearch = useDebounceFn(() => {
+    typing = false;
     emits('update:search', search.value);
     apply({ q: search.value || null, page: null });
 }, 350);
+
+function commitSearch() {
+    typing = true;
+    sendSearch();
+}
 
 function chooseTab(value: string) {
     emits('update:activeTab', value);
@@ -168,6 +180,7 @@ function commitDateRange() {
                     <DateInput
                         v-model="from"
                         placeholder="From"
+                        :max="to ?? undefined"
                         @update:model-value="commitDateRange"
                     />
                 </div>
@@ -176,6 +189,7 @@ function commitDateRange() {
                     <DateInput
                         v-model="to"
                         placeholder="To"
+                        :min="from ?? undefined"
                         @update:model-value="commitDateRange"
                     />
                 </div>

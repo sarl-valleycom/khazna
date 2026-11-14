@@ -3,6 +3,7 @@
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 
 uses(RefreshDatabase::class);
 
@@ -36,6 +37,35 @@ test('a wrong password for a deactivated user gives the generic error', function
         'password' => 'not-the-password',
     ])->assertSessionHasErrors('email')
         ->assertSessionDoesntHaveErrors(['email' => __('khazna.errors.inactive_user')]);
+});
+
+test('a deactivated user submitting a non-GET request is redirected with 303', function () {
+    $user = User::factory()->inactive()->create();
+
+    $this->actingAs($user)
+        ->patch(route('profile.update'), ['name' => 'X', 'email' => 'x@example.com'])
+        ->assertStatus(303)
+        ->assertRedirect(route('login'));
+
+    $this->assertGuest();
+});
+
+test('an unknown email still pays for a password check', function () {
+    Cache::forget('auth.dummy-password-hash');
+
+    $this->post(route('login.store'), [
+        'email' => 'nobody@example.com',
+        'password' => 'whatever',
+    ])->assertSessionHasErrors('email');
+
+    expect(Cache::has('auth.dummy-password-hash'))->toBeTrue();
+});
+
+test('the queue retry window is longer than the worker timeout', function () {
+    $supervisor = (string) file_get_contents(base_path('deploy/supervisor/khazna-worker.conf'));
+    preg_match('/--timeout=(\\d+)/', $supervisor, $matches);
+
+    expect(config('queue.connections.database.retry_after'))->toBeGreaterThan((int) $matches[1]);
 });
 
 test('attempts against a deactivated account count toward the login throttle', function () {

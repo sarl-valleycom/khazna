@@ -31,8 +31,9 @@ final class Money implements JsonSerializable, Stringable
     }
 
     /**
-     * Parse user input into integer centimes. Accepts English, plain and French
-     * grouping, optional "DA", spaces, commas, dots and apostrophes.
+     * Parse an amount in DA (user text, a number, or an int of whole DA) into
+     * integer centimes. Accepts English, plain and French grouping, optional
+     * "DA", spaces, commas, dots and apostrophes. Never pass centimes here.
      */
     public static function parse(string|int|float|null $input, string $currency = 'DZD', string $symbol = 'DA'): ?self
     {
@@ -40,8 +41,10 @@ final class Money implements JsonSerializable, Stringable
             return null;
         }
 
+        // Like floats and strings, an int is an amount in whole DA. Use
+        // fromCents() when you already hold centimes.
         if (is_int($input)) {
-            return new self($input, $currency, $symbol);
+            $input = (string) $input;
         }
 
         if (is_float($input)) {

@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -60,7 +61,15 @@ class FortifyServiceProvider extends ServiceProvider
                 ->where('email', $request->input(Fortify::username()))
                 ->first();
 
-            if ($user === null || ! Hash::check((string) $request->input('password'), $user->password)) {
+            if ($user === null) {
+                // Spend the same time as a real check so response time does not
+                // reveal which emails have accounts.
+                Hash::check((string) $request->input('password'), $this->dummyHash());
+
+                return null;
+            }
+
+            if (! Hash::check((string) $request->input('password'), $user->password)) {
                 return null;
             }
 
@@ -86,6 +95,18 @@ class FortifyServiceProvider extends ServiceProvider
 
             return $user;
         });
+    }
+
+    /**
+     * A hash made with the app's current hasher settings, created once and
+     * cached, used only to keep unknown-email logins as slow as real ones.
+     */
+    private function dummyHash(): string
+    {
+        return Cache::rememberForever(
+            'auth.dummy-password-hash',
+            fn (): string => Hash::make(Str::random(40)),
+        );
     }
 
     /**

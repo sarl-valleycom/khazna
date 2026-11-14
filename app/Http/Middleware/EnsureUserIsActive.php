@@ -27,7 +27,8 @@ class EnsureUserIsActive
                 abort(401, __('khazna.errors.inactive_user'));
             }
 
-            return redirect()->route('login')->with('error', __('khazna.errors.inactive_user'));
+            // 303 so Inertia PATCH/PUT/DELETE visits are retried as GET /login.
+            return redirect()->route('login', [], 303)->with('error', __('khazna.errors.inactive_user'));
         }
 
         return $next($request);

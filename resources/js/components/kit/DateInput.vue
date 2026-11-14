@@ -38,8 +38,30 @@ const value = computed<DateValue | undefined>(() => {
     }
 });
 
-const minValue = computed(() => (props.min ? parseDate(props.min) : undefined));
-const maxValue = computed(() => (props.max ? parseDate(props.max) : undefined));
+function safeParse(text: string | undefined): DateValue | undefined {
+    if (!text) {
+        return undefined;
+    }
+
+    try {
+        return parseDate(text);
+    } catch {
+        return undefined;
+    }
+}
+
+const minValue = computed(() => safeParse(props.min));
+const maxValue = computed(() => safeParse(props.max));
+
+// "Today" is only offered when it falls inside min/max (ISO dates compare as text).
+const todayAllowed = computed(() => {
+    const today = toCalendarDate(new Date());
+
+    return (
+        (!minValue.value || today >= minValue.value.toString()) &&
+        (!maxValue.value || today <= maxValue.value.toString())
+    );
+});
 
 function selectDate(date: DateValue | undefined) {
     model.value = date ? date.toString() : null;
@@ -47,6 +69,10 @@ function selectDate(date: DateValue | undefined) {
 }
 
 function selectToday() {
+    if (!todayAllowed.value) {
+        return;
+    }
+
     // Calendar dates are Algiers dates, whatever the browser timezone is.
     model.value = toCalendarDate(new Date());
     open.value = false;
@@ -88,6 +114,7 @@ function clear() {
                     type="button"
                     variant="ghost"
                     size="sm"
+                    :disabled="!todayAllowed"
                     @click="selectToday"
                 >
                     Today

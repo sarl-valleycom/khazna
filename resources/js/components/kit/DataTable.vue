@@ -104,6 +104,13 @@ const table = useTable({
     },
 });
 
+// Keep paging reachable on a page past the end (stale URL, shrunken result).
+const showFooter = computed(
+    () =>
+        !props.loading &&
+        (props.data.length > 0 || (props.page > 1 && rowCount.value > 0)),
+);
+
 const pageCount = computed(() =>
     Math.max(1, Math.ceil(rowCount.value / props.perPage)),
 );
@@ -254,52 +261,51 @@ function changePerPage(event: Event) {
                     </div>
                 </div>
             </div>
+        </template>
 
-            <div
-                class="flex flex-col gap-3 border-t p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-                <div class="flex items-center gap-2 text-muted-foreground">
-                    <span>Rows per page</span>
-                    <select
-                        class="h-8 rounded-md border bg-background px-2"
-                        :value="perPage"
-                        @change="changePerPage"
-                    >
-                        <option :value="10">10</option>
-                        <option :value="25">25</option>
-                        <option :value="50">50</option>
-                    </select>
-                </div>
-                <div
-                    class="flex items-center justify-between gap-2 sm:justify-end"
+        <div
+            v-if="showFooter"
+            class="flex flex-col gap-3 border-t p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+        >
+            <div class="flex items-center gap-2 text-muted-foreground">
+                <span>Rows per page</span>
+                <select
+                    class="h-8 rounded-md border bg-background px-2"
+                    :value="perPage"
+                    @change="changePerPage"
                 >
-                    <span class="text-muted-foreground">
-                        Page {{ page }} of {{ pageCount }}
-                    </span>
-                    <div class="flex gap-1">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            :disabled="page <= 1"
-                            aria-label="Previous page"
-                            @click="goToPage(page - 1)"
-                        >
-                            <ChevronLeft class="size-4" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            :disabled="page >= pageCount"
-                            aria-label="Next page"
-                            @click="goToPage(page + 1)"
-                        >
-                            <ChevronRight class="size-4" />
-                        </Button>
-                    </div>
+                    <option :value="10">10</option>
+                    <option :value="25">25</option>
+                    <option :value="50">50</option>
+                </select>
+            </div>
+            <div class="flex items-center justify-between gap-2 sm:justify-end">
+                <span class="text-muted-foreground">
+                    Page {{ page }} of {{ pageCount }}
+                </span>
+                <div class="flex gap-1">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        :disabled="page <= 1"
+                        aria-label="Previous page"
+                        @click="goToPage(page - 1)"
+                    >
+                        <ChevronLeft class="size-4" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        :disabled="page >= pageCount"
+                        aria-label="Next page"
+                        @click="goToPage(page + 1)"
+                    >
+                        <ChevronRight class="size-4" />
+                    </Button>
                 </div>
             </div>
-        </template>
+        </div>
     </div>
 </template>

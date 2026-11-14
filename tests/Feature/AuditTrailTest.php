@@ -76,6 +76,28 @@ test('an audited user change masks sensitive fields but keeps role changes', fun
         ->not->toHaveKey('two_factor_recovery_codes');
 });
 
+test('a password change leaves an audit row without the value', function () {
+    $user = User::factory()->create();
+    Activity::query()->delete();
+
+    $user->forceFill(['password' => 'a-brand-new-password'])->save();
+
+    $activity = Activity::query()->where('event', 'security_changed')->firstOrFail();
+
+    expect($activity->subject_id)->toBe($user->id)
+        ->and($activity->getProperty('fields'))->toBe(['password'])
+        ->and(json_encode($activity->properties))->not->toContain('a-brand-new-password');
+});
+
+test('rotating the remember token alone writes no audit row', function () {
+    $user = User::factory()->create();
+    Activity::query()->delete();
+
+    $user->forceFill(['remember_token' => 'rotated'])->save();
+
+    expect(Activity::query()->count())->toBe(0);
+});
+
 test('the request-scoped reason is attached to the activity', function () {
     app(AuditContext::class)->setReason('Correction requested by the owner');
     $fixture = AuditableFixture::create(['name' => 'Named', 'salary_cents' => 50000]);

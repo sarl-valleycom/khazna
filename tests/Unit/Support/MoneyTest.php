@@ -54,6 +54,13 @@ test('parse rejects amounts too large to hold exactly instead of overflowing', f
         ->and(Money::parse("1\t000"))->toBeNull();
 });
 
+test('parse treats ints, floats and strings alike as whole DA', function () {
+    expect(Money::parse(100)?->cents)->toBe(10_000)
+        ->and(Money::parse(100.0)?->cents)->toBe(10_000)
+        ->and(Money::parse('100')?->cents)->toBe(10_000)
+        ->and(Money::parse(PHP_INT_MAX))->toBeNull();
+});
+
 test('format uses English grouping and two decimal places', function () {
     expect(Money::fromCents(1_000_050)->format())->toBe('10,000.50 DA')
         ->and(Money::fromCents(-1_000_050)->format())->toBe('-10,000.50 DA')
