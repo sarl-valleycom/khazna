@@ -74,16 +74,17 @@ class ContractController extends Controller
             abort(403);
         }
 
-        $contract->load(['client:id,name,account_manager_id', 'office:id,name']);
+        $contract->load(['client:id,name,account_manager_id', 'supplier:id,name', 'category:id,name', 'office:id,name']);
 
         $dues = $contract->dues()
             ->visibleTo($actor)
-            ->with(['client:id,name,account_manager_id', 'office:id,name', 'postponements.user:id,name'])
+            ->withParties()
+            ->with('postponements.user:id,name')
             ->orderBy('due_on')
             ->orderBy('id')
             ->get();
 
-        $paymentOptions = app(PaymentAccountOptionsQuery::class)->handle($actor, [$contract->client_id]);
+        $paymentOptions = app(PaymentAccountOptionsQuery::class)->handle($actor, $contract->client_id === null ? [] : [$contract->client_id]);
 
         return Inertia::render('contracts/Show', [
             'contract' => ContractData::fromContract($contract, $actor),

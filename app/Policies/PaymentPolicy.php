@@ -28,6 +28,10 @@ class PaymentPolicy
             return false;
         }
 
+        if ($due->employee_id !== null && ! $user->can('view-salaries')) {
+            return false;
+        }
+
         if ($user->office_id !== null && $due->office_id !== $user->office_id) {
             return false;
         }

@@ -87,7 +87,8 @@ class DueTriageQuery
         };
 
         return $query
-            ->with(['client:id,name,account_manager_id', 'office:id,name', 'postponements.user:id,name'])
+            ->withParties()
+            ->with('postponements.user:id,name')
             ->orderBy('due_on')
             ->orderBy('id')
             ->paginate($perPage)
@@ -122,7 +123,7 @@ class DueTriageQuery
                 'client',
                 fn (Builder $client): Builder => $client->where('account_manager_id', $filters->assignee),
             ))
-            ->with(['client:id,name,account_manager_id', 'office:id,name'])
+            ->withParties()
             ->orderBy('id')
             ->get();
 

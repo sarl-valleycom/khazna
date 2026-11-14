@@ -54,7 +54,10 @@ const form = useForm({
 });
 
 function defaultAccount(): number | null {
-    const remembered = page.props.paymentDefaults?.[props.due.clientId];
+    const remembered =
+        props.due.clientId === null
+            ? undefined
+            : page.props.paymentDefaults?.[props.due.clientId];
 
     if (remembered !== undefined) {
         return remembered;
@@ -111,7 +114,7 @@ function submit() {
     <FormDialog
         v-model:open="open"
         title="Record payment"
-        :description="`${props.due.clientName} · ${props.due.kindLabel} due ${props.due.dueOn}. Remaining ${formatMoney(props.due.remainingCents, symbol)}.`"
+        :description="`${props.due.partyName} · ${props.due.kindLabel}${props.due.dueOn ? ` due ${props.due.dueOn}` : ''}. Remaining ${formatMoney(props.due.remainingCents, symbol)}.`"
         submit-label="Record payment"
         :processing="form.processing"
         :submit-disabled="needsConfirmation && !form.confirm_overpayment"

@@ -46,14 +46,19 @@ const label = computed(() =>
                 </span>
             </div>
             <p class="mt-1 text-xs text-muted-foreground">
-                Due {{ formatDate(props.due.dueOn) }}
+                <template v-if="props.due.dueOn">
+                    Due {{ formatDate(props.due.dueOn) }}
+                </template>
+                <template v-else>Waiting for delivery</template>
                 <template v-if="props.showClient">
                     ·
                     <Link
+                        v-if="props.due.partyType === 'client'"
                         :href="`/clients/${props.due.clientId}`"
                         class="hover:underline"
-                        >{{ props.due.clientName }}</Link
+                        >{{ props.due.partyName }}</Link
                     >
+                    <template v-else>{{ props.due.partyName }}</template>
                 </template>
                 <template v-if="props.due.description">
                     · {{ props.due.description }}

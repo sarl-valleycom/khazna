@@ -71,10 +71,10 @@ class TriageController extends Controller
 
         $clientIds = $rows === null
             ? []
-            : array_values(array_unique(array_map(
-                fn (Due $due): int => $due->client_id,
+            : array_values(array_unique(array_filter(array_map(
+                fn (Due $due): ?int => $due->client_id,
                 $rows->items(),
-            )));
+            ))));
         $paymentOptions = $accountOptions->handle($actor, $clientIds);
 
         return Inertia::render('triage/Index', [

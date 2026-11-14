@@ -37,6 +37,12 @@ class PostponeDue
                 ]);
             }
 
+            if ($due->due_on === null) {
+                throw ValidationException::withMessages([
+                    'new_due_on' => __('This milestone has no date yet. Mark it delivered to set one.'),
+                ]);
+            }
+
             if ($newDate->toDateString() === $due->due_on->toDateString()) {
                 throw ValidationException::withMessages([
                     'new_due_on' => __('Choose a different date.'),

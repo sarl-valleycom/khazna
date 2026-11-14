@@ -25,6 +25,8 @@ class Setting extends Model
 
     public const SALARY_DUE_DAY = 'salary_due_day';
 
+    public const MILESTONE_PAYMENT_TERM_DAYS = 'milestone_payment_term_days';
+
     public static function current(string $key, ?string $default = null): ?string
     {
         return app(SettingsStore::class)->get($key, $default);

@@ -31,7 +31,7 @@ const page = usePage();
 
 const dialogOpen = ref(false);
 const title = computed(
-    () => `${props.contract.typeLabel} · ${props.contract.clientName}`,
+    () => `${props.contract.typeLabel} · ${props.contract.partyName}`,
 );
 </script>
 
@@ -113,13 +113,21 @@ const title = computed(
                 </CardHeader>
                 <CardContent class="grid gap-4 sm:grid-cols-2">
                     <div>
-                        <p class="text-xs text-muted-foreground">Client</p>
+                        <p class="text-xs text-muted-foreground">
+                            {{
+                                props.contract.clientId ? 'Client' : 'Supplier'
+                            }}
+                        </p>
                         <Link
+                            v-if="props.contract.clientId"
                             :href="`/clients/${props.contract.clientId}`"
                             class="font-medium hover:underline"
                         >
-                            {{ props.contract.clientName }}
+                            {{ props.contract.partyName }}
                         </Link>
+                        <p v-else class="font-medium">
+                            {{ props.contract.partyName }}
+                        </p>
                     </div>
                     <div>
                         <p class="text-xs text-muted-foreground">Office</p>

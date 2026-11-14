@@ -34,7 +34,7 @@ function submit() {
     <FormDialog
         v-model:open="open"
         title="Cancel due"
-        :description="`Cancel ${props.due.kindLabel} due on ${props.due.dueOn}. This cannot be undone from the UI.`"
+        :description="`Cancel ${props.due.kindLabel} due ${props.due.dueOn ? `on ${props.due.dueOn}` : 'waiting for delivery'}. This cannot be undone from the UI.`"
         submit-label="Cancel due"
         :processing="form.processing"
         :errors="form.errors"

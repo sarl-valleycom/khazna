@@ -57,7 +57,7 @@ async function remind() {
             size="sm"
             class="h-10 sm:h-8"
             :disabled="reminding"
-            :aria-label="`Send a WhatsApp reminder to ${props.due.clientName}`"
+            :aria-label="`Send a WhatsApp reminder to ${props.due.partyName}`"
             @click="remind"
         >
             <MessageCircle class="mr-1 size-4" /> WhatsApp

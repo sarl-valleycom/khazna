@@ -24,7 +24,9 @@ use LogicException;
  * @property int $id
  * @property ContractType $type
  * @property Direction $direction
- * @property int $client_id
+ * @property int|null $client_id
+ * @property int|null $supplier_id
+ * @property int|null $category_id
  * @property int $office_id
  * @property int $amount_cents
  * @property Cycle $cycle
@@ -41,6 +43,8 @@ use LogicException;
     'type',
     'direction',
     'client_id',
+    'supplier_id',
+    'category_id',
     'office_id',
     'amount_cents',
     'cycle',
@@ -64,6 +68,8 @@ class Contract extends Model
             'type' => ContractType::class,
             'direction' => Direction::class,
             'client_id' => 'integer',
+            'supplier_id' => 'integer',
+            'category_id' => 'integer',
             'office_id' => 'integer',
             'amount_cents' => 'integer',
             'cycle' => Cycle::class,
@@ -78,6 +84,45 @@ class Contract extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /** @return BelongsTo<Supplier, $this> */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /** @return BelongsTo<Category, $this> */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /** @return HasMany<Milestone, $this> */
+    public function milestones(): HasMany
+    {
+        return $this->hasMany(Milestone::class)->orderBy('position');
+    }
+
+    /**
+     * Eager-load everything a contract row shows, so a list never lazy-loads.
+     *
+     * @param  Builder<Contract>  $query
+     */
+    public function scopeWithParties(Builder $query): void
+    {
+        $query->with([
+            'client:id,name,account_manager_id',
+            'supplier:id,name',
+            'category:id,name',
+            'office:id,name',
+        ]);
+    }
+
+    /** The client's or supplier's name. Needs the relations loaded. */
+    public function partyName(): string
+    {
+        return $this->client->name ?? $this->supplier->name ?? '';
     }
 
     /** @return BelongsTo<Office, $this> */

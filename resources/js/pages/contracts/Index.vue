@@ -116,7 +116,7 @@ function openEdit(contract: App.Data.ContractData) {
                         :href="`/contracts/${row.id}`"
                         class="font-medium hover:underline"
                     >
-                        {{ row.clientName }}
+                        {{ row.partyName }}
                     </Link>
                     <p class="text-xs text-muted-foreground">
                         {{ row.officeName }}

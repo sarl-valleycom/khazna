@@ -17,7 +17,7 @@ class ContractIndexQuery
     {
         $query = Contract::query()
             ->visibleTo($user)
-            ->with(['client:id,name,account_manager_id', 'office:id,name']);
+            ->withParties();
 
         if ($filters->q !== '') {
             $term = '%'.addcslashes($filters->q, '\\%_').'%';

@@ -11,6 +11,7 @@ use App\Enums\DueStatus;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Due;
+use App\Models\Supplier;
 use App\Support\AlgerianDate;
 use App\Support\AuditContext;
 use App\Support\CycleArithmetic;
@@ -26,7 +27,7 @@ class GenerateDues
 
         Contract::query()
             ->where('status', ContractStatus::Active)
-            ->whereHas('client')
+            ->where(fn ($query) => $query->whereHas('client')->orWhereHas('supplier'))
             ->lazyById(200)
             ->each(function (Contract $contract) use ($today, &$report): void {
                 $report = $report->merge($this->generate($contract, $today, false));
@@ -44,12 +45,19 @@ class GenerateDues
     {
         // The nightly run already filters out trashed clients in its query; a single
         // contract is checked here with one cheap query instead of lazy-loading.
-        if ($contract->status !== ContractStatus::Active
-            || ! Client::query()->whereKey($contract->client_id)->exists()) {
+        if ($contract->status !== ContractStatus::Active || ! $this->partyExists($contract)) {
             return DueGenerationReport::empty();
         }
 
         return $this->generate($contract, $today, $revive);
+    }
+
+    /** The client or supplier must still exist (soft-deleted ones stop generating). */
+    private function partyExists(Contract $contract): bool
+    {
+        return $contract->client_id !== null
+            ? Client::query()->whereKey($contract->client_id)->exists()
+            : ($contract->supplier_id !== null && Supplier::query()->whereKey($contract->supplier_id)->exists());
     }
 
     private function generate(Contract $contract, ?CarbonImmutable $today, bool $revive): DueGenerationReport
@@ -79,6 +87,8 @@ class GenerateDues
                 'direction' => $contract->direction->value,
                 'contract_id' => $contract->id,
                 'client_id' => $contract->client_id,
+                'supplier_id' => $contract->supplier_id,
+                'category_id' => $contract->category_id,
                 'office_id' => $contract->office_id,
                 'period' => $date->toDateString(),
                 'due_on' => $date->toDateString(),

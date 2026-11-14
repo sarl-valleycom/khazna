@@ -82,14 +82,15 @@ class ClientController extends Controller
 
         $contracts = $client->contracts()
             ->visibleTo($actor)
-            ->with(['client:id,name,account_manager_id', 'office:id,name'])
+            ->withParties()
             ->orderByDesc('starts_on')
             ->get();
 
         $openDues = $client->dues()
             ->visibleTo($actor)
             ->whereIn('status', [DueStatus::Pending->value, DueStatus::Partial->value])
-            ->with(['client:id,name,account_manager_id', 'office:id,name', 'postponements.user:id,name'])
+            ->withParties()
+            ->with('postponements.user:id,name')
             ->orderBy('due_on')
             ->orderBy('id')
             ->get();

@@ -48,7 +48,7 @@ declare namespace App {
         };
         export type AttentionContractData = {
             id: number;
-            clientId: number;
+            clientId: number | null;
             clientName: string;
             officeName: string;
             amountCents: number;
@@ -146,8 +146,12 @@ declare namespace App {
         };
         export type ContractData = {
             id: number;
-            clientId: number;
+            clientId: number | null;
             clientName: string;
+            partyName: string;
+            supplierId: number | null;
+            categoryId: number | null;
+            categoryName: string | null;
             officeId: number;
             officeName: string;
             type: App.Enums.ContractType;
@@ -226,8 +230,9 @@ declare namespace App {
         export type DueRowData = {
             id: number;
             contractId: number | null;
-            clientId: number;
-            clientName: string;
+            clientId: number | null;
+            partyName: string;
+            partyType: string;
             officeId: number;
             officeName: string;
             description: string | null;
@@ -235,7 +240,7 @@ declare namespace App {
             kindLabel: string;
             direction: App.Enums.Direction;
             directionLabel: string;
-            dueOn: string;
+            dueOn: string | null;
             amountDueCents: number;
             amountPaidCents: number;
             remainingCents: number;
@@ -361,6 +366,8 @@ declare namespace App {
     }
     namespace Enums {
         export type AccountType = 'cash' | 'ccp' | 'bank' | 'other';
+        export type AdjustmentType = 'advance' | 'bonus' | 'deduction';
+        export type CategoryKind = 'cost' | 'income';
         export type ContractStatus = 'active' | 'paused' | 'canceled';
         export type ContractType =
             | 'saas_renewal'
@@ -375,6 +382,8 @@ declare namespace App {
             | 'expense'
             | 'other';
         export type DueStatus = 'pending' | 'partial' | 'paid' | 'canceled';
+        export type EmployeeStatus = 'active' | 'inactive';
+        export type MilestoneTrigger = 'date' | 'delivery';
         export type PaymentMethod =
             | 'cash'
             | 'ccp'

@@ -104,7 +104,7 @@ class RecordPayment
             by: $actor,
             description: __('Payment: :kind due :date', [
                 'kind' => $due->kind->label(),
-                'date' => $due->due_on->format('d M Y'),
+                'date' => $due->due_on?->format('d M Y') ?? __('on delivery'),
             ]),
             dateField: 'paid_on',
         );

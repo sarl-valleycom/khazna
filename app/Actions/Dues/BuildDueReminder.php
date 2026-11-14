@@ -43,7 +43,7 @@ class BuildDueReminder
             '{client}' => $client->name,
             '{amount}' => Money::fromCents($due->remainingCents(), 'DZD', $symbol)->format(),
             '{contract}' => $this->subject($due),
-            '{date}' => $due->due_on->format('d M Y'),
+            '{date}' => $due->due_on?->format('d M Y') ?? '',
         ]);
 
         DueReminder::query()->create([
