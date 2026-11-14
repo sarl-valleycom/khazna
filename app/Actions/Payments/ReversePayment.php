@@ -58,6 +58,7 @@ class ReversePayment
                 description: __('Reversal of payment #:id', ['id' => $payment->id]),
                 categoryId: $due->category_id,
                 isPayroll: $due->employee_id !== null,
+                isReversal: true,
             );
 
             $this->recalculate->handle($due);

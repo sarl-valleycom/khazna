@@ -48,6 +48,7 @@ class ReverseTransfer
                     __('Reversal of transfer #:id', ['id' => $transfer->id]),
                     categoryId: $entry->category_id,
                     isTransfer: $entry->is_transfer,
+                    isReversal: true,
                 );
             }
 

@@ -33,6 +33,7 @@ class LedgerWriter
         ?int $categoryId = null,
         bool $isPayroll = false,
         bool $isTransfer = false,
+        bool $isReversal = false,
     ): AccountEntry {
         if ($amountCents <= 0) {
             throw new InvalidArgumentException('A ledger entry needs a positive amount.');
@@ -57,6 +58,7 @@ class LedgerWriter
             'category_id' => $categoryId,
             'is_payroll' => $isPayroll,
             'is_transfer' => $isTransfer,
+            'is_reversal' => $isReversal,
             'created_by' => $by?->id,
         ]);
     }

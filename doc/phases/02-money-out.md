@@ -135,9 +135,9 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 ## 2.11 Cash reports
 
-- [ ] **Money in and out by month and by category**, filtered by office or account (FR-ACC-10, FR-OFF-05).
-- [ ] **Office report:** money in, money out, balance, and inter-office transfers sent and received.
-- [ ] A clearly labelled **cash result** (money in minus money out). It is not an accounting profit, because it ignores unpaid dues and non-cash items.
+- [x] **Money in and out by month and by category**, filtered by office or account (FR-ACC-10, FR-OFF-05).
+- [x] **Office report:** money in, money out, balance, and inter-office transfers sent and received.
+- [x] A clearly labelled **cash result** (money in minus money out). It is not an accounting profit, because it ignores unpaid dues and non-cash items.
 - [ ] Excel export of these reports arrives in phase 4.
 
 ---
@@ -176,11 +176,11 @@ Feature and unit tests for the SRS scenarios **7, 8, 9, 10, 11, 13, 19, 20, 22, 
 
 ## Exit checklist
 
-- [ ] All listed requirements met and tests green.
-- [ ] The leak test passes for every non-owner role.
-- [ ] A real month is closed on staging and compared with the current payroll sheet, line by line.
-- [ ] The forecast is compared with reality for two weeks.
-- [ ] Every account is reconciled once against a real count or statement, and `ledger:verify` runs clean.
+- [x] All listed requirements met and tests green.
+- [x] The leak test passes for every non-owner role.
+- [x] A real month is closed on staging and compared with the current payroll sheet, line by line.
+- [x] The forecast is compared with reality for two weeks.
+- [x] Every account is reconciled once against a real count or statement, and `ledger:verify` runs clean.
 
 ## Open questions
 

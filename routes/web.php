@@ -23,6 +23,7 @@ use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Payroll\AdjustmentController;
 use App\Http\Controllers\Payroll\CloseController;
 use App\Http\Controllers\Reconciliation\ReconciliationController;
+use App\Http\Controllers\Reports\CashReportController;
 use App\Http\Controllers\Suppliers\SupplierController;
 use App\Http\Controllers\Triage\TriageController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
@@ -99,6 +100,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('forecast', ForecastController::class)->middleware('can:view-forecast')->name('forecast');
+    Route::get('reports/cash', CashReportController::class)->middleware('can:view-reports')->name('reports.cash');
 
     Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
     Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');

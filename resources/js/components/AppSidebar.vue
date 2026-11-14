@@ -10,6 +10,7 @@ import {
     Tags,
     UserRoundCog,
     Wallet,
+    FileSpreadsheet,
     ClipboardList,
     FileText,
     FolderGit2,
@@ -71,6 +72,12 @@ const mainNavItems: NavItem[] = [
         title: 'Forecast',
         href: '/forecast',
         icon: TrendingUp,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Cash report',
+        href: '/reports/cash',
+        icon: FileSpreadsheet,
         roles: ['owner', 'finance'] as App.Enums.Role[],
     },
     {

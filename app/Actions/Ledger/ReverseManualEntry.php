@@ -39,6 +39,7 @@ class ReverseManualEntry
                 $actor,
                 __('Reversal: :description', ['description' => $entry->description]),
                 categoryId: $entry->category_id,
+                isReversal: true,
             );
 
             app(AuditContext::class)->withReason($reason, fn () => $entry->update([
