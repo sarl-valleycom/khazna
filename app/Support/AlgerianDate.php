@@ -55,14 +55,28 @@ final class AlgerianDate
         return [self::startOfDayUtc($date), self::endOfDayUtc($date)];
     }
 
-    public static function startOfWeek(CarbonInterface|string|null $date = null): CarbonImmutable
+    public static function startOfWeek(CarbonInterface|string|null $date = null, ?string $weekStartsOn = null): CarbonImmutable
     {
-        return self::toAlgiers($date ?? self::today())->startOfWeek(CarbonInterface::SATURDAY);
+        return self::toAlgiers($date ?? self::today())
+            ->startOfWeek(self::weekDay($weekStartsOn));
     }
 
-    public static function endOfWeek(CarbonInterface|string|null $date = null): CarbonImmutable
+    public static function endOfWeek(CarbonInterface|string|null $date = null, ?string $weekStartsOn = null): CarbonImmutable
     {
-        return self::startOfWeek($date)->addDays(6)->endOfDay();
+        return self::startOfWeek($date, $weekStartsOn)->addDays(6)->endOfDay();
+    }
+
+    public static function weekDay(?string $weekStartsOn = null): int
+    {
+        return match (strtolower((string) ($weekStartsOn ?? 'saturday'))) {
+            'sunday' => CarbonInterface::SUNDAY,
+            'monday' => CarbonInterface::MONDAY,
+            'tuesday' => CarbonInterface::TUESDAY,
+            'wednesday' => CarbonInterface::WEDNESDAY,
+            'thursday' => CarbonInterface::THURSDAY,
+            'friday' => CarbonInterface::FRIDAY,
+            default => CarbonInterface::SATURDAY,
+        };
     }
 
     public static function startOfMonth(CarbonInterface|string|null $date = null): CarbonImmutable

@@ -9,6 +9,18 @@ declare namespace App {
             balanceCents: number;
             balanceFormatted: string;
         };
+        export type AuditLogRowData = {
+            id: number;
+            event: string;
+            description: string;
+            subjectType: string | null;
+            subjectId: number | null;
+            causerName: string | null;
+            causerId: number | null;
+            createdAt: string;
+            changes: Record<string, any>;
+            reason: string | null;
+        };
         export type AuthData = {
             user: App.Data.UserData | null;
             role: App.Enums.Role | null;
@@ -69,6 +81,13 @@ declare namespace App {
             name: string;
             city: string;
         };
+        export type OfficeRowData = {
+            id: number;
+            name: string;
+            city: string;
+            active: boolean;
+            usersCount: number;
+        };
         export type SettingsData = {
             appName: string;
             locale: string;
@@ -76,6 +95,13 @@ declare namespace App {
             weekStartsOn: string;
             currency: string;
             currencySymbol: string;
+        };
+        export type SettingsPageData = {
+            weekStart: string;
+            reminderTemplate: string;
+            currencyLabel: string;
+            salaryDueDay: number;
+            weekStartOptions: Record<string, string>;
         };
         export type UserData = {
             id: number;
@@ -91,8 +117,40 @@ declare namespace App {
             twoFactorEnabled: boolean;
             abilities: Record<string, boolean>;
         };
+        export type UserRowData = {
+            id: number;
+            name: string;
+            email: string;
+            role: App.Enums.Role;
+            roleLabel: string;
+            officeId: number | null;
+            officeName: string | null;
+            active: boolean;
+            isSelf: boolean;
+        };
     }
     namespace Enums {
+        export type AccountType = 'cash' | 'ccp' | 'bank' | 'other';
+        export type ContractStatus = 'active' | 'paused' | 'canceled';
+        export type ContractType =
+            | 'saas_renewal'
+            | 'custom_project'
+            | 'recurring_cost';
+        export type Cycle = 'monthly' | 'quarterly' | 'yearly' | 'once';
+        export type Direction = 'in' | 'out';
+        export type DueKind =
+            | 'saas'
+            | 'project'
+            | 'salary'
+            | 'expense'
+            | 'other';
+        export type DueStatus = 'pending' | 'partial' | 'paid' | 'canceled';
+        export type PaymentMethod =
+            | 'cash'
+            | 'ccp'
+            | 'baridimob'
+            | 'bank_transfer'
+            | 'other';
         export type Role = 'owner' | 'finance' | 'account_manager';
     }
 }

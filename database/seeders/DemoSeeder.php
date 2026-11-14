@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Enums\Role;
+use App\Models\Office;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -13,8 +15,8 @@ class DemoSeeder extends Seeder
     /**
      * Seed the local/staging demo accounts.
      *
-     * Offices are represented by the ids 1 (Algiers) and 2 (Oran) until the
-     * offices table exists in phase 1.
+     * Offices are Algiers HQ and Oran Office; accounts and dues are added
+     * by later phases.
      */
     public function run(): void
     {
@@ -23,6 +25,20 @@ class DemoSeeder extends Seeder
         }
 
         $password = Hash::make($this->demoPassword());
+
+        $algiers = Office::query()->firstOrCreate(
+            ['name' => 'Algiers HQ'],
+            ['city' => 'Algiers', 'active' => true],
+        );
+        $oran = Office::query()->firstOrCreate(
+            ['name' => 'Oran Office'],
+            ['city' => 'Oran', 'active' => true],
+        );
+
+        Setting::put(Setting::WEEK_START, (string) config('khazna.week_starts_on'));
+        Setting::put(Setting::REMINDER_TEMPLATE, (string) config('khazna.reminder_template'));
+        Setting::put(Setting::CURRENCY_LABEL, (string) config('khazna.currency_symbol'));
+        Setting::put(Setting::SALARY_DUE_DAY, (string) config('khazna.salary_due_day'));
 
         $users = [
             [
@@ -35,19 +51,19 @@ class DemoSeeder extends Seeder
                 'name' => 'Sara Haddad',
                 'email' => 'finance@khazna.test',
                 'role' => Role::Finance,
-                'office_id' => 1,
+                'office_id' => $algiers->id,
             ],
             [
                 'name' => 'Amine Boudjelal',
                 'email' => 'algiers@khazna.test',
                 'role' => Role::AccountManager,
-                'office_id' => 1,
+                'office_id' => $algiers->id,
             ],
             [
                 'name' => 'Nadia Cherif',
                 'email' => 'oran@khazna.test',
                 'role' => Role::AccountManager,
-                'office_id' => 2,
+                'office_id' => $oran->id,
             ],
         ];
 

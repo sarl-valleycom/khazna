@@ -14,13 +14,20 @@ Scope note: in this phase the contract form offers only the **SaaS renewal** typ
 
 ## 1.1 Users, offices and settings
 
-- [ ] Migration: `offices` (name, city, active), `users` (role, active, `office_id` nullable), `settings` (key, value).
-- [ ] Offices screen (owner only): create and deactivate. At least one office must exist. Seed the two real offices (FR-OFF-01).
-- [ ] The user form has an optional office. A user with an office sees only that office's data (FR-OFF-02, FR-AUTH-08). The check lives in the shared `visibleTo($user)` scope from phase 0.
-- [ ] Office switcher in the app layout for unrestricted users (FR-OFF-04).
-- [ ] Users screen (owner only): create, edit role, deactivate, reset password link.
-- [ ] Settings screen (owner only): week start, reminder template, default currency label, salary due day (stored now, used in phase 2). Setting changes are audited (FR-AUD-04).
-- [ ] Audit log screen (owner only): filter by user, entity, date. Read-only.
+- [x] Migration: `offices` (name, city, active), `users` (role, active, `office_id` nullable), `settings` (key, value).
+- [x] Offices screen (owner only): create and deactivate. At least one office must exist. Seed the two real offices (FR-OFF-01).
+- [x] The user form has an optional office. A user with an office sees only that office's data (FR-OFF-02, FR-AUTH-08). The check lives in the shared `visibleTo($user)` scope from phase 0.
+- [x] Office switcher in the app layout for unrestricted users (FR-OFF-04).
+- [x] Users screen (owner only): create, edit role, deactivate, reset password link.
+- [x] Settings screen (owner only): week start, reminder template, default currency label, salary due day (stored now, used in phase 2). Setting changes are audited (FR-AUD-04).
+- [x] Audit log screen (owner only): filter by user, entity, date. Read-only.
+
+Notes:
+- `offices` and `settings` are key/value tables; `users.office_id` stays nullable and indexed. The office switcher writes the `office` query parameter and is hidden for restricted users. The domain queries consume that filter in later sections.
+- `DemoSeeder` now seeds `Algiers HQ` and `Oran Office` plus default settings, then the four demo users. The office names are placeholders until the owner confirms the real office names; real accounts and opening balances remain out of scope (open question 4).
+- Deactivating the last active office is refused. Deactivating yourself or removing the last active owner is also refused.
+- The owner settings screen stores the week start, reminder template, currency label and salary due day. Every setting write is audited.
+- 1.1 is covered by `tests/Feature/Phase1/OfficesUsersSettingsTest.php` and the owner Playwright admin smoke test.
 
 ## 1.2 Clients
 

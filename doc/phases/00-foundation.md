@@ -219,7 +219,7 @@ Notes:
 Notes:
 - `UserFactory` is the only factory needed in phase 0; add one factory with each model in later phases.
 - `DemoSeeder` creates the owner, finance, and two account-manager accounts, with office ids 1 (Algiers) and 2 (Oran).
-- Offices, accounts, and dues are deferred to phase 1 because those tables do not exist yet; this follows the decision to defer office rows.
+- Offices are now seeded in phase 1.1; accounts and dues remain deferred until their sections exist.
 - `DatabaseSeeder` calls `DemoSeeder` outside production, and `DemoSeeder` throws in production. The demo password defaults to `password`; override it with `DEMO_PASSWORD`.
 ## Exit checklist
 

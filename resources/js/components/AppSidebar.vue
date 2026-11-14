@@ -1,9 +1,19 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid, Palette } from '@lucide/vue';
+import {
+    BookOpen,
+    Building2,
+    ClipboardList,
+    FolderGit2,
+    LayoutGrid,
+    Palette,
+    Settings,
+    ShieldCheck,
+} from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
+import OfficeSwitcher from '@/components/kit/OfficeSwitcher.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
@@ -15,18 +25,57 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { NavItem } from '@/types';
 
 const page = usePage();
 
 const role = computed(() => page.props.auth.role);
 
+function officeFromUrl(): string | null {
+    const query = page.url.split('?')[1];
+
+    return query ? new URLSearchParams(query).get('office') : null;
+}
+
+const office = ref<string | null>(officeFromUrl());
+
+watch(
+    () => page.url,
+    () => {
+        office.value = officeFromUrl();
+    },
+);
+
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: '/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Users',
+        href: '/users',
+        icon: ClipboardList,
+        roles: ['owner'] as App.Enums.Role[],
+    },
+    {
+        title: 'Offices',
+        href: '/offices',
+        icon: Building2,
+        roles: ['owner'] as App.Enums.Role[],
+    },
+    {
+        title: 'Settings',
+        href: '/settings',
+        icon: Settings,
+        roles: ['owner'] as App.Enums.Role[],
+    },
+    {
+        title: 'Audit log',
+        href: '/audit-log',
+        icon: ShieldCheck,
+        roles: ['owner'] as App.Enums.Role[],
     },
     ...(import.meta.env.DEV
         ? [
@@ -77,6 +126,12 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
+            <div class="px-2 py-2">
+                <OfficeSwitcher
+                    v-model="office"
+                    :offices="page.props.offices"
+                />
+            </div>
             <NavMain :items="visibleMainNavItems" />
         </SidebarContent>
 
