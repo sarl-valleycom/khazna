@@ -69,7 +69,13 @@ function defaultAccount(): number | null {
         (account) => account.officeId === props.due.officeId,
     );
 
-    return sameOffice.length === 1 ? sameOffice[0].id : null;
+    // A client's last account wins; otherwise the office's own account if it has just one,
+    // and for a salary or supplier due (no client) the office's first account.
+    if (sameOffice.length === 1) {
+        return sameOffice[0].id;
+    }
+
+    return props.due.clientId === null ? (sameOffice[0]?.id ?? null) : null;
 }
 
 watch(open, (value) => {

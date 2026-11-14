@@ -7,6 +7,7 @@ import {
     Store,
     Tags,
     UserRoundCog,
+    Wallet,
     ClipboardList,
     FileText,
     FolderGit2,
@@ -82,6 +83,12 @@ const mainNavItems: NavItem[] = [
         roles: ['owner', 'finance'] as App.Enums.Role[],
     },
     {
+        title: 'Payroll',
+        href: '/payroll/close',
+        icon: Wallet,
+        ability: 'view-salaries',
+    },
+    {
         title: 'Suppliers',
         href: '/suppliers',
         icon: Store,
@@ -129,11 +136,14 @@ const mainNavItems: NavItem[] = [
         : []),
 ];
 
+const abilities = computed(() => page.props.auth.user?.abilities ?? {});
+
 const visibleMainNavItems = computed(() =>
     mainNavItems.filter(
         (item) =>
-            !item.roles ||
-            (role.value !== null && item.roles.includes(role.value)),
+            (!item.roles ||
+                (role.value !== null && item.roles.includes(role.value))) &&
+            (!item.ability || abilities.value[item.ability] === true),
     ),
 );
 

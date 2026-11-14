@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import EmployeeFormDialog from '@/components/employees/EmployeeFormDialog.vue';
+import AdjustmentDialog from '@/components/payroll/AdjustmentDialog.vue';
 import DateInput from '@/components/kit/DateInput.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
 import FormDialog from '@/components/kit/FormDialog.vue';
@@ -25,12 +26,16 @@ type Props = {
     canSeeSalaries: boolean;
     offices: App.Data.OfficeOptionData[];
     statuses: Array<{ value: string; label: string }>;
+    accounts: App.Data.PaymentAccountData[];
+    adjustmentTypes: Array<{ value: string; label: string }>;
 };
 
 const props = defineProps<Props>();
 const page = usePage();
 const editOpen = ref(false);
 const salaryOpen = ref(false);
+const advanceOpen = ref(false);
+const thisMonth = toCalendarDate(new Date()).slice(0, 7);
 
 const person = computed(() => props.employee.employee);
 const withSalary = computed(() =>
@@ -69,6 +74,13 @@ function saveSalary() {
                     <Link href="/employees">
                         <ArrowLeft class="mr-1 size-4" /> All employees
                     </Link>
+                </Button>
+                <Button
+                    v-if="props.canSeeSalaries"
+                    variant="outline"
+                    @click="advanceOpen = true"
+                >
+                    Advance
                 </Button>
                 <Button variant="outline" @click="editOpen = true">Edit</Button>
             </template>
@@ -139,6 +151,17 @@ function saveSalary() {
             </p>
         </Card>
     </div>
+
+    <AdjustmentDialog
+        v-if="props.canSeeSalaries"
+        v-model:open="advanceOpen"
+        :employees="[{ id: person.id, name: person.name }]"
+        :accounts="props.accounts"
+        :types="props.adjustmentTypes"
+        :month="thisMonth"
+        :employee-id="person.id"
+        type="advance"
+    />
 
     <EmployeeFormDialog
         v-model:open="editOpen"

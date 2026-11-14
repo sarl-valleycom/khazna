@@ -9,12 +9,15 @@ use App\Data\DueRowData;
 use App\Data\OfficeOptionData;
 use App\Data\TriageFiltersData;
 use App\Data\TriageTabData;
+use App\Enums\AdjustmentType;
 use App\Enums\Direction;
 use App\Enums\DueKind;
+use App\Enums\EmployeeStatus;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Due;
+use App\Models\Employee;
 use App\Models\Office;
 use App\Models\User;
 use App\Queries\DueTriageQuery;
@@ -85,6 +88,14 @@ class TriageController extends Controller
                 : [],
             'weekEnd' => $triage->bounds($today)[0]->toDateString(),
             'paymentAccounts' => $paymentOptions['accounts'],
+            // For the Advance action on a salary due: only built for someone who may see salaries.
+            'payrollEmployees' => $actor->can('view-salaries')
+                ? Employee::query()->visibleTo($actor)->where('status', EmployeeStatus::Active)->orderBy('name')->get(['id', 'name'])
+                    ->map(fn (Employee $employee): array => ['id' => $employee->id, 'name' => $employee->name])->values()->all()
+                : [],
+            'payrollTypes' => $actor->can('view-salaries')
+                ? collect(AdjustmentType::cases())->map(fn (AdjustmentType $type): array => ['value' => $type->value, 'label' => $type->label()])->all()
+                : [],
             'paymentDefaults' => $paymentOptions['defaults'],
             'clients' => Client::query()
                 ->visibleTo($actor)

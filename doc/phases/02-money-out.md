@@ -41,7 +41,7 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 - [x] Employees CRUD. Salary entered as "amount from date", which writes a `employee_salary_history` row.
 - [x] Two data classes: `EmployeeData` (no salary) and `EmployeeWithSalaryData`. The controller picks one based on the `view-salaries` gate (FR-AUTH-05).
-- [ ] All payroll routes sit in one group behind `can:view-salaries`.
+- [x] All payroll routes sit in one group behind `can:view-salaries`.
 - [x] **Leak test:** as `finance` and `account_manager`, request every page and the shared props. Assert the strings `salary`, `base_salary` and any salary amount never appear in the Inertia page JSON.
 - [x] The audit log shows salary changes only to the owner.
 
@@ -62,19 +62,19 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 **Adjustments**
 
-- [ ] Add advance, bonus and deduction per employee per month (FR-SAL-03). An advance also records `paid_on`, `method` and the **account** it was paid from, and writes an out ledger entry through `LedgerWriter` in the same transaction, because the money leaves on that day.
-- [ ] Paying a salary due uses the normal Pay dialog: choose the account the money leaves. Each employee is paid from an account of their own office by default.
-- [ ] Ledger entries that come from salary dues or advances carry a payroll marker. Users without the salary permission see them in statements as one "Payroll" line, with no employee names (FR-ACC-13, BR-20). Balances still reveal the payroll total, which is why this is a limited protection (see open questions).
-- [ ] **Advance** quick action on the employee page and on salary dues in triage (FR-TRI-08).
+- [x] Add advance, bonus and deduction per employee per month (FR-SAL-03). An advance also records `paid_on`, `method` and the **account** it was paid from, and writes an out ledger entry through `LedgerWriter` in the same transaction, because the money leaves on that day.
+- [x] Paying a salary due uses the normal Pay dialog: choose the account the money leaves. Each employee is paid from an account of their own office by default.
+- [x] Ledger entries that come from salary dues or advances carry a payroll marker. Users without the salary permission see them in statements as one "Payroll" line, with no employee names (FR-ACC-13, BR-20). Balances still reveal the payroll total, which is why this is a limited protection (see open questions).
+- [x] **Advance** quick action on the employee page and on salary dues in triage (FR-TRI-08).
 
 **Month-close** (`CloseMonth` action)
 
-- [ ] Preview page for a chosen month. It writes nothing. For each active employee it shows: salary in force on the last day of the month, bonuses, deductions, advances, and the net amount (FR-SAL-05).
-- [ ] Net = salary + bonuses − deductions − advances (FR-SAL-02).
-- [ ] Confirm button runs `CloseMonth` in one transaction. It creates one due per employee with `kind = salary`, `period = YYYY-MM`, `due_on` = the configured salary due day of the following month (FR-SAL-01, 07).
-- [ ] Idempotent: the unique `(employee_id, period)` index makes a second run skip existing dues. The result screen says which were created and which already existed (FR-SAL-04).
-- [ ] `SyncSalaryDue` action keeps an unpaid salary due equal to the current adjustments. After payment, a change requires an explicit owner correction with a reason (FR-SAL-06).
-- [ ] Employees who joined or left mid-month are **not prorated** automatically. The owner adds a deduction. This is an open question below.
+- [x] Preview page for a chosen month. It writes nothing. For each active employee it shows: salary in force on the last day of the month, bonuses, deductions, advances, and the net amount (FR-SAL-05).
+- [x] Net = salary + bonuses − deductions − advances (FR-SAL-02).
+- [x] Confirm button runs `CloseMonth` in one transaction. It creates one due per employee with `kind = salary`, `period = YYYY-MM`, `due_on` = the configured salary due day of the following month (FR-SAL-01, 07).
+- [x] Idempotent: the unique `(employee_id, period)` index makes a second run skip existing dues. The result screen says which were created and which already existed (FR-SAL-04).
+- [x] `SyncSalaryDue` action keeps an unpaid salary due equal to the current adjustments. After payment, a change requires an explicit owner correction with a reason (FR-SAL-06).
+- [x] Employees who joined or left mid-month are **not prorated** automatically. The owner adds a deduction. This is an open question below.
 
 ## 2.6 Dashboard
 

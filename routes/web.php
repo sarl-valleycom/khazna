@@ -16,6 +16,8 @@ use App\Http\Controllers\Dues\DueReminderController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
 use App\Http\Controllers\Payments\PaymentController;
+use App\Http\Controllers\Payroll\AdjustmentController;
+use App\Http\Controllers\Payroll\CloseController;
 use App\Http\Controllers\Suppliers\SupplierController;
 use App\Http\Controllers\Triage\TriageController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
@@ -72,6 +74,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Everything about what people earn sits behind one gate.
     Route::middleware('can:view-salaries')->group(function () {
         Route::post('employees/{employee}/salaries', [SalaryController::class, 'store'])->whereNumber('employee')->name('employees.salaries.store');
+
+        Route::get('payroll/adjustments', [AdjustmentController::class, 'index'])->name('payroll.adjustments');
+        Route::post('payroll/adjustments', [AdjustmentController::class, 'store'])->name('payroll.adjustments.store');
+        Route::get('payroll/close', [CloseController::class, 'show'])->name('payroll.close');
+        Route::post('payroll/close', [CloseController::class, 'store'])->name('payroll.close.store');
     });
 
     Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');

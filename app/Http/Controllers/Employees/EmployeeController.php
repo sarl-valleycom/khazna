@@ -6,9 +6,12 @@ use App\Actions\Payroll\SetSalary;
 use App\Data\EmployeeData;
 use App\Data\EmployeeWithSalaryData;
 use App\Data\OfficeOptionData;
+use App\Data\PaymentAccountData;
+use App\Enums\AdjustmentType;
 use App\Enums\EmployeeStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employees\EmployeeRequest;
+use App\Models\Account;
 use App\Models\Employee;
 use App\Models\EmployeeSalary;
 use App\Models\Office;
@@ -78,6 +81,14 @@ class EmployeeController extends Controller
             'statuses' => collect(EmployeeStatus::cases())
                 ->map(fn (EmployeeStatus $status): array => ['value' => $status->value, 'label' => $status->label()])
                 ->all(),
+            // For the Advance quick action: only built for someone who may see salaries.
+            'accounts' => $actor->can('view-salaries')
+                ? Account::query()->visibleTo($actor)->where('active', true)->with('office:id,name')->orderBy('office_id')->orderBy('name')->get()
+                    ->map(fn (Account $account): PaymentAccountData => PaymentAccountData::fromAccount($account))->values()->all()
+                : [],
+            'adjustmentTypes' => $actor->can('view-salaries')
+                ? collect(AdjustmentType::cases())->map(fn (AdjustmentType $type): array => ['value' => $type->value, 'label' => $type->label()])->all()
+                : [],
         ]);
     }
 

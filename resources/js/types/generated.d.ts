@@ -231,6 +231,7 @@ declare namespace App {
             id: number;
             contractId: number | null;
             clientId: number | null;
+            employeeId: number | null;
             partyName: string;
             partyType: string;
             officeId: number;
@@ -240,6 +241,7 @@ declare namespace App {
             kindLabel: string;
             direction: App.Enums.Direction;
             directionLabel: string;
+            period: string | null;
             dueOn: string | null;
             amountDueCents: number;
             amountPaidCents: number;
@@ -255,6 +257,7 @@ declare namespace App {
                 cancel: boolean;
                 pay: boolean;
                 remind: boolean;
+                advance: boolean;
             };
         };
         export type EmployeeData = {
@@ -340,6 +343,19 @@ declare namespace App {
             isReversed: boolean;
             reversalReason: string | null;
             canReverse: boolean;
+        };
+        export type PayrollLineData = {
+            employeeId: number;
+            employeeName: string;
+            officeName: string;
+            salaryCents: number;
+            bonusCents: number;
+            deductionCents: number;
+            advanceCents: number;
+            netCents: number;
+            state: string;
+            dueId: number | null;
+            note: string | null;
         };
         export type SalaryHistoryData = {
             id: number;

@@ -102,10 +102,12 @@ class RecordPayment
             entryDate: $paidOn,
             source: $payment,
             by: $actor,
-            description: __('Payment: :kind due :date', [
-                'kind' => $due->kind->label(),
-                'date' => $due->due_on?->format('d M Y') ?? __('on delivery'),
-            ]),
+            description: $due->employee_id !== null
+                ? __('Salary: :name', ['name' => $due->employee()->value('name')])
+                : __('Payment: :kind due :date', [
+                    'kind' => $due->kind->label(),
+                    'date' => $due->due_on?->format('d M Y') ?? __('on delivery'),
+                ]),
             dateField: 'paid_on',
             categoryId: $due->category_id,
             isPayroll: $due->employee_id !== null,
