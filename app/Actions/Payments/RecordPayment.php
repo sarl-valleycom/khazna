@@ -107,6 +107,8 @@ class RecordPayment
                 'date' => $due->due_on?->format('d M Y') ?? __('on delivery'),
             ]),
             dateField: 'paid_on',
+            categoryId: $due->category_id,
+            isPayroll: $due->employee_id !== null,
         );
 
         $this->recalculate->handle($due);

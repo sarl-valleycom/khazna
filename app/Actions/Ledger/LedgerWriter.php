@@ -19,6 +19,7 @@ class LedgerWriter
 {
     /**
      * @param  string  $dateField  The form field to blame when the date is refused.
+     * @param  bool  $isPayroll  Salary payments and advances: hidden from anyone without the salary permission.
      */
     public function record(
         Account $account,
@@ -29,6 +30,8 @@ class LedgerWriter
         ?User $by,
         ?string $description = null,
         string $dateField = 'entry_date',
+        ?int $categoryId = null,
+        bool $isPayroll = false,
     ): AccountEntry {
         if ($amountCents <= 0) {
             throw new InvalidArgumentException('A ledger entry needs a positive amount.');
@@ -50,6 +53,8 @@ class LedgerWriter
             'source_type' => $source->getMorphClass(),
             'source_id' => $source->getKey(),
             'description' => $description,
+            'category_id' => $categoryId,
+            'is_payroll' => $isPayroll,
             'created_by' => $by?->id,
         ]);
     }

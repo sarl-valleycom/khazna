@@ -4,6 +4,8 @@ import {
     BookOpen,
     Building2,
     Landmark,
+    Store,
+    Tags,
     ClipboardList,
     FileText,
     FolderGit2,
@@ -70,6 +72,18 @@ const mainNavItems: NavItem[] = [
         title: 'Accounts',
         href: '/accounts',
         icon: Landmark,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Suppliers',
+        href: '/suppliers',
+        icon: Store,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Categories',
+        href: '/categories',
+        icon: Tags,
         roles: ['owner', 'finance'] as App.Enums.Role[],
     },
     {

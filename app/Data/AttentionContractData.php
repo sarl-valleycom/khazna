@@ -21,7 +21,7 @@ class AttentionContractData extends Data
         public string $reason,
     ) {}
 
-    public static function fromContract(Contract $contract): self
+    public static function fromContract(Contract $contract, string $reason): self
     {
         return new self(
             id: $contract->id,
@@ -32,7 +32,7 @@ class AttentionContractData extends Data
             cycleLabel: $contract->cycle->label(),
             startsOn: $contract->starts_on->toDateString(),
             endsOn: $contract->ends_on?->toDateString(),
-            reason: __('Active, but no further due is scheduled. Renew it or close it.'),
+            reason: $reason,
         );
     }
 }

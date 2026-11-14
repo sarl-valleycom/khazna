@@ -23,12 +23,13 @@ use LogicException;
  * @property string $source_type
  * @property int $source_id
  * @property int|null $category_id
+ * @property bool $is_payroll
  * @property string|null $description
  * @property int|null $created_by
  * @property CarbonImmutable|null $created_at
  * @property int|null $running_cents Only present on statement queries.
  */
-#[Fillable(['account_id', 'direction', 'amount_cents', 'entry_date', 'source_type', 'source_id', 'category_id', 'description', 'created_by'])]
+#[Fillable(['account_id', 'direction', 'amount_cents', 'entry_date', 'source_type', 'source_id', 'category_id', 'is_payroll', 'description', 'created_by'])]
 class AccountEntry extends Model
 {
     public const UPDATED_AT = null;
@@ -53,6 +54,7 @@ class AccountEntry extends Model
             'entry_date' => 'immutable_date',
             'source_id' => 'integer',
             'category_id' => 'integer',
+            'is_payroll' => 'boolean',
             'created_by' => 'integer',
             'created_at' => 'immutable_datetime',
         ];

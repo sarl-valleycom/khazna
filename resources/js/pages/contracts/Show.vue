@@ -24,6 +24,9 @@ type Props = {
     offices: App.Data.OfficeOptionData[];
     cycles: Array<{ value: string; label: string }>;
     canChooseOffice: boolean;
+    types: Array<{ value: string; label: string }>;
+    suppliers: Array<{ id: number; name: string }>;
+    categories: Array<{ id: number; name: string }>;
 };
 
 const props = defineProps<Props>();
@@ -223,6 +226,9 @@ const title = computed(
         :offices="props.offices"
         :cycles="props.cycles"
         :can-choose-office="props.canChooseOffice"
+        :types="props.types"
+        :suppliers="props.suppliers"
+        :categories="props.categories"
         :contract="props.contract"
     />
 </template>

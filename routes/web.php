@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Categories\CategoryController;
 use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Clients\ClientImportController;
 use App\Http\Controllers\Contracts\ContractController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Controllers\Dues\DueController;
 use App\Http\Controllers\Dues\DueReminderController;
 use App\Http\Controllers\Payments\PaymentController;
+use App\Http\Controllers\Suppliers\SupplierController;
 use App\Http\Controllers\Triage\TriageController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +55,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::get('accounts/{account}', [AccountController::class, 'show'])->whereNumber('account')->name('accounts.show');
     Route::patch('accounts/{account}', [AccountController::class, 'update'])->whereNumber('account')->name('accounts.update');
+
+    Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+    Route::patch('suppliers/{supplier}', [SupplierController::class, 'update'])->whereNumber('supplier')->name('suppliers.update');
+    Route::delete('suppliers/{supplier}', [SupplierController::class, 'destroy'])->whereNumber('supplier')->name('suppliers.destroy');
+
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::patch('categories/{category}', [CategoryController::class, 'update'])->whereNumber('category')->name('categories.update');
 
     Route::get('offices', [OfficeController::class, 'index'])->name('offices.index');
     Route::post('offices', [OfficeController::class, 'store'])->name('offices.store');

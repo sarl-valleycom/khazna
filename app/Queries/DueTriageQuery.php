@@ -5,6 +5,7 @@ namespace App\Queries;
 use App\Actions\Dues\GenerateDues;
 use App\Data\TriageFiltersData;
 use App\Enums\ContractStatus;
+use App\Enums\ContractType;
 use App\Enums\DueStatus;
 use App\Models\Contract;
 use App\Models\Due;
@@ -28,6 +29,9 @@ use Illuminate\Support\Collection;
  */
 class DueTriageQuery
 {
+    /** How soon before its end date a contract starts asking for a decision. */
+    public const ENDING_SOON_DAYS = 30;
+
     public function __construct(private readonly GenerateDues $generateDues) {}
 
     /**
@@ -96,27 +100,67 @@ class DueTriageQuery
     }
 
     /**
-     * Active contracts that will never bill again: no due is left on or after
-     * today and the cycle has no further date. A yearly contract whose next due
-     * is simply outside the 30-day window is not flagged.
+     * Contracts that need someone to decide something:
+     *  - active, but no due is left and the cycle has no further date (renew or close it);
+     *  - active and ending within the next 30 days, until it is renewed, ended or canceled.
      *
-     * @return Collection<int, Contract>
+     * A yearly contract whose next due is simply outside the 30-day window is not flagged.
+     *
+     * @return Collection<int, array{contract: Contract, reason: string}>
      */
     public function attention(User $user, TriageFiltersData $filters, CarbonImmutable $today): Collection
     {
-        if ($filters->direction === 'out' || ($filters->kind !== '' && $filters->kind !== 'saas')) {
-            return new Collection;
-        }
-
-        $contracts = Contract::query()
-            ->visibleTo($user)
-            ->where('status', ContractStatus::Active)
+        $unscheduled = $this->attentionBase($user, $filters)
             ->whereDoesntHave('dues', fn (Builder $due): Builder => $due
                 ->where('status', '!=', DueStatus::Canceled->value)
                 ->where('due_on', '>=', $today->toDateString()))
             // An overdue or part-paid due is already on the Overdue tab; it is not "unscheduled".
             ->whereDoesntHave('dues', fn (Builder $due): Builder => $due
                 ->whereIn('status', [DueStatus::Pending->value, DueStatus::Partial->value]))
+            ->get()
+            ->filter(fn (Contract $contract): bool => $this->generateDues->nextScheduledDate($contract, $today) === null)
+            ->map(fn (Contract $contract): array => [
+                'contract' => $contract,
+                'reason' => (string) __('Active, but no further due is scheduled. Renew it or close it.'),
+            ]);
+
+        $seen = $unscheduled->pluck('contract.id')->all();
+
+        $ending = $this->attentionBase($user, $filters)
+            ->whereNotNull('ends_on')
+            ->whereDate('ends_on', '>=', $today->toDateString())
+            ->whereDate('ends_on', '<=', $today->addDays(self::ENDING_SOON_DAYS)->toDateString())
+            ->whereNotIn('id', $seen)
+            ->orderBy('ends_on')
+            ->get()
+            ->map(fn (Contract $contract): array => [
+                'contract' => $contract,
+                'reason' => (string) __('Ends on :date. Renew it, or let it end.', ['date' => $contract->ends_on?->format('d M Y')]),
+            ]);
+
+        return $unscheduled->concat($ending)->values();
+    }
+
+    /**
+     * Active contracts the user may see, narrowed by the triage filters.
+     *
+     * @return Builder<Contract>
+     */
+    private function attentionBase(User $user, TriageFiltersData $filters): Builder
+    {
+        $types = match ($filters->kind) {
+            'saas' => [ContractType::SaasRenewal->value],
+            'project' => [ContractType::CustomProject->value],
+            'expense' => [ContractType::RecurringCost->value],
+            '' => null,
+            default => [],
+        };
+
+        return Contract::query()
+            ->visibleTo($user)
+            ->where('status', ContractStatus::Active)
+            ->when($filters->direction !== '', fn (Builder $query): Builder => $query->where('direction', $filters->direction))
+            ->when($types !== null, fn (Builder $query): Builder => $query->whereIn('type', $types ?? []))
             ->when($filters->client !== null, fn (Builder $query): Builder => $query->where('client_id', $filters->client))
             ->when($filters->office !== null, fn (Builder $query): Builder => $query->where('office_id', $filters->office))
             ->when($filters->assignee !== null, fn (Builder $query): Builder => $query->whereHas(
@@ -124,12 +168,7 @@ class DueTriageQuery
                 fn (Builder $client): Builder => $client->where('account_manager_id', $filters->assignee),
             ))
             ->withParties()
-            ->orderBy('id')
-            ->get();
-
-        return $contracts
-            ->filter(fn (Contract $contract): bool => $this->generateDues->nextScheduledDate($contract, $today) === null)
-            ->values();
+            ->orderBy('id');
     }
 
     /**

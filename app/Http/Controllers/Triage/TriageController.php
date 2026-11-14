@@ -14,7 +14,6 @@ use App\Enums\DueKind;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
-use App\Models\Contract;
 use App\Models\Due;
 use App\Models\Office;
 use App\Models\User;
@@ -82,7 +81,7 @@ class TriageController extends Controller
             'tabs' => $tabs,
             'dues' => $rows?->through(fn (Due $due): DueRowData => DueRowData::fromDue($due, $actor)),
             'attention' => $filters->tab === 'attention'
-                ? $attention->map(fn (Contract $contract): AttentionContractData => AttentionContractData::fromContract($contract))->all()
+                ? $attention->map(fn (array $item): AttentionContractData => AttentionContractData::fromContract($item['contract'], $item['reason']))->all()
                 : [],
             'weekEnd' => $triage->bounds($today)[0]->toDateString(),
             'paymentAccounts' => $paymentOptions['accounts'],

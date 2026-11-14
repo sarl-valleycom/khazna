@@ -39,6 +39,8 @@ const methods = [
 ];
 
 const accounts = computed(() => page.props.paymentAccounts ?? []);
+// For money going out the same dialog reads the other way round.
+const isOut = computed(() => props.due.direction === 'out');
 const symbol = computed(() => page.props.settings.currencySymbol);
 const today = computed(() => toCalendarDate(new Date()));
 
@@ -113,9 +115,9 @@ function submit() {
 <template>
     <FormDialog
         v-model:open="open"
-        title="Record payment"
+        :title="isOut ? 'Pay out' : 'Record payment'"
         :description="`${props.due.partyName} · ${props.due.kindLabel}${props.due.dueOn ? ` due ${props.due.dueOn}` : ''}. Remaining ${formatMoney(props.due.remainingCents, symbol)}.`"
-        submit-label="Record payment"
+        :submit-label="isOut ? 'Pay' : 'Record payment'"
         :processing="form.processing"
         :submit-disabled="needsConfirmation && !form.confirm_overpayment"
         :errors="form.errors"
@@ -124,7 +126,9 @@ function submit() {
     >
         <div class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-2">
-                <Label for="pay-amount">Amount received</Label>
+                <Label for="pay-amount">{{
+                    isOut ? 'Amount paid' : 'Amount received'
+                }}</Label>
                 <MoneyInput
                     id="pay-amount"
                     v-model="form.amount_cents"
@@ -152,7 +156,11 @@ function submit() {
                     v-model="form.account_id"
                     :accounts="accounts"
                     :allow-all="false"
-                    placeholder="Where did the money go?"
+                    :placeholder="
+                        isOut
+                            ? 'Which account did it leave?'
+                            : 'Where did the money go?'
+                    "
                 />
                 <p
                     v-if="accounts.length === 0"

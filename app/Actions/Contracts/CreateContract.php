@@ -5,8 +5,6 @@ namespace App\Actions\Contracts;
 use App\Actions\Dues\GenerateDues;
 use App\Data\ContractInput;
 use App\Enums\ContractStatus;
-use App\Enums\ContractType;
-use App\Enums\Direction;
 use App\Models\Contract;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -33,8 +31,6 @@ class CreateContract
                 $contract = Contract::query()->create([
                     ...$attributes,
                     ...$attachment,
-                    'type' => ContractType::SaasRenewal,
-                    'direction' => Direction::In,
                     'status' => ContractStatus::Active,
                 ]);
 

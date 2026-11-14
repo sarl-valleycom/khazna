@@ -135,10 +135,6 @@ const hint = computed(() =>
                             </p>
                             <p class="text-xs text-muted-foreground">
                                 {{ contract.reason }}
-                                <template v-if="contract.endsOn">
-                                    Ended
-                                    {{ formatDate(contract.endsOn) }}.
-                                </template>
                             </p>
                         </div>
                         <MoneyText

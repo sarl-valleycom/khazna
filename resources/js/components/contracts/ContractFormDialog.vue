@@ -21,18 +21,27 @@ type Props = {
     offices: App.Data.OfficeOptionData[];
     cycles: Array<{ value: string; label: string }>;
     canChooseOffice: boolean;
+    types?: Array<{ value: string; label: string }>;
+    suppliers?: Array<{ id: number; name: string }>;
+    categories?: Array<{ id: number; name: string }>;
     contract?: App.Data.ContractData | null;
 };
 
 const props = withDefaults(defineProps<Props>(), {
     contract: null,
+    types: () => [{ value: 'saas_renewal', label: 'SaaS renewal' }],
+    suppliers: () => [],
+    categories: () => [],
 });
 
 const open = defineModel<boolean>('open', { default: false });
 const page = usePage();
 
 const form = useForm({
+    type: 'saas_renewal',
     client_id: null as number | null,
+    supplier_id: null as number | null,
+    category_id: null as number | null,
     amount_cents: null as number | null,
     cycle: 'monthly',
     starts_on: toCalendarDate(new Date()),
@@ -44,6 +53,7 @@ const form = useForm({
 });
 
 const editing = computed(() => props.contract !== null);
+const isCost = computed(() => form.type === 'recurring_cost');
 const title = computed(() =>
     editing.value ? 'Edit contract' : 'New contract',
 );
@@ -66,7 +76,10 @@ watch(open, (value) => {
     form.clearErrors();
 
     if (props.contract) {
+        form.type = props.contract.type;
         form.client_id = props.contract.clientId;
+        form.supplier_id = props.contract.supplierId;
+        form.category_id = props.contract.categoryId;
         form.amount_cents = props.contract.amountCents;
         form.cycle = props.contract.cycle;
         form.starts_on = props.contract.startsOn;
@@ -118,15 +131,35 @@ function submit() {
         :description="
             editing
                 ? 'Changing the amount only affects dues generated afterwards.'
-                : 'Create a SaaS renewal for a client.'
+                : isCost
+                  ? 'A cost the company pays to a supplier on a cycle.'
+                  : 'Create a SaaS renewal for a client.'
         "
         :processing="form.processing"
         :errors="form.errors"
         wide
         @submit="submit"
     >
+        <div v-if="!editing && props.types.length > 1" class="space-y-2">
+            <Label>Type</Label>
+            <Select v-model="form.type">
+                <SelectTrigger aria-label="Contract type">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem
+                        v-for="type in props.types"
+                        :key="type.value"
+                        :value="type.value"
+                    >
+                        {{ type.label }}
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+
         <div class="grid gap-4 sm:grid-cols-2">
-            <div class="space-y-2">
+            <div v-if="!isCost" class="space-y-2">
                 <Label>Client</Label>
                 <Select
                     :model-value="
@@ -158,6 +191,32 @@ function submit() {
                 </p>
             </div>
 
+            <div v-if="isCost" class="space-y-2">
+                <Label>Supplier</Label>
+                <Select
+                    :model-value="
+                        form.supplier_id === null
+                            ? undefined
+                            : String(form.supplier_id)
+                    "
+                    :disabled="editing"
+                    @update:model-value="(v) => (form.supplier_id = Number(v))"
+                >
+                    <SelectTrigger aria-label="Supplier">
+                        <SelectValue placeholder="Choose a supplier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="supplier in props.suppliers"
+                            :key="supplier.id"
+                            :value="String(supplier.id)"
+                        >
+                            {{ supplier.name }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
             <div class="space-y-2">
                 <Label for="contract-amount">Amount</Label>
                 <MoneyInput
@@ -166,6 +225,34 @@ function submit() {
                     :symbol="page.props.settings.currencySymbol"
                 />
             </div>
+        </div>
+
+        <div v-if="isCost" class="space-y-2">
+            <Label>Category</Label>
+            <Select
+                :model-value="
+                    form.category_id === null
+                        ? undefined
+                        : String(form.category_id)
+                "
+                @update:model-value="(v) => (form.category_id = Number(v))"
+            >
+                <SelectTrigger aria-label="Category">
+                    <SelectValue placeholder="Choose a category" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem
+                        v-for="category in props.categories"
+                        :key="category.id"
+                        :value="String(category.id)"
+                    >
+                        {{ category.name }}
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+            <p class="text-xs text-muted-foreground">
+                Every due and payment of this cost is filed under it.
+            </p>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">

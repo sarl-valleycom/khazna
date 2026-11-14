@@ -11,15 +11,19 @@ use App\Data\ContractFiltersData;
 use App\Data\ContractInput;
 use App\Data\DueRowData;
 use App\Data\OfficeOptionData;
+use App\Enums\CategoryKind;
 use App\Enums\ContractStatus;
+use App\Enums\ContractType;
 use App\Enums\Cycle;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Contracts\ContractRequest;
 use App\Http\Requests\Contracts\ContractStatusRequest;
+use App\Models\Category;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Due;
 use App\Models\Office;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Queries\ContractIndexQuery;
 use App\Queries\PaymentAccountOptionsQuery;
@@ -60,6 +64,9 @@ class ContractController extends Controller
             'offices' => $this->offices($actor),
             'statuses' => $this->statuses(),
             'cycles' => $this->cycles(),
+            'types' => $this->types($actor),
+            'suppliers' => $this->suppliers($actor),
+            'categories' => $this->categories($actor),
             'canChooseOffice' => $this->canChooseOffice($actor),
         ]);
     }
@@ -97,6 +104,9 @@ class ContractController extends Controller
             'clients' => $this->clients($actor),
             'offices' => $this->offices($actor),
             'cycles' => $this->cycles(),
+            'types' => $this->types($actor),
+            'suppliers' => $this->suppliers($actor),
+            'categories' => $this->categories($actor),
             'canChooseOffice' => $this->canChooseOffice($actor),
         ]);
     }
@@ -182,6 +192,57 @@ class ContractController extends Controller
             ->all();
 
         return array_values($clients);
+    }
+
+    /**
+     * Contract types the user may create. Costs are not for account managers.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    private function types(User $actor): array
+    {
+        return collect(ContractRequest::creatableTypes())
+            ->map(fn (string $value): ContractType => ContractType::from($value))
+            ->reject(fn (ContractType $type): bool => $type === ContractType::RecurringCost && $actor->isAccountManager())
+            ->map(fn (ContractType $type): array => ['value' => $type->value, 'label' => $type->label()])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function suppliers(User $actor): array
+    {
+        if ($actor->isAccountManager()) {
+            return [];
+        }
+
+        return Supplier::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Supplier $supplier): array => ['id' => $supplier->id, 'name' => $supplier->name])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function categories(User $actor): array
+    {
+        if ($actor->isAccountManager()) {
+            return [];
+        }
+
+        return Category::query()
+            ->where('kind', CategoryKind::Cost)
+            ->where('active', true)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Category $category): array => ['id' => $category->id, 'name' => $category->name])
+            ->values()
+            ->all();
     }
 
     /**

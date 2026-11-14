@@ -2,13 +2,17 @@
 
 namespace App\Data;
 
+use App\Enums\ContractType;
 use App\Http\Requests\Contracts\ContractRequest;
 use Illuminate\Http\UploadedFile;
 
 final readonly class ContractInput
 {
     public function __construct(
-        public int $clientId,
+        public ContractType $type,
+        public ?int $clientId,
+        public ?int $supplierId,
+        public ?int $categoryId,
         public int $amountCents,
         public string $cycle,
         public string $startsOn,
@@ -25,7 +29,10 @@ final readonly class ContractInput
         $attachment = $request->file('attachment');
 
         return new self(
-            clientId: (int) $validated['client_id'],
+            type: ContractType::from((string) ($validated['type'] ?? ContractType::SaasRenewal->value)),
+            clientId: isset($validated['client_id']) ? (int) $validated['client_id'] : null,
+            supplierId: isset($validated['supplier_id']) ? (int) $validated['supplier_id'] : null,
+            categoryId: isset($validated['category_id']) ? (int) $validated['category_id'] : null,
             amountCents: (int) $validated['amount_cents'],
             cycle: (string) $validated['cycle'],
             startsOn: (string) $validated['starts_on'],
