@@ -9,6 +9,7 @@ use App\Models\Office;
 use App\Models\User;
 use App\Queries\CashReportQuery;
 use App\Support\AlgerianDate;
+use App\Support\Dates;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,8 +26,8 @@ class CashReportController extends Controller
         }
 
         $today = AlgerianDate::today();
-        $to = $this->date($request->string('to')->toString(), $today);
-        $from = $this->date($request->string('from')->toString(), $today->startOfYear());
+        $to = $this->date($this->queryString($request, 'to'), $today);
+        $from = $this->date($this->queryString($request, 'from'), $today->startOfYear());
 
         if ($from->gt($to)) {
             [$from, $to] = [$to, $from];
@@ -49,6 +50,6 @@ class CashReportController extends Controller
 
     private function date(string $value, CarbonImmutable $fallback): CarbonImmutable
     {
-        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? CarbonImmutable::parse($value)->startOfDay() : $fallback;
+        return Dates::day($value) ?? $fallback;
     }
 }

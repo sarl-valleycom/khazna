@@ -65,7 +65,7 @@ class RecordManualEntry
                     'created_by' => $actor->id,
                 ]);
 
-                $this->ledger->record($account, $direction, $amountCents, $on, $entry, $actor, $description, 'entry_date', categoryId: $category->id);
+                $this->ledger->record($account, $direction, $amountCents, $on, $entry, $actor, $description, 'entry_date', categoryId: $category->id, isPayroll: $category->kind === CategoryKind::Cost && $category->name === Category::SALARIES);
 
                 return $entry;
             });

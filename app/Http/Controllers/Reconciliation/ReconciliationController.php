@@ -11,6 +11,7 @@ use App\Http\Requests\Ledger\ReversalRequest;
 use App\Models\Account;
 use App\Models\Reconciliation;
 use App\Support\AlgerianDate;
+use App\Support\Dates;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,7 +47,7 @@ class ReconciliationController extends Controller
             ->pluck('last_as_of', 'account_id');
 
         $selected = $accounts->firstWhere('id', $request->integer('account')) ?? $accounts->first();
-        $asOf = $this->date($request->string('as_of')->toString(), $today);
+        $asOf = $this->date($this->queryString($request, 'as_of'), $today);
 
         return Inertia::render('accounts/Reconcile', [
             'accounts' => $accounts->map(function (Account $account) use ($last, $today): array {
@@ -123,12 +124,8 @@ class ReconciliationController extends Controller
 
     private function date(string $value, CarbonImmutable $fallback): CarbonImmutable
     {
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
-            return $fallback;
-        }
+        $date = Dates::day($value);
 
-        $date = CarbonImmutable::parse($value)->startOfDay();
-
-        return $date->gt($fallback) ? $fallback : $date;
+        return $date === null || $date->gt($fallback) ? $fallback : $date;
     }
 }

@@ -18,7 +18,7 @@ class SupplierController extends Controller
     {
         $this->authorize('viewAny', Supplier::class);
 
-        $term = trim($request->string('q')->toString());
+        $term = trim($this->queryString($request, 'q'));
 
         $suppliers = Supplier::query()
             ->withCount([

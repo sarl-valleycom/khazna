@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CloseMonth
@@ -29,34 +30,8 @@ class CloseMonth
     public function preview(CarbonImmutable $month, ?User $actor = null): array
     {
         $first = $month->startOfMonth();
-        $existing = Due::query()
-            ->whereNotNull('employee_id')
-            ->whereDate('period', $first->toDateString())
-            ->get()
-            ->keyBy('employee_id');
 
-        $lines = [];
-
-        foreach ($this->calculator->payableEmployees($first, $actor) as $employee) {
-            $line = $this->calculator->forEmployee($employee, $first);
-            $due = $existing->get($employee->id);
-
-            if ($line === null) {
-                $lines[] = $this->line($employee, [
-                    'salary' => 0, 'bonuses' => 0, 'deductions' => 0, 'advances' => 0, 'net' => 0,
-                ], 'nothing', null, __('No salary is set for this month.'));
-
-                continue;
-            }
-
-            $lines[] = match (true) {
-                $due !== null => $this->line($employee, $line, 'exists', $due->id, __('Already closed.')),
-                $line['net'] <= 0 => $this->line($employee, $line, 'nothing', null, __('Nothing to pay: advances and deductions cover the salary.')),
-                default => $this->line($employee, $line, 'ready', null, null),
-            };
-        }
-
-        return $lines;
+        return $this->lines($first, $this->calculator->payableEmployees($first, $actor));
     }
 
     /**
@@ -75,14 +50,23 @@ class CloseMonth
         return DB::transaction(function () use ($first, $dueOn, $category, $actor): array {
             $result = ['created' => [], 'existing' => [], 'skipped' => []];
 
-            foreach ($this->preview($first, $actor) as $line) {
+            // Lock the people first, then read their salaries. A raise being saved at this moment
+            // (SetSalary locks the same row) is either fully in these figures or waits until the
+            // month is closed and is then refused as falling inside it.
+            $employees = $this->calculator->payableEmployees($first, $actor, lock: true)->keyBy('id');
+
+            foreach ($this->lines($first, $employees->values()) as $line) {
                 if ($line->state !== 'ready') {
                     $result[$line->state === 'exists' ? 'existing' : 'skipped'][] = $line;
 
                     continue;
                 }
 
-                $employee = Employee::query()->with('office:id,name')->findOrFail($line->employeeId);
+                $employee = $employees->get($line->employeeId);
+
+                if ($employee === null) {
+                    continue;
+                }
 
                 // The unique (employee_id, period) key is the real guard against a double close,
                 // even if two people press the button at the same moment.
@@ -109,6 +93,46 @@ class CloseMonth
 
             return $result;
         });
+    }
+
+    /**
+     * One line per employee, from one batch of lookups.
+     *
+     * @param  Collection<int, Employee>  $employees
+     * @return array<int, PayrollLineData>
+     */
+    private function lines(CarbonImmutable $first, Collection $employees): array
+    {
+        $figures = $this->calculator->forMany($employees, $first);
+        $existing = Due::query()
+            ->whereNotNull('employee_id')
+            ->whereDate('period', $first->toDateString())
+            ->whereIn('employee_id', $employees->pluck('id')->all())
+            ->get()
+            ->keyBy('employee_id');
+
+        $lines = [];
+
+        foreach ($employees as $employee) {
+            $line = $figures[$employee->id] ?? null;
+            $due = $existing->get($employee->id);
+
+            if ($line === null) {
+                $lines[] = $this->line($employee, [
+                    'salary' => 0, 'bonuses' => 0, 'deductions' => 0, 'advances' => 0, 'net' => 0,
+                ], 'nothing', null, __('No salary is set for this month.'));
+
+                continue;
+            }
+
+            $lines[] = match (true) {
+                $due !== null => $this->line($employee, $line, 'exists', $due->id, __('Already closed.')),
+                $line['net'] <= 0 => $this->line($employee, $line, 'nothing', null, __('Nothing to pay: advances and deductions cover the salary.')),
+                default => $this->line($employee, $line, 'ready', null, null),
+            };
+        }
+
+        return $lines;
     }
 
     /**

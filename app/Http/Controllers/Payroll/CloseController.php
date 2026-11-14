@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Support\AlgerianDate;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,7 +19,7 @@ class CloseController extends Controller
 {
     public function show(Request $request, CloseMonth $close): Response
     {
-        $month = $this->month($request->string('month')->toString());
+        $month = $this->month($this->queryString($request, 'month'));
         $lines = $close->preview($month, $this->actor($request));
 
         $ready = array_filter($lines, fn (PayrollLineData $line): bool => $line->state === 'ready');
@@ -38,7 +39,11 @@ class CloseController extends Controller
     public function store(Request $request, CloseMonth $close): RedirectResponse
     {
         $validated = $request->validate([
-            'month' => ['required', 'date_format:Y-m'],
+            // Never a month that has not happened yet: that would put a year of salary dues
+            // in the forecast and block closing the real month later.
+            'month' => ['required', 'date_format:Y-m', fn (string $attribute, mixed $value, Closure $fail) => (string) $value > AlgerianDate::today()->format('Y-m')
+                ? $fail(__('You cannot close a month that has not started yet.'))
+                : null],
         ]);
 
         $month = CarbonImmutable::parse($validated['month'].'-01');

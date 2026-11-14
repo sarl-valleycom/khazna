@@ -105,6 +105,8 @@ class DashboardMetrics extends Metrics
     {
         $query = $this->openReceivables()
             ->whereNotNull('contract_id')
+            // A project's milestones fall due but nothing is renewing: only cycle contracts renew.
+            ->whereNull('milestone_id')
             ->whereDate('due_on', '>=', $this->today->toDateString())
             ->whereDate('due_on', '<=', $this->today->addDays(30)->toDateString());
 

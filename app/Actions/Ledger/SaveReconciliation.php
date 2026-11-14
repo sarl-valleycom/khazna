@@ -34,7 +34,7 @@ class SaveReconciliation
             $account = Account::query()->visibleTo($actor)->where('active', true)->lockForUpdate()->find($accountId)
                 ?? throw ValidationException::withMessages(['account_id' => __('Choose one of the accounts available to you.')]);
 
-            if ($on->lt($account->opening_date)) {
+            if ($on->toDateString() < $account->opening_date->toDateString()) {
                 throw ValidationException::withMessages([
                     'as_of' => __('This account starts on :date. Choose that date or a later one.', ['date' => $account->opening_date->format('d M Y')]),
                 ]);

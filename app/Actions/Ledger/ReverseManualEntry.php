@@ -39,6 +39,7 @@ class ReverseManualEntry
                 $actor,
                 __('Reversal: :description', ['description' => $entry->description]),
                 categoryId: $entry->category_id,
+                isPayroll: $entry->loadMissing('category')->isPayroll(),
                 isReversal: true,
             );
 

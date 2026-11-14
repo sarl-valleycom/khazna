@@ -21,4 +21,15 @@ abstract class Controller
 
         return $actor;
     }
+
+    /**
+     * A query-string value as text, or '' when it is missing or not text. Filters come from the
+     * address bar, where anyone can type ?from[]=x; reading that as a string would be a 500.
+     */
+    protected function queryString(Request $request, string $key): string
+    {
+        $value = $request->query($key);
+
+        return is_string($value) ? $value : '';
+    }
 }

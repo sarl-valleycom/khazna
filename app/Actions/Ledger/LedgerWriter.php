@@ -39,7 +39,8 @@ class LedgerWriter
             throw new InvalidArgumentException('A ledger entry needs a positive amount.');
         }
 
-        if ($entryDate->startOfDay()->lt($account->opening_date->startOfDay())) {
+        // Calendar days, not instants: Algiers midnight is the evening before in UTC.
+        if ($entryDate->toDateString() < $account->opening_date->toDateString()) {
             throw ValidationException::withMessages([
                 $dateField => __('This account starts on :date. Choose that date or a later one.', [
                     'date' => $account->opening_date->format('d M Y'),

@@ -5,6 +5,7 @@ namespace App\Data;
 use App\Enums\ContractType;
 use App\Enums\Cycle;
 use App\Http\Requests\Contracts\ContractRequest;
+use App\Models\Contract;
 use Illuminate\Http\UploadedFile;
 
 final readonly class ContractInput
@@ -26,13 +27,25 @@ final readonly class ContractInput
         public array $milestones = [],
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private static function typeFrom(ContractRequest $request, array $validated): ContractType
+    {
+        $existing = $request->route('contract');
+
+        return $existing instanceof Contract
+            ? $existing->type
+            : ContractType::from((string) ($validated['type'] ?? ContractType::SaasRenewal->value));
+    }
+
     public static function fromRequest(ContractRequest $request): self
     {
         $validated = $request->validated();
         $attachment = $request->file('attachment');
 
         return new self(
-            type: ContractType::from((string) ($validated['type'] ?? ContractType::SaasRenewal->value)),
+            type: self::typeFrom($request, $validated),
             clientId: isset($validated['client_id']) ? (int) $validated['client_id'] : null,
             supplierId: isset($validated['supplier_id']) ? (int) $validated['supplier_id'] : null,
             categoryId: isset($validated['category_id']) ? (int) $validated['category_id'] : null,

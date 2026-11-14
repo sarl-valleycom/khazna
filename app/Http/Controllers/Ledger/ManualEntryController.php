@@ -30,6 +30,8 @@ class ManualEntryController extends Controller
         $entries = ManualEntry::query()
             ->with(['account' => fn ($account) => $account->select('id', 'name', 'office_id')->with('office:id,name'), 'category:id,name', 'creator:id,name'])
             ->whereHas('account', fn ($account) => $account->visibleTo($actor))
+            // Payroll entries are for people with the salary permission, here as everywhere.
+            ->when(! $actor->can('view-salaries'), fn ($query) => $query->whereHas('category', fn ($category) => $category->where('name', '!=', Category::SALARIES)))
             ->orderByDesc('entry_date')
             ->orderByDesc('id')
             ->limit(200)
@@ -53,7 +55,9 @@ class ManualEntryController extends Controller
             ])->values()->all(),
             'accounts' => Account::query()->visibleTo($actor)->where('active', true)->with('office:id,name')->orderBy('office_id')->orderBy('name')->get()
                 ->map(fn (Account $account): PaymentAccountData => PaymentAccountData::fromAccount($account))->values()->all(),
-            'categories' => Category::query()->where('active', true)->orderBy('kind')->orderBy('name')->get()
+            'categories' => Category::query()->where('active', true)
+                ->when(! $actor->can('view-salaries'), fn ($query) => $query->where('name', '!=', Category::SALARIES))
+                ->orderBy('kind')->orderBy('name')->get()
                 ->map(fn (Category $category): array => ['id' => $category->id, 'name' => $category->name, 'kind' => $category->kind->value])->values()->all(),
         ]);
     }
@@ -88,10 +92,11 @@ class ManualEntryController extends Controller
         return back(303)->with('success', __('Entry reversed.'));
     }
 
-    public function receipt(ManualEntry $entry): StreamedResponse
+    public function receipt(Request $request, ManualEntry $entry): StreamedResponse
     {
-        $entry->loadMissing('account:id,office_id');
+        $entry->loadMissing(['account:id,office_id', 'category']);
         $this->authorize('view', $entry);
+        abort_if($entry->isPayroll() && ! $request->user()?->can('view-salaries'), 403);
 
         abort_if($entry->receipt_path === null || $entry->receipt_mime === null, 404);
         abort_unless(Storage::disk('local')->exists($entry->receipt_path), 404);

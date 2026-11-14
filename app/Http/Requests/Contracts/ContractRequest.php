@@ -6,6 +6,7 @@ use App\Enums\CategoryKind;
 use App\Enums\ContractType;
 use App\Enums\Cycle;
 use App\Enums\MilestoneTrigger;
+use App\Models\Contract;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,6 +31,7 @@ class ContractRequest extends FormRequest
         return [
             'supplier_id.required' => __('Choose the supplier this cost is paid to.'),
             'category_id.required' => __('Choose a category for this cost.'),
+            'type.in' => __('The type of a contract cannot be changed.'),
             'client_id.prohibited' => __('A recurring cost is paid to a supplier, not a client.'),
             'supplier_id.prohibited' => __('Only a recurring cost has a supplier.'),
             'category_id.prohibited' => __('Only a recurring cost has a category.'),
@@ -43,13 +45,18 @@ class ContractRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isCost = $this->input('type') === ContractType::RecurringCost->value;
-        $isProject = $this->input('type') === ContractType::CustomProject->value;
-        $creating = $this->route('contract') === null;
+        // On an update the contract's own type decides what is validated: a type that is not
+        // sent (or is wrong) must not turn a cost into a SaaS renewal.
+        $existing = $this->route('contract');
+        $creating = ! $existing instanceof Contract;
+        $type = $existing instanceof Contract ? $existing->type->value : $this->input('type');
+        $isCost = $type === ContractType::RecurringCost->value;
+        $isProject = $type === ContractType::CustomProject->value;
 
         return [
             // Optional so existing callers keep creating SaaS renewals; fixed once a contract exists.
-            'type' => ['sometimes', Rule::in(self::creatableTypes())],
+            // On an update it may be left out, but if sent it has to be the contract's own.
+            'type' => ['sometimes', Rule::in($existing instanceof Contract ? [$existing->type->value] : self::creatableTypes())],
             'client_id' => [
                 $isCost ? 'prohibited' : 'required',
                 'integer',

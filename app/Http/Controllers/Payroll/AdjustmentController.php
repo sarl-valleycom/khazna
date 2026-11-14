@@ -26,7 +26,7 @@ class AdjustmentController extends Controller
     public function index(Request $request): Response
     {
         $actor = $this->actor($request);
-        $month = $this->month($request->string('month')->toString());
+        $month = $this->month($this->queryString($request, 'month'));
 
         $adjustments = SalaryAdjustment::query()
             ->with(['employee' => fn ($query) => $query->select('id', 'name', 'office_id')->withTrashed(), 'account:id,name'])

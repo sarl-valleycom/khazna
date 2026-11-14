@@ -13,7 +13,7 @@ use Inertia\Response;
 class DashboardController extends Controller
 {
     /**
-     * @return array{checkedAt: string|null, problems: array<int, string>}|null
+     * @return array{checkedAt: string|null, total: int, problems: array<int, string>}|null
      */
     private function ledgerCheck(): ?array
     {
@@ -21,7 +21,11 @@ class DashboardController extends Controller
         $data = $raw === null ? null : json_decode($raw, true);
 
         return is_array($data)
-            ? ['checkedAt' => $data['checked_at'] ?? null, 'problems' => array_values($data['problems'] ?? [])]
+            ? [
+                'checkedAt' => $data['checked_at'] ?? null,
+                'total' => (int) ($data['total'] ?? count($data['problems'] ?? [])),
+                'problems' => array_values($data['problems'] ?? []),
+            ]
             : null;
     }
 

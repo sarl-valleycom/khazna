@@ -38,7 +38,11 @@ type Props = {
     kpis?: Kpis;
     balances?: OfficeBalances[];
     salary?: { billCents: number | null };
-    ledgerCheck?: { checkedAt: string | null; problems: string[] } | null;
+    ledgerCheck?: {
+        checkedAt: string | null;
+        total: number;
+        problems: string[];
+    } | null;
 };
 
 const props = defineProps<Props>();
@@ -58,7 +62,7 @@ function money(cents: number): string {
         />
 
         <div
-            v-if="props.ledgerCheck && props.ledgerCheck.problems.length > 0"
+            v-if="props.ledgerCheck && props.ledgerCheck.total > 0"
             class="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
             role="alert"
         >

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CategoryKind;
 use App\Enums\Direction;
 use App\Models\Concerns\Auditable;
 use Carbon\CarbonImmutable;
@@ -62,6 +63,14 @@ class ManualEntry extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** Money filed under Salaries is payroll, wherever it was recorded from. Needs the category loaded. */
+    public function isPayroll(): bool
+    {
+        $category = $this->category;
+
+        return $category !== null && $category->name === Category::SALARIES && $category->kind === CategoryKind::Cost;
     }
 
     public function isReversed(): bool
