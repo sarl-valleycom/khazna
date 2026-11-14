@@ -16,12 +16,12 @@ dataset('roles', [
  * ['method' => 'GET', 'uri' => '/clients', 'allowed' => [Role::Owner, Role::Finance, ...]]
  * The test below is deliberately small; it is the seed for the full matrix.
  */
-test('the dashboard is reachable by every active role', function (Role $role) {
+test('the home screen is reachable by every active role', function (Role $role) {
     $this->actingAsRole($role);
 
-    $this->get(route('dashboard'))->assertOk();
+    $this->get(route('home'))->assertOk();
 })->with('roles');
 
-test('guests cannot open the dashboard', function () {
-    $this->get(route('dashboard'))->assertRedirect(route('login'));
+test('guests cannot open the home screen', function () {
+    $this->get(route('home'))->assertRedirect(route('login'));
 });

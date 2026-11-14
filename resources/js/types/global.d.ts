@@ -21,6 +21,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             flash: App.Data.FlashData;
             settings: App.Data.SettingsData;
+            offices: App.Data.OfficeOptionData[];
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

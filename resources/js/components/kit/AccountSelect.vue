@@ -16,18 +16,25 @@ type Account = {
     officeId: number;
     officeName: string;
     name: string;
-    type: string;
-    balanceCents: number;
-    balanceFormatted: string;
+    type?: string;
+    typeLabel?: string;
+    balanceCents?: number;
+    balanceFormatted?: string;
 };
 
 type Props = {
     accounts: Account[];
     placeholder?: string;
+    /** Offer an "All accounts" entry that clears the value (filters only). */
+    allowAll?: boolean;
+    /** Accessible name of the control; the visible label sits outside it. */
+    label?: string;
 };
 
 const props = withDefaults(defineProps<Props>(), {
     placeholder: 'Choose an account',
+    allowAll: true,
+    label: 'Account',
 });
 
 const page = usePage<{ auth: App.Data.AuthData }>();
@@ -65,16 +72,18 @@ const groups = computed(() => {
 
 <template>
     <Select
-        :model-value="model === null ? 'all' : String(model)"
+        :model-value="
+            model === null ? (allowAll ? 'all' : undefined) : String(model)
+        "
         @update:model-value="
             (value) => (model = String(value) === 'all' ? null : Number(value))
         "
     >
-        <SelectTrigger class="w-full">
+        <SelectTrigger class="w-full" :aria-label="label">
             <SelectValue :placeholder="placeholder" />
         </SelectTrigger>
         <SelectContent>
-            <SelectItem value="all">All accounts</SelectItem>
+            <SelectItem v-if="allowAll" value="all">All accounts</SelectItem>
             <SelectGroup v-for="group in groups" :key="group.officeName">
                 <SelectLabel>{{ group.officeName }}</SelectLabel>
                 <SelectItem
@@ -87,6 +96,7 @@ const groups = computed(() => {
                     >
                         <span>{{ account.name }}</span>
                         <span
+                            v-if="account.balanceFormatted"
                             class="text-xs text-muted-foreground tabular-nums"
                         >
                             {{ account.balanceFormatted }}

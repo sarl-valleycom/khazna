@@ -59,4 +59,8 @@ return [
 
     'finance_can_view_salaries' => env('KHAZNA_FINANCE_CAN_VIEW_SALARIES', false),
 
+    'reminder_template' => 'Hello {client}, this is a friendly reminder that {amount} for {contract} is due on {date}. Thank you.',
+
+    'salary_due_day' => 5,
+
 ];

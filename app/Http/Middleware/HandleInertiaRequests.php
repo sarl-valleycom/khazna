@@ -4,8 +4,10 @@ namespace App\Http\Middleware;
 
 use App\Data\AuthData;
 use App\Data\FlashData;
+use App\Data\OfficeOptionData;
 use App\Data\SettingsData;
 use App\Data\UserData;
+use App\Models\Office;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -55,7 +57,21 @@ class HandleInertiaRequests extends Middleware
                 role: $userData?->role,
             ),
             'flash' => FlashData::fromSession($request->session()),
-            'settings' => SettingsData::fromConfig(),
+            // Closures: only evaluated when a response includes them, so partial reloads skip the queries.
+            'settings' => fn (): SettingsData => SettingsData::fromCurrentSettings(),
+            'offices' => fn (): array => $user === null
+                ? []
+                : Office::query()
+                    ->visibleTo($user)
+                    ->where('active', true)
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn (Office $office): OfficeOptionData => new OfficeOptionData(
+                        id: $office->id,
+                        name: $office->name,
+                        city: $office->city,
+                    ))
+                    ->all(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

@@ -26,12 +26,12 @@ import StatusBadge from '@/components/kit/StatusBadge.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate, formatInteger, formatMoney } from '@/lib/format';
-import { dashboard } from '@/routes';
+import { home } from '@/routes';
 
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: dashboard() },
+            { title: 'Triage', href: home() },
             { title: 'UI kit', href: '/dev/ui' },
         ],
     },

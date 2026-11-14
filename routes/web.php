@@ -1,13 +1,72 @@
 <?php
 
+use App\Http\Controllers\Accounts\AccountController;
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\OfficeController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Clients\ClientController;
+use App\Http\Controllers\Clients\ClientImportController;
+use App\Http\Controllers\Contracts\ContractController;
 use App\Http\Controllers\Dev\DevUiController;
+use App\Http\Controllers\Dues\DueController;
+use App\Http\Controllers\Dues\DueReminderController;
+use App\Http\Controllers\Payments\PaymentController;
+use App\Http\Controllers\Triage\TriageController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
-
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('/', TriageController::class)->name('home');
+    Route::redirect('dashboard', '/')->name('dashboard');
+
+    Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
+    Route::get('clients/import', [ClientImportController::class, 'create'])->name('clients.import');
+    Route::post('clients/import/preview', [ClientImportController::class, 'preview'])->name('clients.import.preview');
+    Route::get('clients/import/template', [ClientImportController::class, 'template'])->name('clients.import.template');
+    Route::get('clients/import/{token}', [ClientImportController::class, 'showPreview'])
+        ->where('token', '[A-Za-z0-9]{40}')
+        ->name('clients.import.show');
+    Route::post('clients/import/confirm', [ClientImportController::class, 'confirm'])->name('clients.import.confirm');
+    Route::post('clients', [ClientController::class, 'store'])->name('clients.store');
+    Route::post('clients/{client}/dues', [DueController::class, 'store'])->whereNumber('client')->name('dues.store');
+    Route::get('clients/{client}', [ClientController::class, 'show'])->whereNumber('client')->name('clients.show');
+    Route::patch('clients/{client}', [ClientController::class, 'update'])->whereNumber('client')->name('clients.update');
+    Route::delete('clients/{client}', [ClientController::class, 'destroy'])->whereNumber('client')->name('clients.destroy');
+
+    Route::get('contracts', [ContractController::class, 'index'])->name('contracts.index');
+    Route::post('contracts', [ContractController::class, 'store'])->name('contracts.store');
+    Route::get('contracts/{contract}/attachment', [ContractController::class, 'attachment'])->whereNumber('contract')->name('contracts.attachment');
+    Route::patch('contracts/{contract}/status', [ContractController::class, 'status'])->whereNumber('contract')->name('contracts.status');
+    Route::get('contracts/{contract}', [ContractController::class, 'show'])->whereNumber('contract')->name('contracts.show');
+    Route::patch('contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
+
+    Route::patch('dues/{due}/postpone', [DueController::class, 'postpone'])->whereNumber('due')->name('dues.postpone');
+    Route::post('dues/{due}/reminders', [DueReminderController::class, 'store'])->whereNumber('due')->name('dues.reminders.store');
+    Route::patch('dues/{due}/cancel', [DueController::class, 'cancel'])->whereNumber('due')->name('dues.cancel');
+
+    Route::post('dues/{due}/payments', [PaymentController::class, 'store'])->whereNumber('due')->name('payments.store');
+    Route::post('payments/{payment}/reverse', [PaymentController::class, 'reverse'])->whereNumber('payment')->name('payments.reverse');
+    Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->whereNumber('payment')->name('payments.receipt');
+
+    Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+    Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+    Route::get('accounts/{account}', [AccountController::class, 'show'])->whereNumber('account')->name('accounts.show');
+    Route::patch('accounts/{account}', [AccountController::class, 'update'])->whereNumber('account')->name('accounts.update');
+
+    Route::get('offices', [OfficeController::class, 'index'])->name('offices.index');
+    Route::post('offices', [OfficeController::class, 'store'])->name('offices.store');
+    Route::patch('offices/{office}', [OfficeController::class, 'update'])->name('offices.update');
+
+    Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
+    Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::post('users/{user}/password-reset', [UserController::class, 'resetPassword'])->name('users.password-reset');
+
+    Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
+    Route::patch('settings', [SettingsController::class, 'update'])->name('settings.update');
+
+    Route::get('audit-log', AuditLogController::class)->name('audit-log.index');
 });
 
 Route::middleware([EnsureDevToolsEnabled::class, 'auth', 'verified', 'can:view-dev-tools'])->group(function () {

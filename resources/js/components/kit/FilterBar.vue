@@ -26,6 +26,8 @@ type Props = {
     select?: SelectFilter;
     dateRange?: DateRange;
     reloadProps?: string[];
+    /** Show the search box. Pages without a text search turn it off. */
+    searchable?: boolean;
 };
 
 const props = withDefaults(defineProps<Props>(), {
@@ -36,6 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
     select: undefined,
     dateRange: undefined,
     reloadProps: () => [],
+    searchable: true,
 });
 
 const emits = defineEmits<{
@@ -143,7 +146,7 @@ function commitDateRange() {
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div class="relative min-w-48 flex-1">
+            <div v-if="searchable" class="relative min-w-48 flex-1">
                 <Search
                     class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
                 />

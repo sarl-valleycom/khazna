@@ -69,4 +69,15 @@ final class Phone
 
         return $normalized === null ? null : 'https://wa.me/'.$normalized;
     }
+
+    public static function formatLocal(?string $phone): ?string
+    {
+        $local = self::toLocal($phone);
+
+        if ($local === null) {
+            return null;
+        }
+
+        return substr($local, 0, 4).' '.substr($local, 4, 2).' '.substr($local, 6, 2).' '.substr($local, 8, 2);
+    }
 }

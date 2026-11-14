@@ -1,9 +1,22 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid, Palette } from '@lucide/vue';
+import {
+    BookOpen,
+    Building2,
+    Landmark,
+    ClipboardList,
+    FileText,
+    FolderGit2,
+    LayoutGrid,
+    Palette,
+    Users,
+    Settings,
+    ShieldCheck,
+} from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
+import OfficeSwitcher from '@/components/kit/OfficeSwitcher.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
@@ -14,19 +27,74 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
-import { computed } from 'vue';
+import { home } from '@/routes';
+import { computed, ref, watch } from 'vue';
 import type { NavItem } from '@/types';
 
 const page = usePage();
 
 const role = computed(() => page.props.auth.role);
 
+function officeFromUrl(): string | null {
+    const query = page.url.split('?')[1];
+
+    return query ? new URLSearchParams(query).get('office') : null;
+}
+
+const office = ref<string | null>(officeFromUrl());
+
+watch(
+    () => page.url,
+    () => {
+        office.value = officeFromUrl();
+    },
+);
+
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
+        title: 'Triage',
+        href: '/',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Clients',
+        href: '/clients',
+        icon: Users,
+    },
+    {
+        title: 'Contracts',
+        href: '/contracts',
+        icon: FileText,
+    },
+    {
+        title: 'Accounts',
+        href: '/accounts',
+        icon: Landmark,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Users',
+        href: '/users',
+        icon: ClipboardList,
+        roles: ['owner'] as App.Enums.Role[],
+    },
+    {
+        title: 'Offices',
+        href: '/offices',
+        icon: Building2,
+        roles: ['owner'] as App.Enums.Role[],
+    },
+    {
+        title: 'Settings',
+        href: '/settings',
+        icon: Settings,
+        roles: ['owner'] as App.Enums.Role[],
+    },
+    {
+        title: 'Audit log',
+        href: '/audit-log',
+        icon: ShieldCheck,
+        roles: ['owner'] as App.Enums.Role[],
     },
     ...(import.meta.env.DEV
         ? [
@@ -68,7 +136,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="home()">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -77,6 +145,12 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
+            <div class="px-2 py-2">
+                <OfficeSwitcher
+                    v-model="office"
+                    :offices="page.props.offices"
+                />
+            </div>
             <NavMain :items="visibleMainNavItems" />
         </SidebarContent>
 
