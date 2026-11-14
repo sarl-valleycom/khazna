@@ -73,10 +73,11 @@ test('guests are redirected from the home screen and the reminder endpoint', fun
     $this->post(route('dues.reminders.store', $due))->assertRedirect(route('login'));
 });
 
-test('the old dashboard address redirects to the home screen', function () {
+test('the dashboard is its own page, separate from the triage home screen', function () {
     $this->actingAs(User::factory()->owner()->create())
         ->get(route('dashboard'))
-        ->assertRedirect('/');
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('dashboard/Index'));
 });
 
 test('SRS scenario 3: a due dated yesterday appears under Overdue', function () {

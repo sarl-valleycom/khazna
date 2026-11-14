@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
     Building2,
+    ChartColumn,
     Landmark,
     Store,
     Tags,
@@ -59,6 +60,11 @@ const mainNavItems: NavItem[] = [
         title: 'Triage',
         href: '/',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Dashboard',
+        href: '/dashboard',
+        icon: ChartColumn,
     },
     {
         title: 'Clients',

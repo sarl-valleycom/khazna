@@ -89,11 +89,11 @@ Keeping salary in a history table from the start means a raise never rewrites th
 | Upcoming renewals | Contracts with a due in the next 30 days |
 | Salary bill | Sum of salaries in force for active employees (owner only) |
 
-- [ ] Each card group loads with Inertia deferred props, so the page appears at once and cards fill in.
-- [ ] The office switcher (All offices, or one) applies to every card. A card lists each account's balance, grouped by office (FR-DSH-08).
-- [ ] The salary card is only built if the user passes the gate.
+- [x] Each card group loads with Inertia deferred props, so the page appears at once and cards fill in.
+- [x] The office switcher (All offices, or one) applies to every card. A card lists each account's balance, grouped by office (FR-DSH-08).
+- [x] The salary card is only built if the user passes the gate.
 - [ ] Indexes: `dues (direction, status, due_on)` and `payments (paid_on)`. Check query plans on realistic data.
-- [ ] No caching at first. Add it only if a card is slower than 300 ms.
+- [x] No caching at first. Add it only if a card is slower than 300 ms.
 
 ## 2.7 Forecast
 

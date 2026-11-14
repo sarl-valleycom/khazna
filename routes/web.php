@@ -10,6 +10,7 @@ use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Clients\ClientImportController;
 use App\Http\Controllers\Contracts\ContractController;
 use App\Http\Controllers\Contracts\MilestoneController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Controllers\Dues\DueController;
 use App\Http\Controllers\Dues\DueReminderController;
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', TriageController::class)->name('home');
-    Route::redirect('dashboard', '/')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
     Route::get('clients/import', [ClientImportController::class, 'create'])->name('clients.import');
