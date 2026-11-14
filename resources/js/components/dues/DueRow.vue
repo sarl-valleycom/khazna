@@ -4,7 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import DueActions from '@/components/dues/DueActions.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
 import StatusBadge from '@/components/kit/StatusBadge.vue';
-import { formatDate, formatMoney } from '@/lib/format';
+import { formatDate, formatDateTime, formatMoney } from '@/lib/format';
 
 type Props = {
     due: App.Data.DueRowData;
@@ -59,6 +59,32 @@ const label = computed(() =>
                     · {{ props.due.description }}
                 </template>
             </p>
+            <details
+                v-if="props.due.postponements.length > 0"
+                class="mt-1 text-xs text-muted-foreground"
+            >
+                <summary class="cursor-pointer select-none">
+                    Postponed {{ props.due.postponements.length }}
+                    {{
+                        props.due.postponements.length === 1 ? 'time' : 'times'
+                    }}
+                </summary>
+                <ul class="mt-1 space-y-1 border-l pl-3">
+                    <li
+                        v-for="(move, index) in props.due.postponements"
+                        :key="index"
+                    >
+                        {{ formatDate(move.oldDueOn) }} →
+                        {{ formatDate(move.newDueOn) }}: {{ move.reason }}
+                        <span class="block">
+                            {{ move.userName }}
+                            <template v-if="move.at">
+                                · {{ formatDateTime(move.at) }}
+                            </template>
+                        </span>
+                    </li>
+                </ul>
+            </details>
         </div>
 
         <div

@@ -21,7 +21,7 @@ class ChangeContractStatus
     {
         if (! $contract->status->canTransitionTo($target)) {
             throw ValidationException::withMessages([
-                'status' => __('This contract status change is not allowed.'),
+                'status' => __('A contract cannot move to that status from where it is now.'),
             ]);
         }
 
@@ -30,7 +30,7 @@ class ChangeContractStatus
 
         if ($target !== ContractStatus::Active && $reason === null) {
             throw ValidationException::withMessages([
-                'reason' => __('Give a reason for pausing or cancelling this contract.'),
+                'reason' => __('Give a reason for pausing or canceling this contract.'),
             ]);
         }
 

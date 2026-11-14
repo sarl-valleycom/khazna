@@ -9,7 +9,7 @@ import { sendWhatsAppReminder } from '@/lib/reminders';
 
 type Props = {
     due: App.Data.DueRowData;
-    /** Triage keeps to the three daily actions; cancelling lives on the client and contract pages. */
+    /** Triage keeps to the three daily actions; canceling lives on the client and contract pages. */
     showCancel?: boolean;
 };
 

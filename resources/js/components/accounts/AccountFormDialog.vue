@@ -120,7 +120,9 @@ function submit() {
             <div class="space-y-2">
                 <Label>Type</Label>
                 <Select v-model="form.type">
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Account type"
+                        ><SelectValue
+                    /></SelectTrigger>
                     <SelectContent>
                         <SelectItem
                             v-for="type in props.types"

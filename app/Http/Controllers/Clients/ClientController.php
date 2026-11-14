@@ -87,7 +87,7 @@ class ClientController extends Controller
         $openDues = $client->dues()
             ->visibleTo($actor)
             ->whereIn('status', [DueStatus::Pending->value, DueStatus::Partial->value])
-            ->with(['client:id,name,account_manager_id', 'office:id,name'])
+            ->with(['client:id,name,account_manager_id', 'office:id,name', 'postponements.user:id,name'])
             ->orderBy('due_on')
             ->orderBy('id')
             ->get();

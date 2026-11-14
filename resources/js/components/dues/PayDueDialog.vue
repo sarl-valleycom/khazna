@@ -162,7 +162,9 @@ function submit() {
             <div class="space-y-2">
                 <Label>Method</Label>
                 <Select v-model="form.method">
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Payment method"
+                        ><SelectValue
+                    /></SelectTrigger>
                     <SelectContent>
                         <SelectItem
                             v-for="method in methods"

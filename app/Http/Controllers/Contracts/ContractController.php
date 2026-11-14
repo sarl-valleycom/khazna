@@ -78,7 +78,7 @@ class ContractController extends Controller
 
         $dues = $contract->dues()
             ->visibleTo($actor)
-            ->with(['client:id,name,account_manager_id', 'office:id,name'])
+            ->with(['client:id,name,account_manager_id', 'office:id,name', 'postponements.user:id,name'])
             ->orderBy('due_on')
             ->orderBy('id')
             ->get();

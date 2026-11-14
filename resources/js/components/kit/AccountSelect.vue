@@ -27,11 +27,14 @@ type Props = {
     placeholder?: string;
     /** Offer an "All accounts" entry that clears the value (filters only). */
     allowAll?: boolean;
+    /** Accessible name of the control; the visible label sits outside it. */
+    label?: string;
 };
 
 const props = withDefaults(defineProps<Props>(), {
     placeholder: 'Choose an account',
     allowAll: true,
+    label: 'Account',
 });
 
 const page = usePage<{ auth: App.Data.AuthData }>();
@@ -76,7 +79,7 @@ const groups = computed(() => {
             (value) => (model = String(value) === 'all' ? null : Number(value))
         "
     >
-        <SelectTrigger class="w-full">
+        <SelectTrigger class="w-full" :aria-label="label">
             <SelectValue :placeholder="placeholder" />
         </SelectTrigger>
         <SelectContent>

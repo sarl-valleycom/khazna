@@ -414,3 +414,31 @@ test('dues cannot be permanently deleted', function () {
     expect(fn () => $due->forceDelete())->toThrow(LogicException::class)
         ->and(Due::query()->whereKey($due->id)->exists())->toBeTrue();
 });
+
+test('SRS scenario 5: a postponed due shows its history with old date, new date, reason, user and time', function () {
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    $office = Office::factory()->create();
+    $manager = User::factory()->accountManager()->forOffice($office->id)->create(['name' => 'Amine']);
+    $client = Client::factory()->forManager($manager)->forOffice($office)->create();
+    $due = Due::factory()->forClient($client)->create(['due_on' => '2026-02-10', 'period' => '2026-02-10']);
+
+    $this->actingAs($manager);
+    $this->patch(route('dues.postpone', $due), ['new_due_on' => '2026-02-20', 'reason' => 'Client asked for more time.']);
+    CarbonImmutable::setTestNow('2026-02-02 09:30:00');
+    $this->patch(route('dues.postpone', $due), ['new_due_on' => '2026-02-25', 'reason' => 'Waiting on the bank.']);
+
+    $this->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('openDues.0.postponements', 2)
+            ->where('openDues.0.postponements.0.oldDueOn', '2026-02-10')
+            ->where('openDues.0.postponements.0.newDueOn', '2026-02-20')
+            ->where('openDues.0.postponements.0.reason', 'Client asked for more time.')
+            ->where('openDues.0.postponements.0.userName', 'Amine')
+            ->where('openDues.0.postponements.0.at', fn ($at) => str_starts_with((string) $at, '2026-02-01'))
+            ->where('openDues.0.postponements.1.oldDueOn', '2026-02-20')
+            ->where('openDues.0.postponements.1.newDueOn', '2026-02-25'));
+
+    $this->get(route('home', ['tab' => 'month']))
+        ->assertInertia(fn (Assert $page) => $page->has('dues.data.0.postponements', 2));
+});

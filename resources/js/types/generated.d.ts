@@ -216,6 +216,13 @@ declare namespace App {
             from: string | null;
             to: string | null;
         };
+        export type DuePostponementData = {
+            oldDueOn: string;
+            newDueOn: string;
+            reason: string;
+            userName: string;
+            at: string | null;
+        };
         export type DueRowData = {
             id: number;
             contractId: number | null;
@@ -237,6 +244,7 @@ declare namespace App {
             statusLabel: string;
             isOverdue: boolean;
             canceledReason: string | null;
+            postponements: App.Data.DuePostponementData[];
             abilities: {
                 postpone: boolean;
                 cancel: boolean;

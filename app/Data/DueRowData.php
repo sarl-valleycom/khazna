@@ -6,6 +6,7 @@ use App\Enums\Direction;
 use App\Enums\DueKind;
 use App\Enums\DueStatus;
 use App\Models\Due;
+use App\Models\DuePostponement;
 use App\Models\User;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -37,6 +38,8 @@ class DueRowData extends Data
         public string $statusLabel,
         public bool $isOverdue,
         public ?string $canceledReason,
+        /** @var array<int, DuePostponementData> */
+        public array $postponements,
         public array $abilities,
     ) {}
 
@@ -63,6 +66,10 @@ class DueRowData extends Data
             statusLabel: $due->isOverdue() ? 'Overdue' : $due->status->label(),
             isOverdue: $due->isOverdue(),
             canceledReason: $due->canceled_reason,
+            // Only when the caller eager-loaded them, so a list never lazy-loads per row.
+            postponements: $due->relationLoaded('postponements')
+                ? $due->postponements->map(fn (DuePostponement $postponement): DuePostponementData => DuePostponementData::fromPostponement($postponement))->values()->all()
+                : [],
             abilities: [
                 'postpone' => $viewer->can('postpone', $due),
                 'cancel' => $viewer->can('cancel', $due),

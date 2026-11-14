@@ -217,7 +217,7 @@ class ParseClientCsv
         $delimiter = array_key_first($delimiters);
 
         if ($delimiters[$delimiter] === 0) {
-            throw new InvalidArgumentException(__('The file has no header delimiter. Use a CSV file with commas.'));
+            throw new InvalidArgumentException(__('This does not look like a CSV file with commas between the columns. Download the template to see the layout.'));
         }
 
         return $delimiter;

@@ -85,7 +85,7 @@ function submit() {
         :description="
             asking === 'Pause'
                 ? 'Pausing stops new dues. Open future dues are canceled; paid dues are unchanged.'
-                : 'Cancelling ends the contract. Open future dues are canceled; paid dues are unchanged.'
+                : 'Canceling ends the contract. Open future dues are canceled; paid dues are unchanged.'
         "
         :submit-label="asking"
         :processing="form.processing"

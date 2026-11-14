@@ -21,6 +21,7 @@ class DuePostponement extends Model
     protected function casts(): array
     {
         return [
+            'created_at' => 'immutable_datetime',
             'due_id' => 'integer',
             'old_due_on' => 'immutable_date',
             'new_due_on' => 'immutable_date',

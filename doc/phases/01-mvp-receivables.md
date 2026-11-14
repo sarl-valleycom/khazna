@@ -135,12 +135,12 @@ The tabs are **mutually exclusive** so their counts add up. Confirm this reading
 
 ## 1.7 Hardening
 
-- [ ] `visibleTo($user)` scope on every query that returns clients, contracts, dues or payments. A test loops over every list route as an account manager and asserts no foreign record appears.
-- [ ] Policy tests for every role × resource × action.
-- [ ] Office scope test: as a user restricted to office 1, open every list and try direct links to office 2 accounts, contracts, clients, dues and payments. All must be hidden or denied.
-- [ ] Lazy-loading and N+1 check on triage, client page and contract page.
-- [ ] Copy review of every message, label and validation error.
-- [ ] Accessibility pass: keyboard focus in dialogs, labels on inputs, contrast.
+- [x] `visibleTo($user)` scope on every query that returns clients, contracts, dues or payments. A test loops over every list route as an account manager and asserts no foreign record appears.
+- [x] Policy tests for every role × resource × action.
+- [x] Office scope test: as a user restricted to office 1, open every list and try direct links to office 2 accounts, contracts, clients, dues and payments. All must be hidden or denied.
+- [x] Lazy-loading and N+1 check on triage, client page and contract page.
+- [x] Copy review of every message, label and validation error.
+- [x] Accessibility pass: keyboard focus in dialogs, labels on inputs, contrast.
 
 ## 1.8 Go-live
 
@@ -184,7 +184,7 @@ Feature tests for the SRS scenarios **1, 2, 3, 4, 5, 6, 11, 12, 17, 18, 21**, pl
 ## Exit checklist
 
 - [ ] All listed requirements met and their tests green.
-- [ ] Role matrix and scoping tests green.
+- [x] Role matrix and scoping tests green.
 - [ ] Two weeks of parallel run with matching totals.
 - [ ] Backup restored on staging with production-like data.
 - [ ] After two weeks, each account's balance in Khazna matches a real cash count or bank statement.
