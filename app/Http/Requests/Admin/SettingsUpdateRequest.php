@@ -15,6 +15,8 @@ class SettingsUpdateRequest extends FormRequest
             'reminder_template' => ['required', 'string', 'max:1000'],
             'currency_label' => ['required', 'string', 'max:10'],
             'salary_due_day' => ['required', 'integer', 'min:1', 'max:28'],
+            // How many days after delivery a milestone falls due. Optional so older callers keep working.
+            'milestone_payment_term_days' => ['sometimes', 'integer', 'min:0', 'max:365'],
         ];
     }
 }

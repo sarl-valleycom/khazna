@@ -5,6 +5,7 @@ namespace App\Actions\Contracts;
 use App\Actions\Dues\CancelOpenFutureDues;
 use App\Actions\Dues\GenerateDues;
 use App\Data\ContractInput;
+use App\Enums\ContractType;
 use App\Models\Contract;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,9 @@ class UpdateContract
         try {
             DB::transaction(function () use ($contract, $attributes, $attachment): void {
                 $contract->fill([...$attributes, ...$attachment]);
-                $rescheduled = $contract->isDirty(self::SCHEDULE_FIELDS);
+                // A project has no cycle to reschedule: its dues are its milestones.
+                $rescheduled = $contract->type !== ContractType::CustomProject
+                    && $contract->isDirty(self::SCHEDULE_FIELDS);
                 $contract->save();
 
                 // A new schedule replaces the old one: unpaid future dues of the old

@@ -9,6 +9,7 @@ use App\Enums\ContractType;
 use App\Enums\DueStatus;
 use App\Models\Contract;
 use App\Models\Due;
+use App\Models\Milestone;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\AlgerianDate;
@@ -138,7 +139,24 @@ class DueTriageQuery
                 'reason' => (string) __('Ends on :date. Renew it, or let it end.', ['date' => $contract->ends_on?->format('d M Y')]),
             ]);
 
-        return $unscheduled->concat($ending)->values();
+        // FR-TRI-03: a milestone was delivered, but nobody has asked the client to pay yet.
+        $unrequested = Milestone::query()
+            ->whereNotNull('delivered_at')
+            ->whereNull('requested_at')
+            ->whereHas('due', fn (Builder $due): Builder => $due->whereIn('status', [DueStatus::Pending->value, DueStatus::Partial->value]))
+            ->whereIn('contract_id', $this->attentionBase($user, $filters)->reorder()->select('contracts.id'))
+            ->with(['contract' => fn ($contract) => $contract->withParties()])
+            ->orderBy('delivered_at')
+            ->get()
+            ->flatMap(fn (Milestone $milestone): array => $milestone->contract === null ? [] : [[
+                'contract' => $milestone->contract,
+                'reason' => (string) __('Milestone “:label” was delivered on :date, but the client has not been asked to pay.', [
+                    'label' => $milestone->label,
+                    'date' => $milestone->delivered_at?->format('d M Y'),
+                ]),
+            ]]);
+
+        return $unrequested->concat($unscheduled)->concat($ending)->values();
     }
 
     /**

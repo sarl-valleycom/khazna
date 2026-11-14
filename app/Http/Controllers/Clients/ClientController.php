@@ -91,6 +91,7 @@ class ClientController extends Controller
             ->whereIn('status', [DueStatus::Pending->value, DueStatus::Partial->value])
             ->withParties()
             ->with('postponements.user:id,name')
+            ->orderByRaw('due_on is null')
             ->orderBy('due_on')
             ->orderBy('id')
             ->get();

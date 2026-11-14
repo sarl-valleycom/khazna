@@ -10,6 +10,7 @@ use App\Data\ContractData;
 use App\Data\ContractFiltersData;
 use App\Data\ContractInput;
 use App\Data\DueRowData;
+use App\Data\MilestoneData;
 use App\Data\OfficeOptionData;
 use App\Enums\CategoryKind;
 use App\Enums\ContractStatus;
@@ -22,6 +23,7 @@ use App\Models\Category;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Due;
+use App\Models\Milestone;
 use App\Models\Office;
 use App\Models\Supplier;
 use App\Models\User;
@@ -87,6 +89,7 @@ class ContractController extends Controller
             ->visibleTo($actor)
             ->withParties()
             ->with('postponements.user:id,name')
+            ->orderByRaw('due_on is null')
             ->orderBy('due_on')
             ->orderBy('id')
             ->get();
@@ -101,6 +104,12 @@ class ContractController extends Controller
                 ->map(fn (Due $due): DueRowData => DueRowData::fromDue($due, $actor))
                 ->values()
                 ->all(),
+            'milestones' => $contract->type === ContractType::CustomProject
+                ? $contract->milestones()->with('due')->get()
+                    ->map(fn (Milestone $milestone): MilestoneData => MilestoneData::fromMilestone($milestone, $actor->can('manageMilestones', $contract)))
+                    ->values()
+                    ->all()
+                : [],
             'clients' => $this->clients($actor),
             'offices' => $this->offices($actor),
             'cycles' => $this->cycles(),

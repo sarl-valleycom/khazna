@@ -16,6 +16,7 @@ class SettingsPageData extends Data
         public string $reminderTemplate,
         public string $currencyLabel,
         public int $salaryDueDay,
+        public int $milestonePaymentTermDays,
         public array $weekStartOptions,
     ) {}
 }

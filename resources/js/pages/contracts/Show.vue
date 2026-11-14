@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ContractFormDialog from '@/components/contracts/ContractFormDialog.vue';
 import ContractStatusActions from '@/components/contracts/ContractStatusActions.vue';
+import MilestonesCard from '@/components/contracts/MilestonesCard.vue';
 import DueRow from '@/components/dues/DueRow.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
@@ -27,6 +28,7 @@ type Props = {
     types: Array<{ value: string; label: string }>;
     suppliers: Array<{ id: number; name: string }>;
     categories: Array<{ id: number; name: string }>;
+    milestones: App.Data.MilestoneData[];
 };
 
 const props = defineProps<Props>();
@@ -196,6 +198,14 @@ const title = computed(
                 </CardContent>
             </Card>
         </div>
+
+        <MilestonesCard
+            v-if="props.milestones.length > 0"
+            :contract-id="props.contract.id"
+            :milestones="props.milestones"
+            :symbol="page.props.settings.currencySymbol"
+            :can-manage="props.contract.abilities.update"
+        />
 
         <Card>
             <CardHeader>

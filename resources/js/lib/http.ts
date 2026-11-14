@@ -18,12 +18,16 @@ function xsrfToken(): string {
  * endpoints that return data instead of an Inertia page. A validation or
  * authorization failure becomes an HttpError carrying the server's message.
  */
-export async function postJson<T>(url: string): Promise<T> {
+export async function postJson<T>(url: string, payload?: unknown): Promise<T> {
     const response = await fetch(url, {
         method: 'POST',
         credentials: 'same-origin',
+        body: payload === undefined ? undefined : JSON.stringify(payload),
         headers: {
             Accept: 'application/json',
+            ...(payload === undefined
+                ? {}
+                : { 'Content-Type': 'application/json' }),
             'X-Requested-With': 'XMLHttpRequest',
             'X-XSRF-TOKEN': xsrfToken(),
         },

@@ -27,6 +27,7 @@ class GenerateDues
 
         Contract::query()
             ->where('status', ContractStatus::Active)
+            ->where('type', '!=', ContractType::CustomProject->value)
             ->where(fn ($query) => $query->whereHas('client')->orWhereHas('supplier'))
             ->lazyById(200)
             ->each(function (Contract $contract) use ($today, &$report): void {
@@ -45,7 +46,10 @@ class GenerateDues
     {
         // The nightly run already filters out trashed clients in its query; a single
         // contract is checked here with one cheap query instead of lazy-loading.
-        if ($contract->status !== ContractStatus::Active || ! $this->partyExists($contract)) {
+        // A project is billed by its milestones, never by a cycle.
+        if ($contract->status !== ContractStatus::Active
+            || $contract->type === ContractType::CustomProject
+            || ! $this->partyExists($contract)) {
             return DueGenerationReport::empty();
         }
 

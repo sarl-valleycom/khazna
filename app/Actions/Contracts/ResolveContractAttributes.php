@@ -27,6 +27,13 @@ class ResolveContractAttributes
 
         $isCost = $input->type === ContractType::RecurringCost;
 
+        // A project's total is fixed by its milestones; changing it means rebalancing them.
+        if ($contract !== null && $input->type === ContractType::CustomProject && $input->amountCents !== $contract->amount_cents) {
+            throw ValidationException::withMessages([
+                'amount_cents' => __('The amount of a project changes by rebalancing its milestones.'),
+            ]);
+        }
+
         // Costs are the company's own business: not for account managers, who only deal with clients.
         if ($isCost && $actor->isAccountManager()) {
             throw new AuthorizationException(__('You are not allowed to do that.'));

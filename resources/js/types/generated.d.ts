@@ -290,6 +290,22 @@ declare namespace App {
             outflow: number;
             balance: number;
         };
+        export type MilestoneData = {
+            id: number;
+            position: number;
+            label: string;
+            amountCents: number;
+            paidCents: number;
+            dueOn: string | null;
+            trigger: App.Enums.MilestoneTrigger;
+            deliveredAt: string | null;
+            requestedAt: string | null;
+            dueStatus: App.Enums.DueStatus | null;
+            waitingForDelivery: boolean;
+            locked: boolean;
+            canDeliver: boolean;
+            canRequest: boolean;
+        };
         export type OfficeOptionData = {
             id: number;
             name: string;
@@ -344,6 +360,7 @@ declare namespace App {
             reminderTemplate: string;
             currencyLabel: string;
             salaryDueDay: number;
+            milestonePaymentTermDays: number;
             weekStartOptions: Record<string, string>;
         };
         export type TriageFiltersData = {

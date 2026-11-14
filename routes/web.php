@@ -9,6 +9,7 @@ use App\Http\Controllers\Categories\CategoryController;
 use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Clients\ClientImportController;
 use App\Http\Controllers\Contracts\ContractController;
+use App\Http\Controllers\Contracts\MilestoneController;
 use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Controllers\Dues\DueController;
 use App\Http\Controllers\Dues\DueReminderController;
@@ -44,6 +45,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('contracts/{contract}/status', [ContractController::class, 'status'])->whereNumber('contract')->name('contracts.status');
     Route::get('contracts/{contract}', [ContractController::class, 'show'])->whereNumber('contract')->name('contracts.show');
     Route::patch('contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
+
+    Route::post('contracts/{contract}/milestones/preview', [MilestoneController::class, 'preview'])->whereNumber('contract')->name('contracts.milestones.preview');
+    Route::put('contracts/{contract}/milestones', [MilestoneController::class, 'update'])->whereNumber('contract')->name('contracts.milestones.update');
+    Route::post('contracts/{contract}/milestones/{milestone}/deliver', [MilestoneController::class, 'deliver'])->whereNumber(['contract', 'milestone'])->name('contracts.milestones.deliver');
+    Route::post('contracts/{contract}/milestones/{milestone}/request', [MilestoneController::class, 'request'])->whereNumber(['contract', 'milestone'])->name('contracts.milestones.request');
 
     Route::patch('dues/{due}/postpone', [DueController::class, 'postpone'])->whereNumber('due')->name('dues.postpone');
     Route::post('dues/{due}/reminders', [DueReminderController::class, 'store'])->whereNumber('due')->name('dues.reminders.store');

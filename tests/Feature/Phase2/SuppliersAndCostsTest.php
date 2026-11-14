@@ -191,7 +191,11 @@ test('account managers cannot create, see or open recurring costs', function () 
     $this->get(route('contracts.show', $contract))->assertForbidden();
     $this->get(route('contracts.index'))->assertInertia(fn (Assert $page) => $page
         ->has('contracts', 0)
-        ->where('types', [['value' => 'saas_renewal', 'label' => 'SaaS renewal']])
+        // Projects are client work, so account managers may create them; costs they may not.
+        ->where('types', [
+            ['value' => 'saas_renewal', 'label' => 'SaaS renewal'],
+            ['value' => 'custom_project', 'label' => 'Custom project'],
+        ])
         ->where('suppliers', [])
         ->where('categories', []));
 });

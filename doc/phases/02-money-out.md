@@ -31,32 +31,32 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 ## 2.2 Suppliers and recurring costs
 
-- [ ] Suppliers CRUD (FR-PTY-05).
-- [ ] Categories screen (owner and finance). Recurring cost contracts require a category, and every due and payment of that contract inherits it (FR-ACC-10).
-- [ ] Enable contract types **recurring cost** (direction `out`, party a supplier) in the contract form. Same `GenerateDues` action, reversed direction.
-- [ ] Contracts near their end date appear in "Needs attention" until renewed, ended or canceled (FR-CON-07).
-- [ ] The triage page already filters by direction and kind. Check that out-dues display correctly (red amounts, "Pay" means money leaving).
+- [x] Suppliers CRUD (FR-PTY-05).
+- [x] Categories screen (owner and finance). Recurring cost contracts require a category, and every due and payment of that contract inherits it (FR-ACC-10).
+- [x] Enable contract types **recurring cost** (direction `out`, party a supplier) in the contract form. Same `GenerateDues` action, reversed direction.
+- [x] Contracts near their end date appear in "Needs attention" until renewed, ended or canceled (FR-CON-07).
+- [x] The triage page already filters by direction and kind. Check that out-dues display correctly (red amounts, "Pay" means money leaving).
 
 ## 2.3 Employees and salary protection
 
-- [ ] Employees CRUD. Salary entered as "amount from date", which writes a `employee_salary_history` row.
-- [ ] Two data classes: `EmployeeData` (no salary) and `EmployeeWithSalaryData`. The controller picks one based on the `view-salaries` gate (FR-AUTH-05).
+- [x] Employees CRUD. Salary entered as "amount from date", which writes a `employee_salary_history` row.
+- [x] Two data classes: `EmployeeData` (no salary) and `EmployeeWithSalaryData`. The controller picks one based on the `view-salaries` gate (FR-AUTH-05).
 - [ ] All payroll routes sit in one group behind `can:view-salaries`.
-- [ ] **Leak test:** as `finance` and `account_manager`, request every page and the shared props. Assert the strings `salary`, `base_salary` and any salary amount never appear in the Inertia page JSON.
-- [ ] The audit log shows salary changes only to the owner.
+- [x] **Leak test:** as `finance` and `account_manager`, request every page and the shared props. Assert the strings `salary`, `base_salary` and any salary amount never appear in the Inertia page JSON.
+- [x] The audit log shows salary changes only to the owner.
 
 ## 2.4 Project contracts and milestones
 
-- [ ] Enable the **custom project** contract type.
-- [ ] Milestone editor in the contract form: label and either a percentage or an amount. Amounts are computed with `Money::allocate`, and the total must equal the contract amount (FR-CON-05). Saving otherwise shows an error.
-- [ ] On creation, one due per milestone (FR-MIL-01):
+- [x] Enable the **custom project** contract type.
+- [x] Milestone editor in the contract form: label and either a percentage or an amount. Amounts are computed with `Money::allocate`, and the total must equal the contract amount (FR-CON-05). Saving otherwise shows an error.
+- [x] On creation, one due per milestone (FR-MIL-01):
   - With a date: `due_on` set.
   - Delivery-triggered: `due_on` is null until delivery.
-- [ ] **Mark delivered** action: sets `delivered_at` and `due_on = delivered_at + payment term` (default 0 days, setting) (FR-MIL-02).
-- [ ] **Mark as requested** action: sets `requested_at` when the client has been asked to pay (FR-MIL-03).
-- [ ] "Needs attention" tab now includes delivered milestones with no `requested_at`, and active contracts with no next due (FR-TRI-03).
-- [ ] Rebalancing milestones after a payment exists shows a preview of the new amounts before saving (FR-MIL-04).
-- [ ] Time-based tabs ignore dues with a null `due_on`. The contract page lists them as "waiting for delivery".
+- [x] **Mark delivered** action: sets `delivered_at` and `due_on = delivered_at + payment term` (default 0 days, setting) (FR-MIL-02).
+- [x] **Mark as requested** action: sets `requested_at` when the client has been asked to pay (FR-MIL-03).
+- [x] "Needs attention" tab now includes delivered milestones with no `requested_at`, and active contracts with no next due (FR-TRI-03).
+- [x] Rebalancing milestones after a payment exists shows a preview of the new amounts before saving (FR-MIL-04).
+- [x] Time-based tabs ignore dues with a null `due_on`. The contract page lists them as "waiting for delivery".
 
 ## 2.5 Payroll
 
