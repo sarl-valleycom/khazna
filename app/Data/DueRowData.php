@@ -14,13 +14,14 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 class DueRowData extends Data
 {
     /**
-     * @param  array{postpone: bool, cancel: bool}  $abilities
+     * @param  array{postpone: bool, cancel: bool, pay: bool}  $abilities
      */
     public function __construct(
         public int $id,
         public ?int $contractId,
         public int $clientId,
         public string $clientName,
+        public int $officeId,
         public string $officeName,
         public ?string $description,
         public DueKind $kind,
@@ -31,6 +32,7 @@ class DueRowData extends Data
         public int $amountDueCents,
         public int $amountPaidCents,
         public int $remainingCents,
+        public int $creditCents,
         public DueStatus $status,
         public string $statusLabel,
         public bool $isOverdue,
@@ -45,6 +47,7 @@ class DueRowData extends Data
             contractId: $due->contract_id,
             clientId: $due->client_id,
             clientName: $due->client->name ?? '',
+            officeId: $due->office_id,
             officeName: $due->office->name ?? '',
             description: $due->description,
             kind: $due->kind,
@@ -55,6 +58,7 @@ class DueRowData extends Data
             amountDueCents: $due->amount_due_cents,
             amountPaidCents: $due->amount_paid_cents,
             remainingCents: $due->remainingCents(),
+            creditCents: $due->creditCents(),
             status: $due->status,
             statusLabel: $due->isOverdue() ? 'Overdue' : $due->status->label(),
             isOverdue: $due->isOverdue(),
@@ -62,6 +66,7 @@ class DueRowData extends Data
             abilities: [
                 'postpone' => $viewer->can('postpone', $due),
                 'cancel' => $viewer->can('cancel', $due),
+                'pay' => $viewer->can('pay', $due),
             ],
         );
     }

@@ -118,6 +118,12 @@ class Due extends Model
         return max(0, $this->amount_due_cents - $this->amount_paid_cents);
     }
 
+    /** An overpayment, shown as a credit on the due and never applied elsewhere. */
+    public function creditCents(): int
+    {
+        return max(0, $this->amount_paid_cents - $this->amount_due_cents);
+    }
+
     public function forceDelete(): ?bool
     {
         throw new LogicException(__('Dues are soft-deleted and cannot be permanently deleted.'));

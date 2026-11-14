@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
     Building2,
+    Landmark,
     ClipboardList,
     FileText,
     FolderGit2,
@@ -64,6 +65,12 @@ const mainNavItems: NavItem[] = [
         title: 'Contracts',
         href: '/contracts',
         icon: FileText,
+    },
+    {
+        title: 'Accounts',
+        href: '/accounts',
+        icon: Landmark,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
     },
     {
         title: 'Users',

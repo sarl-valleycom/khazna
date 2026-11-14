@@ -9,6 +9,7 @@ use App\Data\ClientShowData;
 use App\Data\ContractData;
 use App\Data\DueRowData;
 use App\Data\OfficeOptionData;
+use App\Data\PaymentRowData;
 use App\Enums\Direction;
 use App\Enums\DueKind;
 use App\Enums\DueStatus;
@@ -19,8 +20,11 @@ use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Due;
 use App\Models\Office;
+use App\Models\Payment;
 use App\Models\User;
 use App\Queries\ClientIndexQuery;
+use App\Queries\PaymentAccountOptionsQuery;
+use App\Support\Money;
 use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -88,6 +92,23 @@ class ClientController extends Controller
             ->orderBy('id')
             ->get();
 
+        $payments = Payment::query()
+            ->visibleTo($actor)
+            ->whereHas('due', fn ($query) => $query->where('client_id', $client->id))
+            ->with(['due.client:id,name,account_manager_id', 'account:id,name', 'recorder:id,name'])
+            ->orderByDesc('paid_on')
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get();
+
+        $totalCollected = (int) Payment::query()
+            ->visibleTo($actor)
+            ->notReversed()
+            ->whereHas('due', fn ($query) => $query->where('client_id', $client->id)->where('direction', Direction::In->value))
+            ->sum('amount_cents');
+
+        $paymentOptions = app(PaymentAccountOptionsQuery::class)->handle($actor, [$client->id]);
+
         return Inertia::render('clients/Show', [
             'client' => ClientShowData::fromClient($client, $actor),
             'contracts' => $contracts
@@ -98,6 +119,14 @@ class ClientController extends Controller
                 ->map(fn (Due $due): DueRowData => DueRowData::fromDue($due, $actor))
                 ->values()
                 ->all(),
+            'payments' => $payments
+                ->map(fn (Payment $payment): PaymentRowData => PaymentRowData::fromPayment($payment, $actor))
+                ->values()
+                ->all(),
+            'totalCollectedCents' => $totalCollected,
+            'totalCollectedFormatted' => Money::fromCents($totalCollected)->format(),
+            'paymentAccounts' => $paymentOptions['accounts'],
+            'paymentDefaults' => $paymentOptions['defaults'],
             'canCreateDue' => $actor->can('create', Due::class),
             'dueKinds' => $this->dueKinds(),
             'dueDirections' => $this->dueDirections(),

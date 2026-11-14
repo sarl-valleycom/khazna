@@ -3,11 +3,13 @@
 namespace Database\Seeders;
 
 use App\Actions\Dues\GenerateDues;
+use App\Enums\AccountType;
 use App\Enums\ContractStatus;
 use App\Enums\ContractType;
 use App\Enums\Cycle;
 use App\Enums\Direction;
 use App\Enums\Role;
+use App\Models\Account;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Office;
@@ -47,6 +49,8 @@ class DemoSeeder extends Seeder
         Setting::put(Setting::REMINDER_TEMPLATE, (string) config('khazna.reminder_template'));
         Setting::put(Setting::CURRENCY_LABEL, (string) config('khazna.currency_symbol'));
         Setting::put(Setting::SALARY_DUE_DAY, (string) config('khazna.salary_due_day'));
+
+        $this->seedAccounts($algiers, $oran);
 
         $users = [
             [
@@ -151,6 +155,33 @@ class DemoSeeder extends Seeder
         }
 
         app(GenerateDues::class)->handle();
+    }
+
+    /**
+     * Demo money accounts, opened 60 days ago. Real accounts and opening
+     * balances come from a physical count at go-live, never from a seeder.
+     */
+    private function seedAccounts(Office $algiers, Office $oran): void
+    {
+        $accounts = [
+            [$algiers, 'Cash box', AccountType::Cash, 1_250_000],
+            [$algiers, 'CCP', AccountType::Ccp, 8_450_050],
+            [$algiers, 'Bank (BNA)', AccountType::Bank, 25_000_000],
+            [$oran, 'Cash box', AccountType::Cash, 3_200_000],
+        ];
+
+        foreach ($accounts as [$office, $name, $type, $opening]) {
+            Account::query()->firstOrCreate(
+                ['office_id' => $office->id, 'name' => $name],
+                [
+                    'type' => $type,
+                    'currency' => 'DZD',
+                    'opening_balance_cents' => $opening,
+                    'opening_date' => AlgerianDate::today()->subDays(60)->toDateString(),
+                    'active' => true,
+                ],
+            );
+        }
     }
 
     /**

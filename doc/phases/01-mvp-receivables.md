@@ -35,7 +35,7 @@ Notes:
 - [x] CRUD with a `ClientIndexQuery` (search by name or phone, filter by account manager).
 - [x] Phone normalized on save through `Phone`. Invalid numbers are refused with a clear message.
 - [x] Soft delete only. A client with history cannot be hard-deleted (FR-PTY-06).
-- [ ] Client page: contracts, open dues, payment history, total collected (FR-PTY-07).
+- [x] Client page: contracts, open dues, payment history, total collected (FR-PTY-07).
 - [x] **CSV import** (FR-PTY-03), in three steps:
   1. Upload. Offer a downloadable template CSV.
   2. Preview: valid rows, invalid rows with line number and reason, possible duplicates (same phone).
@@ -88,25 +88,25 @@ Notes:
 
 **Accounts and ledger** (FR-ACC-01..06)
 
-- [ ] Migration: `accounts` (office_id, name, type: cash, ccp, bank, other, currency, opening_balance, opening_date, active).
-- [ ] Migration: `account_entries` (account_id, direction, amount, entry_date, source_type, source_id, category_id nullable, description, created_by). Append only: no update or delete route, and the model refuses both.
-- [ ] A `LedgerWriter` service is the **only** code that inserts entries. Actions call it inside their own transaction. It refuses an entry dated before the account's opening date (FR-ACC-05).
-- [ ] Balance = opening balance + sum of entries, calculated by a query. Nothing stores a balance by hand.
-- [ ] Accounts screen: balances grouped by office, plus a per-account statement with running balance and a date filter (FR-ACC-06). Excel export arrives in phase 4.
-- [ ] Method (cash, CCP, BaridiMob, bank transfer, other) stays on the payment as the way the money moved. The **account** says where it went.
+- [x] Migration: `accounts` (office_id, name, type: cash, ccp, bank, other, currency, opening_balance, opening_date, active).
+- [x] Migration: `account_entries` (account_id, direction, amount, entry_date, source_type, source_id, category_id nullable, description, created_by). Append only: no update or delete route, and the model refuses both.
+- [x] A `LedgerWriter` service is the **only** code that inserts entries. Actions call it inside their own transaction. It refuses an entry dated before the account's opening date (FR-ACC-05).
+- [x] Balance = opening balance + sum of entries, calculated by a query. Nothing stores a balance by hand.
+- [x] Accounts screen: balances grouped by office, plus a per-account statement with running balance and a date filter (FR-ACC-06). Excel export arrives in phase 4.
+- [x] Method (cash, CCP, BaridiMob, bank transfer, other) stays on the payment as the way the money moved. The **account** says where it went.
 
 **Payments**
 
-- [ ] Migration: `payments` (due_id, `account_id` required, amount, paid_on, method, reference, receipt_path, notes, recorded_by, reversed_at, reversal_reason), soft deletes.
-- [ ] `RecordPayment` action, in one transaction:
+- [x] Migration: `payments` (due_id, `account_id` required, amount, paid_on, method, reference, receipt_path, notes, recorded_by, reversed_at, reversal_reason), soft deletes.
+- [x] `RecordPayment` action, in one transaction:
   1. Lock the due (`lockForUpdate`).
   2. Validate the amount (positive, date not in the future).
   3. If it exceeds the remaining amount, require `confirm_overpayment`. The UI asks the user to confirm and resubmits.
   4. Insert the payment and its ledger entry on the chosen account, recompute `amount_paid` from the sum of non-reversed payments, set the status.
-- [ ] `ReversePayment` action (owner or finance, reason required). Recomputes the due and adds an **opposite ledger entry**. The original entry stays.
-- [ ] Receipts: image or PDF only, size limit, stored with a random name on the private disk. Served by `GET /payments/{payment}/receipt`, which checks the policy and streams the file with `Content-Type` fixed from the stored type, `X-Content-Type-Options: nosniff` and `Cache-Control: private` (FR-PAY-04).
-- [ ] Invariant test: `amount_paid` always equals the sum of non-reversed payments, even after reversals.
-- [ ] Invariant test: every payment has exactly one ledger entry, and an account's balance equals its opening balance plus its entries, including after reversals.
+- [x] `ReversePayment` action (owner or finance, reason required). Recomputes the due and adds an **opposite ledger entry**. The original entry stays.
+- [x] Receipts: image or PDF only, size limit, stored with a random name on the private disk. Served by `GET /payments/{payment}/receipt`, which checks the policy and streams the file with `Content-Type` fixed from the stored type, `X-Content-Type-Options: nosniff` and `Cache-Control: private` (FR-PAY-04).
+- [x] Invariant test: `amount_paid` always equals the sum of non-reversed payments, even after reversals.
+- [x] Invariant test: every payment has exactly one ledger entry, and an account's balance equals its opening balance plus its entries, including after reversals.
 
 ## 1.6 Triage page (the home screen)
 

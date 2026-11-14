@@ -27,6 +27,12 @@ class DuePolicy
         return $this->canSee($user, $due) && $due->status->isOpen();
     }
 
+    /** Every role may record a payment on a due it can see. */
+    public function pay(User $user, Due $due): bool
+    {
+        return $this->canSee($user, $due) && $due->status->isOpen();
+    }
+
     public function cancel(User $user, Due $due): bool
     {
         return $this->canSee($user, $due) && $due->status->isOpen();

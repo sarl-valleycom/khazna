@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Accounts\AccountController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Clients\ClientImportController;
 use App\Http\Controllers\Contracts\ContractController;
 use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Controllers\Dues\DueController;
+use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +42,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::patch('dues/{due}/postpone', [DueController::class, 'postpone'])->whereNumber('due')->name('dues.postpone');
     Route::patch('dues/{due}/cancel', [DueController::class, 'cancel'])->whereNumber('due')->name('dues.cancel');
+
+    Route::post('dues/{due}/payments', [PaymentController::class, 'store'])->whereNumber('due')->name('payments.store');
+    Route::post('payments/{payment}/reverse', [PaymentController::class, 'reverse'])->whereNumber('payment')->name('payments.reverse');
+    Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->whereNumber('payment')->name('payments.receipt');
+
+    Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+    Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+    Route::get('accounts/{account}', [AccountController::class, 'show'])->whereNumber('account')->name('accounts.show');
+    Route::patch('accounts/{account}', [AccountController::class, 'update'])->whereNumber('account')->name('accounts.update');
 
     Route::get('offices', [OfficeController::class, 'index'])->name('offices.index');
     Route::post('offices', [OfficeController::class, 'store'])->name('offices.store');

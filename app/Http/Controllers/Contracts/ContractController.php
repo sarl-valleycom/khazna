@@ -22,6 +22,7 @@ use App\Models\Due;
 use App\Models\Office;
 use App\Models\User;
 use App\Queries\ContractIndexQuery;
+use App\Queries\PaymentAccountOptionsQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -82,8 +83,12 @@ class ContractController extends Controller
             ->orderBy('id')
             ->get();
 
+        $paymentOptions = app(PaymentAccountOptionsQuery::class)->handle($actor, [$contract->client_id]);
+
         return Inertia::render('contracts/Show', [
             'contract' => ContractData::fromContract($contract, $actor),
+            'paymentAccounts' => $paymentOptions['accounts'],
+            'paymentDefaults' => $paymentOptions['defaults'],
             'dues' => $dues
                 ->map(fn (Due $due): DueRowData => DueRowData::fromDue($due, $actor))
                 ->values()

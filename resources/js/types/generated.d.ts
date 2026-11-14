@@ -17,6 +17,35 @@ declare namespace App {
             balanceCents: number;
             balanceFormatted: string;
         };
+        export type AccountRowData = {
+            id: number;
+            officeId: number;
+            officeName: string;
+            name: string;
+            type: App.Enums.AccountType;
+            typeLabel: string;
+            currency: string;
+            openingBalanceCents: number;
+            openingBalanceFormatted: string;
+            openingDate: string;
+            balanceCents: number;
+            balanceFormatted: string;
+            active: boolean;
+            canEdit: boolean;
+            openingLocked: boolean;
+        };
+        export type AccountStatementRowData = {
+            id: number;
+            entryDate: string;
+            description: string;
+            direction: App.Enums.Direction;
+            inCents: number;
+            inFormatted: string;
+            outCents: number;
+            outFormatted: string;
+            runningCents: number;
+            runningFormatted: string;
+        };
         export type AuditLogRowData = {
             id: number;
             event: string;
@@ -181,6 +210,7 @@ declare namespace App {
             contractId: number | null;
             clientId: number;
             clientName: string;
+            officeId: number;
             officeName: string;
             description: string | null;
             kind: App.Enums.DueKind;
@@ -191,6 +221,7 @@ declare namespace App {
             amountDueCents: number;
             amountPaidCents: number;
             remainingCents: number;
+            creditCents: number;
             status: App.Enums.DueStatus;
             statusLabel: string;
             isOverdue: boolean;
@@ -198,6 +229,7 @@ declare namespace App {
             abilities: {
                 postpone: boolean;
                 cancel: boolean;
+                pay: boolean;
             };
         };
         export type FlashData = {
@@ -227,6 +259,29 @@ declare namespace App {
             city: string;
             active: boolean;
             usersCount: number;
+        };
+        export type PaymentAccountData = {
+            id: number;
+            officeId: number;
+            officeName: string;
+            name: string;
+            typeLabel: string;
+        };
+        export type PaymentRowData = {
+            id: number;
+            dueId: number;
+            dueLabel: string;
+            amountCents: number;
+            amountFormatted: string;
+            paidOn: string;
+            methodLabel: string;
+            reference: string | null;
+            accountName: string;
+            recordedBy: string | null;
+            hasReceipt: boolean;
+            isReversed: boolean;
+            reversalReason: string | null;
+            canReverse: boolean;
         };
         export type SettingsData = {
             appName: string;

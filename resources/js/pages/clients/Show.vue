@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DueRow from '@/components/dues/DueRow.vue';
 import ManualDueDialog from '@/components/dues/ManualDueDialog.vue';
+import PaymentHistoryItem from '@/components/dues/PaymentHistoryItem.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
@@ -18,6 +19,8 @@ type Props = {
     client: App.Data.ClientShowData;
     contracts: App.Data.ContractData[];
     openDues: App.Data.DueRowData[];
+    payments: App.Data.PaymentRowData[];
+    totalCollectedCents: number;
     canCreateDue: boolean;
     dueKinds: Option[];
     dueDirections: Option[];
@@ -128,7 +131,7 @@ const manualDueOpen = ref(false);
                         </CardHeader>
                         <CardContent>
                             <MoneyText
-                                :cents="0"
+                                :cents="props.totalCollectedCents"
                                 :symbol="page.props.settings.currencySymbol"
                                 direction="in"
                             />
@@ -214,7 +217,17 @@ const manualDueOpen = ref(false);
                     <CardHeader>
                         <CardTitle>Payment history</CardTitle>
                     </CardHeader>
-                    <CardContent class="p-0">
+                    <CardContent v-if="props.payments.length > 0" class="p-0">
+                        <div class="divide-y">
+                            <PaymentHistoryItem
+                                v-for="payment in props.payments"
+                                :key="payment.id"
+                                :payment="payment"
+                                :symbol="page.props.settings.currencySymbol"
+                            />
+                        </div>
+                    </CardContent>
+                    <CardContent v-else class="p-0">
                         <EmptyState
                             title="No payments yet"
                             description="Recorded payments will appear here."

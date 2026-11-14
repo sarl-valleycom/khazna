@@ -79,6 +79,13 @@ const label = computed(() =>
                     {{ formatMoney(props.due.remainingCents, props.symbol) }}
                     remaining
                 </p>
+                <p
+                    v-if="props.due.creditCents > 0"
+                    class="text-xs text-emerald-700 dark:text-emerald-400"
+                >
+                    {{ formatMoney(props.due.creditCents, props.symbol) }}
+                    credit
+                </p>
             </div>
             <DueActions :due="props.due" />
         </div>
