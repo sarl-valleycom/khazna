@@ -20,6 +20,7 @@ test('all supported Algerian mobile formats normalize to the same canonical form
 test('canonical phone helpers produce E.164, local and WhatsApp forms', function () {
     expect(Phone::toE164('0550 12 34 56'))->toBe('+213550123456')
         ->and(Phone::toLocal('+213 550 12 34 56'))->toBe('0550123456')
+        ->and(Phone::formatLocal('+213 550 12 34 56'))->toBe('0550 12 34 56')
         ->and(Phone::whatsappUrl('0550 12 34 56'))->toBe('https://wa.me/213550123456');
 });
 

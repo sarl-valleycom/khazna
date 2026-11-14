@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\Role;
+use App\Models\Client;
 use App\Models\Office;
 use App\Models\Setting;
 use App\Models\User;
@@ -16,7 +17,7 @@ class DemoSeeder extends Seeder
      * Seed the local/staging demo accounts.
      *
      * Offices are Algiers HQ and Oran Office; accounts and dues are added
-     * by later phases.
+     * by later phases. Clients exist so the client list is usable locally.
      */
     public function run(): void
     {
@@ -78,6 +79,22 @@ class DemoSeeder extends Seeder
                     'office_id' => $attributes['office_id'],
                     'email_verified_at' => now(),
                 ],
+            );
+        }
+
+        $algiersManager = User::query()->where('email', 'algiers@khazna.test')->firstOrFail();
+        $oranManager = User::query()->where('email', 'oran@khazna.test')->firstOrFail();
+
+        $clients = [
+            ['name' => 'Atlas Distribution', 'contact' => 'Karim Bensalem', 'phone' => '213550100101', 'email' => 'contact@atlas.test', 'office_id' => $algiers->id, 'account_manager_id' => $algiersManager->id],
+            ['name' => 'Mediterranee Services', 'contact' => 'Lina Merabet', 'phone' => '213661200202', 'email' => 'contact@mediterranee.test', 'office_id' => $algiers->id, 'account_manager_id' => $algiersManager->id],
+            ['name' => 'Oran Logistique', 'contact' => 'Sofiane Kaddour', 'phone' => '213770300303', 'email' => 'contact@oran-logistique.test', 'office_id' => $oran->id, 'account_manager_id' => $oranManager->id],
+        ];
+
+        foreach ($clients as $attributes) {
+            Client::query()->updateOrCreate(
+                ['phone' => $attributes['phone']],
+                $attributes,
             );
         }
     }

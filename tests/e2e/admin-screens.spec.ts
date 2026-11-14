@@ -18,6 +18,7 @@ test('the owner can open the offices, users, settings and audit screens', async 
     await expect(page).toHaveURL(/\/dashboard$/);
 
     for (const [path, heading] of [
+        ['/clients', 'Clients'],
         ['/offices', 'Offices'],
         ['/users', 'Users'],
         ['/settings', 'Settings'],

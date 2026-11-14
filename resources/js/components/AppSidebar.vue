@@ -7,6 +7,7 @@ import {
     FolderGit2,
     LayoutGrid,
     Palette,
+    Users,
     Settings,
     ShieldCheck,
 } from '@lucide/vue';
@@ -52,6 +53,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Clients',
+        href: '/clients',
+        icon: Users,
     },
     {
         title: 'Users',

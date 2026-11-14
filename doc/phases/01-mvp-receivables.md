@@ -31,16 +31,23 @@ Notes:
 
 ## 1.2 Clients
 
-- [ ] Migration: `clients` (name, contact, phone, email, address, notes, account_manager_id, `office_id` nullable, `crm_lead_id` nullable unique), soft deletes.
-- [ ] CRUD with a `ClientIndexQuery` (search by name or phone, filter by account manager).
-- [ ] Phone normalized on save through `Phone`. Invalid numbers are refused with a clear message.
-- [ ] Soft delete only. A client with history cannot be hard-deleted (FR-PTY-06).
+- [x] Migration: `clients` (name, contact, phone, email, address, notes, account_manager_id, `office_id` nullable, `crm_lead_id` nullable unique), soft deletes.
+- [x] CRUD with a `ClientIndexQuery` (search by name or phone, filter by account manager).
+- [x] Phone normalized on save through `Phone`. Invalid numbers are refused with a clear message.
+- [x] Soft delete only. A client with history cannot be hard-deleted (FR-PTY-06).
 - [ ] Client page: contracts, open dues, payment history, total collected (FR-PTY-07).
-- [ ] **CSV import** (FR-PTY-03), in three steps:
+- [x] **CSV import** (FR-PTY-03), in three steps:
   1. Upload. Offer a downloadable template CSV.
   2. Preview: valid rows, invalid rows with line number and reason, possible duplicates (same phone).
   3. Confirm: insert in one transaction, show a summary.
-- [ ] Import rules: UTF-8 required (reject other encodings with a message that explains how to re-save from Excel), file under 5 MB, header row mapped by name, account manager matched by email.
+- [x] Import rules: UTF-8 required (reject other encodings with a message that explains how to re-save from Excel), file under 5 MB, header row mapped by name, account manager matched by email.
+
+Notes:
+- Phones are stored as `213XXXXXXXXX` and shown as `0XXX XX XX XX`. `ClientIndexQuery` supports name/phone search, account-manager filter, the shared office filter and whitelisted sorting.
+- An account manager creates clients for themselves and their office; a client's office must match its manager's office. Duplicate phones are not unique at the database level but are flagged and skipped during import.
+- Import is owner/finance only. The preview is cached for 30 minutes and bound to the user; confirm inserts valid rows in one transaction. Duplicates against existing (including soft-deleted) clients and within the file are skipped. Commas, semicolons and tabs are accepted; UTF-8 BOM is accepted.
+- The client page currently shows the profile plus empty history sections. Contracts, open dues, payments and total collected are wired when those models arrive in 1.3 to 1.5 (FR-PTY-07 remains open).
+- Covered by `tests/Feature/Phase1/ClientsTest.php` and the client Playwright import-preview smoke test. `DemoSeeder` adds three demo clients.
 
 ## 1.3 Contracts
 

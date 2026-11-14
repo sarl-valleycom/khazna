@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Clients\ClientController;
+use App\Http\Controllers\Clients\ClientImportController;
 use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +14,19 @@ Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+
+    Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
+    Route::get('clients/import', [ClientImportController::class, 'create'])->name('clients.import');
+    Route::post('clients/import/preview', [ClientImportController::class, 'preview'])->name('clients.import.preview');
+    Route::get('clients/import/template', [ClientImportController::class, 'template'])->name('clients.import.template');
+    Route::get('clients/import/{token}', [ClientImportController::class, 'showPreview'])
+        ->where('token', '[A-Za-z0-9]{40}')
+        ->name('clients.import.show');
+    Route::post('clients/import/confirm', [ClientImportController::class, 'confirm'])->name('clients.import.confirm');
+    Route::post('clients', [ClientController::class, 'store'])->name('clients.store');
+    Route::get('clients/{client}', [ClientController::class, 'show'])->whereNumber('client')->name('clients.show');
+    Route::patch('clients/{client}', [ClientController::class, 'update'])->whereNumber('client')->name('clients.update');
+    Route::delete('clients/{client}', [ClientController::class, 'destroy'])->whereNumber('client')->name('clients.destroy');
 
     Route::get('offices', [OfficeController::class, 'index'])->name('offices.index');
     Route::post('offices', [OfficeController::class, 'store'])->name('offices.store');

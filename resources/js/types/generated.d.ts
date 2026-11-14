@@ -1,5 +1,13 @@
 declare namespace App {
     namespace Data {
+        export type AccountManagerOptionData = {
+            id: number;
+            name: string;
+            email: string;
+            officeId: number | null;
+            officeName: string | null;
+            active: boolean;
+        };
         export type AccountOptionData = {
             id: number;
             officeId: number;
@@ -24,6 +32,71 @@ declare namespace App {
         export type AuthData = {
             user: App.Data.UserData | null;
             role: App.Enums.Role | null;
+        };
+        export type ClientFiltersData = {
+            q: string;
+            accountManager: number | null;
+            office: number | null;
+            sort: string;
+            direction: string;
+            perPage: number;
+        };
+        export type ClientImportPreviewData = {
+            token: string;
+            fileName: string;
+            totalCount: number;
+            validCount: number;
+            invalidCount: number;
+            duplicateCount: number;
+            rows: App.Data.ClientImportRowData[];
+        };
+        export type ClientImportRowData = {
+            line: number;
+            status: string;
+            name: string | null;
+            phoneDisplay: string | null;
+            managerEmail: string | null;
+            reason: string | null;
+        };
+        export type ClientRowData = {
+            id: number;
+            name: string;
+            contact: string | null;
+            phone: string;
+            phoneDisplay: string;
+            email: string | null;
+            address: string | null;
+            notes: string | null;
+            accountManagerId: number;
+            accountManagerName: string;
+            officeId: number | null;
+            officeName: string | null;
+            abilities: {
+                view: boolean;
+                update: boolean;
+                delete: boolean;
+            };
+        };
+        export type ClientShowData = {
+            id: number;
+            name: string;
+            contact: string | null;
+            phone: string;
+            phoneDisplay: string;
+            email: string | null;
+            address: string | null;
+            notes: string | null;
+            accountManagerId: number;
+            accountManagerName: string;
+            accountManagerEmail: string;
+            officeId: number | null;
+            officeName: string | null;
+            createdAt: string;
+            abilities: {
+                view: boolean;
+                update: boolean;
+                delete: boolean;
+            };
         };
         export type DemoDueRowData = {
             id: number;
