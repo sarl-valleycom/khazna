@@ -257,6 +257,23 @@ declare namespace App {
                 remind: boolean;
             };
         };
+        export type EmployeeData = {
+            id: number;
+            name: string;
+            phone: string | null;
+            title: string | null;
+            hireDate: string | null;
+            status: App.Enums.EmployeeStatus;
+            statusLabel: string;
+            officeId: number;
+            officeName: string;
+        };
+        export type EmployeeWithSalaryData = {
+            employee: App.Data.EmployeeData;
+            currentSalaryCents: number | null;
+            currentSalaryFormatted: string | null;
+            salaryHistory: App.Data.SalaryHistoryData[];
+        };
         export type FlashData = {
             success: string | null;
             error: string | null;
@@ -307,6 +324,12 @@ declare namespace App {
             isReversed: boolean;
             reversalReason: string | null;
             canReverse: boolean;
+        };
+        export type SalaryHistoryData = {
+            id: number;
+            amountCents: number;
+            amountFormatted: string;
+            effectiveFrom: string;
         };
         export type SettingsData = {
             appName: string;

@@ -6,6 +6,7 @@ import {
     Landmark,
     Store,
     Tags,
+    UserRoundCog,
     ClipboardList,
     FileText,
     FolderGit2,
@@ -72,6 +73,12 @@ const mainNavItems: NavItem[] = [
         title: 'Accounts',
         href: '/accounts',
         icon: Landmark,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Employees',
+        href: '/employees',
+        icon: UserRoundCog,
         roles: ['owner', 'finance'] as App.Enums.Role[],
     },
     {

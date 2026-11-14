@@ -109,7 +109,9 @@ class TriageController extends Controller
                     ->get()
                     ->map(fn (User $user): AccountManagerOptionData => AccountManagerOptionData::fromUser($user))
                     ->all(),
+            // Salary is not even offered as a filter to anyone who may not see salary dues.
             'kinds' => collect(DueKind::cases())
+                ->reject(fn (DueKind $kind): bool => $kind === DueKind::Salary && ! $actor->can('view-salaries'))
                 ->map(fn (DueKind $kind): array => ['value' => $kind->value, 'label' => $kind->label()])
                 ->all(),
             'directions' => collect(Direction::cases())

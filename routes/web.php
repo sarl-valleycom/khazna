@@ -12,6 +12,8 @@ use App\Http\Controllers\Contracts\ContractController;
 use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Controllers\Dues\DueController;
 use App\Http\Controllers\Dues\DueReminderController;
+use App\Http\Controllers\Employees\EmployeeController;
+use App\Http\Controllers\Employees\SalaryController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Suppliers\SupplierController;
 use App\Http\Controllers\Triage\TriageController;
@@ -55,6 +57,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::get('accounts/{account}', [AccountController::class, 'show'])->whereNumber('account')->name('accounts.show');
     Route::patch('accounts/{account}', [AccountController::class, 'update'])->whereNumber('account')->name('accounts.update');
+
+    Route::get('employees', [EmployeeController::class, 'index'])->name('employees.index');
+    Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
+    Route::get('employees/{employee}', [EmployeeController::class, 'show'])->whereNumber('employee')->name('employees.show');
+    Route::patch('employees/{employee}', [EmployeeController::class, 'update'])->whereNumber('employee')->name('employees.update');
+
+    // Everything about what people earn sits behind one gate.
+    Route::middleware('can:view-salaries')->group(function () {
+        Route::post('employees/{employee}/salaries', [SalaryController::class, 'store'])->whereNumber('employee')->name('employees.salaries.store');
+    });
 
     Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
     Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
