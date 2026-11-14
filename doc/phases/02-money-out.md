@@ -112,9 +112,9 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 ## 2.8 Role-aware views and hardening
 
-- [ ] Account managers get a dashboard of their own clients only, without salary or out-money (FR-DSH-06).
-- [ ] Finance sees everything except salary figures and salary dues. Check triage, forecast and exports exclude salary dues for finance. **The forecast must still include the salary outflow for the owner.**
-- [ ] Extend the role matrix test with every new route.
+- [x] Account managers get a dashboard of their own clients only, without salary or out-money (FR-DSH-06).
+- [x] Finance sees everything except salary figures and salary dues. Check triage, forecast and exports exclude salary dues for finance. **The forecast must still include the salary outflow for the owner.**
+- [x] Extend the role matrix test with every new route.
 - [ ] Review payroll terms and labels with someone who does payroll.
 
 ## 2.9 Transfers and manual entries
