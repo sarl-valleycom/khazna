@@ -335,6 +335,12 @@ test('triage, the client page and the contract page do not add queries as rows g
 
     $this->actingAs($owner);
     $addRows(3);
+
+    // One warm-up pass, so per-request caches (settings) are not counted as growth.
+    foreach ($urls as $url) {
+        $this->get($url)->assertOk();
+    }
+
     $before = collect($urls)->map(fn (string $url): int => hardeningQueryCount(fn () => $this->get($url)->assertOk()));
 
     $addRows(12);

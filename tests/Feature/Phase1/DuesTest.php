@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Dues\CancelDue;
 use App\Actions\Dues\CancelOpenFutureDues;
 use App\Actions\Dues\GenerateDues;
 use App\Enums\DueKind;
@@ -13,6 +14,7 @@ use App\Models\Office;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -593,4 +595,115 @@ test('a one-time contract dated in the past gets its overdue due exactly once', 
     expect($due->due_on->toDateString())->toBe('2026-03-01')
         ->and($due->amount_due_cents)->toBe(750_000)
         ->and($due->isOverdue())->toBeTrue();
+});
+
+test('a contract that does not auto-renew bills until its end date, or for one cycle without one', function () {
+    CarbonImmutable::setTestNow('2026-01-15 12:00:00');
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $make = fn (array $attributes) => Contract::factory()->create([
+        'client_id' => $client->id,
+        'office_id' => $client->office_id,
+        'cycle' => 'monthly',
+        'starts_on' => '2026-01-15',
+        ...$attributes,
+    ]);
+    $generate = app(GenerateDues::class);
+
+    $renewing = $make(['auto_renew' => true, 'ends_on' => null]);
+    $oneTerm = $make(['auto_renew' => false, 'ends_on' => null]);
+    $dated = $make(['auto_renew' => false, 'ends_on' => '2026-02-20']);
+
+    // On its start date every contract bills its first period.
+    expect($generate->forContract($renewing)->created)->toBe(1)
+        ->and($generate->forContract($oneTerm)->created)->toBe(1)
+        ->and($generate->forContract($dated)->created)->toBe(1);
+
+    // Mid-February: the renewing and the dated contract bill 15 Feb. The one-cycle term is over.
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    expect($generate->forContract($renewing)->created)->toBe(1)
+        ->and($generate->forContract($oneTerm)->created)->toBe(0)
+        ->and($generate->forContract($dated)->created)->toBe(1);
+
+    // March: only the contract that renews keeps billing.
+    CarbonImmutable::setTestNow('2026-03-01 12:00:00');
+    expect($generate->forContract($renewing)->created)->toBe(1)
+        ->and($generate->forContract($oneTerm)->created)->toBe(0)
+        ->and($generate->forContract($dated)->created)->toBe(0);
+});
+
+test('a non-renewing contract that has run its term shows up under Needs attention', function () {
+    CarbonImmutable::setTestNow('2026-03-01 12:00:00');
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $contract = Contract::factory()->create([
+        'client_id' => $client->id,
+        'office_id' => $client->office_id,
+        'cycle' => 'monthly',
+        'starts_on' => '2026-01-15',
+        'auto_renew' => false,
+        'ends_on' => null,
+    ]);
+
+    expect(app(GenerateDues::class)->nextScheduledDate($contract))->toBeNull();
+});
+
+test('a due with payments on it cannot be canceled', function () {
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    $owner = $this->actingAsRole(Role::Owner);
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $due = Due::factory()->forClient($client)->create([
+        'status' => DueStatus::Partial,
+        'amount_paid_cents' => 400_000,
+        'amount_due_cents' => 1_000_000,
+    ]);
+
+    $this->patch(route('dues.cancel', $due), ['reason' => 'Writing it off'])->assertForbidden();
+
+    expect($due->refresh()->status)->toBe(DueStatus::Partial);
+    expect(fn () => app(CancelDue::class)->handle($due, 'Writing it off'))
+        ->toThrow(ValidationException::class);
+});
+
+test('moving a client to another office moves its contracts and unsettled dues with it', function () {
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    $owner = $this->actingAsRole(Role::Owner);
+    $algiers = Office::factory()->create();
+    $oran = Office::factory()->create();
+    $manager = User::factory()->accountManager()->forOffice($oran->id)->create();
+    $client = Client::factory()->forManager(User::factory()->accountManager()->forOffice($algiers->id)->create())->forOffice($algiers)->create();
+    $contract = Contract::factory()->create(['client_id' => $client->id, 'office_id' => $algiers->id]);
+    $open = dueFor($contract, '2026-02-15');
+    $paid = dueFor($contract, '2026-01-15', ['status' => DueStatus::Paid, 'amount_paid_cents' => $contract->amount_cents]);
+
+    $this->patch(route('clients.update', $client), [
+        'name' => $client->name,
+        'phone' => '0550123456',
+        'account_manager_id' => $manager->id,
+        'office_id' => $oran->id,
+    ])->assertSessionHasNoErrors();
+
+    expect($contract->refresh()->office_id)->toBe($oran->id)
+        ->and($open->refresh()->office_id)->toBe($oran->id)
+        ->and($paid->refresh()->office_id)->toBe($algiers->id);
+});
+
+test('only an unrestricted owner or finance user chooses a contract office, and edits keep the existing one', function () {
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    $algiers = Office::factory()->create();
+    $oran = Office::factory()->create();
+    $unrestrictedManager = User::factory()->accountManager()->create(['office_id' => null]);
+    $client = Client::factory()->forManager($unrestrictedManager)->forOffice($algiers)->create();
+
+    $this->actingAs($unrestrictedManager)
+        ->post(route('contracts.store'), duesContractPayload($client, ['office_id' => $oran->id]))
+        ->assertSessionHasNoErrors();
+    expect(Contract::query()->latest('id')->first()->office_id)->toBe($algiers->id);
+
+    $owner = User::factory()->owner()->create();
+    $contract = Contract::factory()->create(['client_id' => $client->id, 'office_id' => $oran->id]);
+
+    $payload = duesContractPayload($client);
+    unset($payload['office_id']);
+    $this->actingAs($owner)->patch(route('contracts.update', $contract), $payload)->assertSessionHasNoErrors();
+
+    expect($contract->refresh()->office_id)->toBe($oran->id);
 });

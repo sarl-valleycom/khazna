@@ -3,6 +3,7 @@
 namespace App\Actions\Payments;
 
 use App\Models\Account;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SaveAccount
@@ -26,17 +27,23 @@ class SaveAccount
      */
     public function update(Account $account, array $data): Account
     {
-        $changesOpening = (int) $data['opening_balance_cents'] !== $account->opening_balance_cents
-            || $data['opening_date'] !== $account->opening_date->toDateString();
+        return DB::transaction(function () use ($account, $data): Account {
+            // RecordPayment locks this same row before writing the first entry, so the
+            // "has entries" check below cannot race with it.
+            $account = Account::query()->lockForUpdate()->findOrFail($account->id);
 
-        if ($changesOpening && $account->hasEntries()) {
-            throw ValidationException::withMessages([
-                'opening_balance_cents' => __('This account already has entries, so its opening balance and date can no longer change.'),
-            ]);
-        }
+            $changesOpening = (int) $data['opening_balance_cents'] !== $account->opening_balance_cents
+                || $data['opening_date'] !== $account->opening_date->toDateString();
 
-        $account->update($data);
+            if ($changesOpening && $account->hasEntries()) {
+                throw ValidationException::withMessages([
+                    'opening_balance_cents' => __('This account already has entries, so its opening balance and date can no longer change.'),
+                ]);
+            }
 
-        return $account->refresh();
+            $account->update($data);
+
+            return $account->refresh();
+        });
     }
 }

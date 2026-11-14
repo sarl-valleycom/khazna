@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Clients;
 
+use App\Actions\Clients\CascadeClientOffice;
 use App\Data\AccountManagerOptionData;
 use App\Data\ClientFiltersData;
 use App\Data\ClientRowData;
@@ -160,6 +161,10 @@ class ClientController extends Controller
         }
 
         $client->update($this->attributes($request, $actor));
+
+        if ($client->wasChanged('office_id')) {
+            app(CascadeClientOffice::class)->handle($client);
+        }
 
         return to_route('clients.show', $client, 303)->with('success', __('Client updated.'));
     }

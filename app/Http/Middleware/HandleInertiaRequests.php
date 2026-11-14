@@ -49,20 +49,6 @@ class HandleInertiaRequests extends Middleware
 
         $userData = UserData::fromUser($user, $abilities);
 
-        $offices = $user === null
-            ? []
-            : Office::query()
-                ->visibleTo($user)
-                ->where('active', true)
-                ->orderBy('name')
-                ->get()
-                ->map(fn (Office $office): OfficeOptionData => new OfficeOptionData(
-                    id: $office->id,
-                    name: $office->name,
-                    city: $office->city,
-                ))
-                ->all();
-
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -71,8 +57,21 @@ class HandleInertiaRequests extends Middleware
                 role: $userData?->role,
             ),
             'flash' => FlashData::fromSession($request->session()),
-            'settings' => SettingsData::fromCurrentSettings(),
-            'offices' => $offices,
+            // Closures: only evaluated when a response includes them, so partial reloads skip the queries.
+            'settings' => fn (): SettingsData => SettingsData::fromCurrentSettings(),
+            'offices' => fn (): array => $user === null
+                ? []
+                : Office::query()
+                    ->visibleTo($user)
+                    ->where('active', true)
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn (Office $office): OfficeOptionData => new OfficeOptionData(
+                        id: $office->id,
+                        name: $office->name,
+                        city: $office->city,
+                    ))
+                    ->all(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

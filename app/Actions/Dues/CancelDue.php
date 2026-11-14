@@ -29,6 +29,12 @@ class CancelDue
                 ]);
             }
 
+            if ($due->amount_paid_cents > 0) {
+                throw ValidationException::withMessages([
+                    'reason' => __('This due has payments on it. Reverse them first, or leave it open until it is settled.'),
+                ]);
+            }
+
             app(AuditContext::class)->withReason($reason, fn () => $due->update([
                 'status' => DueStatus::Canceled,
                 'canceled_reason' => $reason,

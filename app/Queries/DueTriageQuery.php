@@ -113,6 +113,9 @@ class DueTriageQuery
             ->whereDoesntHave('dues', fn (Builder $due): Builder => $due
                 ->where('status', '!=', DueStatus::Canceled->value)
                 ->where('due_on', '>=', $today->toDateString()))
+            // An overdue or part-paid due is already on the Overdue tab; it is not "unscheduled".
+            ->whereDoesntHave('dues', fn (Builder $due): Builder => $due
+                ->whereIn('status', [DueStatus::Pending->value, DueStatus::Partial->value]))
             ->when($filters->client !== null, fn (Builder $query): Builder => $query->where('client_id', $filters->client))
             ->when($filters->office !== null, fn (Builder $query): Builder => $query->where('office_id', $filters->office))
             ->when($filters->assignee !== null, fn (Builder $query): Builder => $query->whereHas(

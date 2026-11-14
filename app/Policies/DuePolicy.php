@@ -42,9 +42,10 @@ class DuePolicy
             && $due->status->isOpen();
     }
 
+    /** A due with payments on it is real money owed: reverse the payments before canceling. */
     public function cancel(User $user, Due $due): bool
     {
-        return $this->canSee($user, $due) && $due->status->isOpen();
+        return $this->canSee($user, $due) && $due->status->isOpen() && $due->amount_paid_cents === 0;
     }
 
     private function canSee(User $user, Due $due): bool

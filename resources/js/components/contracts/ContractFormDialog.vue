@@ -37,7 +37,7 @@ const form = useForm({
     cycle: 'monthly',
     starts_on: toCalendarDate(new Date()),
     ends_on: null as string | null,
-    auto_renew: false,
+    auto_renew: true,
     notes: '',
     office_id: null as number | null,
     attachment: null as File | null,
@@ -239,7 +239,13 @@ function submit() {
 
         <div class="flex items-center gap-2">
             <Checkbox id="contract-auto-renew" v-model="form.auto_renew" />
-            <Label for="contract-auto-renew">Auto-renew</Label>
+            <div>
+                <Label for="contract-auto-renew">Auto-renew</Label>
+                <p class="text-xs text-muted-foreground">
+                    Off means it bills until the end date, or for one cycle if
+                    there is none.
+                </p>
+            </div>
         </div>
 
         <div class="space-y-2">

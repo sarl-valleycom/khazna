@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Support\SettingsStore;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -26,16 +27,18 @@ class Setting extends Model
 
     public static function current(string $key, ?string $default = null): ?string
     {
-        $value = static::query()->where('key', $key)->value('value');
-
-        return $value === null ? $default : (string) $value;
+        return app(SettingsStore::class)->get($key, $default);
     }
 
     public static function put(string $key, ?string $value): self
     {
-        return static::query()->updateOrCreate(
+        $setting = static::query()->updateOrCreate(
             ['key' => $key],
             ['value' => $value],
         );
+
+        app(SettingsStore::class)->remember($key, $value);
+
+        return $setting;
     }
 }

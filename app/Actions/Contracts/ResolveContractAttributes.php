@@ -29,7 +29,10 @@ class ResolveContractAttributes
             ]);
         }
 
-        $officeId = $actor->office_id ?? $input->officeId ?? $client->office_id;
+        // Only an unrestricted owner or finance user may choose the office. Anyone else
+        // gets the contract's current office, or the client's, never a submitted value.
+        $chosen = $actor->isAccountManager() ? null : $input->officeId;
+        $officeId = $actor->office_id ?? $chosen ?? $contract->office_id ?? $client->office_id;
 
         if ($officeId === null) {
             throw ValidationException::withMessages([

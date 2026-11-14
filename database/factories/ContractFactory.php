@@ -31,7 +31,7 @@ class ContractFactory extends Factory
             'starts_on' => AlgerianDate::today()->subMonths(2)->toDateString(),
             'ends_on' => null,
             'status' => ContractStatus::Active,
-            'auto_renew' => false,
+            'auto_renew' => true,
             'notes' => null,
             'attachment_path' => null,
             'attachment_name' => null,

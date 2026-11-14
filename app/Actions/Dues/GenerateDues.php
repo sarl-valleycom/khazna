@@ -58,13 +58,15 @@ class GenerateDues
         $from = $contract->starts_on->gt($today) ? $contract->starts_on : $today;
         $to = $today->addDays(30);
 
-        if ($contract->ends_on !== null) {
-            if ($contract->ends_on->lt($from)) {
+        $end = $this->billingEnd($contract);
+
+        if ($end !== null) {
+            if ($end->toDateString() < $from->toDateString()) {
                 return DueGenerationReport::empty();
             }
 
-            if ($contract->ends_on->lt($to)) {
-                $to = $contract->ends_on;
+            if ($end->toDateString() < $to->toDateString()) {
+                $to = $end;
             }
         }
 
@@ -139,7 +141,9 @@ class GenerateDues
         $today = $today?->startOfDay() ?? AlgerianDate::today();
         $from = $contract->starts_on->gt($today) ? $contract->starts_on : $today;
 
-        if ($contract->ends_on !== null && $contract->ends_on->lt($from)) {
+        $end = $this->billingEnd($contract);
+
+        if ($end !== null && $end->toDateString() < $from->toDateString()) {
             return null;
         }
 
@@ -147,9 +151,29 @@ class GenerateDues
             return $contract->starts_on->toDateString() >= $today->toDateString() ? $contract->starts_on : null;
         }
 
-        $to = $contract->ends_on ?? $from->addYears(2);
+        // One cycle ahead always contains the next date, so there is no need to list years of them.
+        $to = $end ?? $from->addMonths($contract->cycle->months() + 1);
 
         return $this->dates($contract, $from, $to)[0] ?? null;
+    }
+
+    /**
+     * The last day this contract bills. `ends_on` wins. Without one, a contract
+     * that auto-renews bills indefinitely, and one that does not is a single term
+     * of one cycle: it bills its first period and then shows up under "Needs
+     * attention" so someone renews it or closes it.
+     */
+    private function billingEnd(Contract $contract): ?CarbonImmutable
+    {
+        if ($contract->ends_on !== null) {
+            return $contract->ends_on;
+        }
+
+        if ($contract->auto_renew || $contract->cycle === Cycle::Once) {
+            return null;
+        }
+
+        return CycleArithmetic::addMonths($contract->starts_on, $contract->cycle->months())->subDay();
     }
 
     /**

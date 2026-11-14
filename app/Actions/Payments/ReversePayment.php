@@ -49,7 +49,7 @@ class ReversePayment
 
             // The original entry stays. An opposite entry cancels it out.
             $this->ledger->record(
-                account: Account::query()->findOrFail($payment->account_id),
+                account: Account::query()->lockForUpdate()->findOrFail($payment->account_id),
                 direction: $due->direction === Direction::In ? Direction::Out : Direction::In,
                 amountCents: $payment->amount_cents,
                 entryDate: AlgerianDate::today(),
