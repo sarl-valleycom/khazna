@@ -143,6 +143,10 @@ class GenerateDues
             return null;
         }
 
+        if ($contract->cycle === Cycle::Once) {
+            return $contract->starts_on->toDateString() >= $today->toDateString() ? $contract->starts_on : null;
+        }
+
         $to = $contract->ends_on ?? $from->addYears(2);
 
         return $this->dates($contract, $from, $to)[0] ?? null;
@@ -154,7 +158,10 @@ class GenerateDues
     private function dates(Contract $contract, CarbonImmutable $from, CarbonImmutable $to): array
     {
         if ($contract->cycle === Cycle::Once) {
-            return $contract->starts_on->betweenIncluded($from, $to)
+            // A one-time amount is owed once, on its date. If that date has already
+            // passed and it was never billed, it is simply overdue: create it. The
+            // unique (contract, period) key keeps every later run from adding another.
+            return $contract->starts_on->toDateString() <= $to->toDateString()
                 ? [$contract->starts_on]
                 : [];
         }

@@ -572,3 +572,25 @@ test('trashed clients stop generating dues and cannot be deleted while they owe 
     expect($report->created)->toBe(0)
         ->and(app(GenerateDues::class)->forContract($contract->refresh())->created)->toBe(0);
 });
+
+test('a one-time contract dated in the past gets its overdue due exactly once', function () {
+    CarbonImmutable::setTestNow('2026-03-11 10:00:00');
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $contract = Contract::factory()->create([
+        'client_id' => $client->id,
+        'office_id' => $client->office_id,
+        'cycle' => 'once',
+        'starts_on' => '2026-03-01',
+        'amount_cents' => 750_000,
+    ]);
+    $generate = app(GenerateDues::class);
+
+    expect($generate->forContract($contract)->created)->toBe(1)
+        ->and($generate->forContract($contract)->created)->toBe(0)
+        ->and($generate->handle()->created)->toBe(0);
+
+    $due = Due::query()->where('contract_id', $contract->id)->sole();
+    expect($due->due_on->toDateString())->toBe('2026-03-01')
+        ->and($due->amount_due_cents)->toBe(750_000)
+        ->and($due->isOverdue())->toBeTrue();
+});
