@@ -57,7 +57,10 @@ function triageTabs($response): array
     $tabs = [];
 
     foreach ($response->viewData('page')['props']['tabs'] as $tab) {
-        $tabs[$tab['value']] = ['count' => $tab['count'], 'total' => $tab['totalCents']];
+        $tabs[$tab['value']] = [
+            'count' => $tab['count'],
+            'total' => $tab['collectCents'] === null ? null : $tab['collectCents'] + $tab['payCents'],
+        ];
     }
 
     return $tabs;
@@ -367,4 +370,32 @@ test('a reminder needs a valid phone and an open due the user can see', function
         ->assertJsonValidationErrors('phone');
 
     expect(DueReminder::query()->count())->toBe(0);
+});
+
+test('money to collect and money to pay are never added together', function () {
+    triageNow();
+    $client = triageClient();
+    triageDue($client, '2026-03-01', 500_000, ['direction' => Direction::In]);
+    triageDue($client, '2026-03-02', 300_000, ['direction' => Direction::Out, 'kind' => DueKind::Expense]);
+
+    $response = $this->actingAs(User::factory()->owner()->create())->get(route('home'));
+    $overdue = collect($response->viewData('page')['props']['tabs'])->firstWhere('value', 'overdue');
+
+    expect($overdue['count'])->toBe(2)
+        ->and($overdue['collectCents'])->toBe(500_000)
+        ->and($overdue['payCents'])->toBe(300_000);
+});
+
+test('a reminder cannot be prepared for money we owe', function () {
+    triageNow();
+    $client = triageClient(['phone' => '0550 12 34 56']);
+    $outgoing = triageDue($client, '2026-03-15', 100_000, ['direction' => Direction::Out, 'kind' => DueKind::Expense]);
+    $owner = User::factory()->owner()->create();
+
+    $this->actingAs($owner)->postJson(route('dues.reminders.store', $outgoing))->assertForbidden();
+
+    $row = collect($this->get(route('home', ['tab' => 'month']))->viewData('page')['props']['dues']['data'])->firstWhere('id', $outgoing->id);
+
+    expect($row['abilities']['remind'])->toBeFalse()
+        ->and(DueReminder::query()->count())->toBe(0);
 });

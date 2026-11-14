@@ -21,7 +21,6 @@ use App\Models\User;
 use App\Queries\DueTriageQuery;
 use App\Queries\PaymentAccountOptionsQuery;
 use App\Support\AlgerianDate;
-use App\Support\Money;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -59,8 +58,8 @@ class TriageController extends Controller
                 value: $value,
                 label: $label,
                 count: $summary[$value]['count'],
-                totalCents: $summary[$value]['totalCents'],
-                totalFormatted: Money::fromCents($summary[$value]['totalCents'])->format(),
+                collectCents: $summary[$value]['collectCents'],
+                payCents: $summary[$value]['payCents'],
             );
         }
 

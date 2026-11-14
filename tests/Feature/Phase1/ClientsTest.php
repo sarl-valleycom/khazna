@@ -360,3 +360,28 @@ test('a CSV import file is limited to five megabytes', function () {
         'file' => UploadedFile::fake()->create('clients.csv', 6000, 'text/csv'),
     ])->assertSessionHasErrors('file');
 });
+
+test('a phone added between the preview and the confirm is skipped, not duplicated', function () {
+    $this->actingAsRole(Role::Owner);
+    $manager = User::factory()->accountManager()->create(['email' => 'manager@khazna.test']);
+    $contents = clientCsv(
+        ['name', 'phone', 'account_manager_email'],
+        [
+            ['Alpha', '0550 11 22 33', 'manager@khazna.test'],
+            ['Beta', '0661 44 55 66', 'manager@khazna.test'],
+        ],
+    );
+
+    $response = $this->post(route('clients.import.preview'), ['file' => clientCsvFile($contents)]);
+    $token = importToken((string) $response->headers->get('Location'));
+
+    // Someone adds Alpha's number by hand after the preview was made.
+    Client::factory()->forManager($manager)->create(['name' => 'Alpha (manual)', 'phone' => '213550112233']);
+
+    $this->post(route('clients.import.confirm'), ['token' => $token])
+        ->assertRedirect(route('clients.index'))
+        ->assertSessionHas('success', fn (string $message): bool => str_contains($message, 'Imported 1 client') && str_contains($message, '1 skipped'));
+
+    expect(Client::query()->where('phone', '213550112233')->count())->toBe(1)
+        ->and(Client::query()->where('name', 'Beta')->exists())->toBeTrue();
+});

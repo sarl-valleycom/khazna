@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Dues\CancelOpenFutureDues;
 use App\Actions\Dues\GenerateDues;
 use App\Enums\DueKind;
 use App\Enums\DueStatus;
@@ -172,7 +173,7 @@ test('creating a contract generates its first dues immediately', function () {
         ->and($contract->dues()->sole()->due_on->toDateString())->toBe('2026-02-15');
 });
 
-test('pausing a contract cancels only open future dues and records the reason', function () {
+test('pausing a contract cancels only unpaid future dues and records the reason', function () {
     CarbonImmutable::setTestNow('2026-02-01 12:00:00');
 
     $owner = $this->actingAsRole(Role::Owner);
@@ -202,7 +203,8 @@ test('pausing a contract cancels only open future dues and records the reason', 
         ->and($past->refresh()->status)->toBe(DueStatus::Pending)
         ->and($future->refresh()->status)->toBe(DueStatus::Canceled)
         ->and($future->canceled_reason)->toBe('Client is restructuring.')
-        ->and($futurePartial->refresh()->status)->toBe(DueStatus::Canceled)
+        ->and($futurePartial->refresh()->status)->toBe(DueStatus::Partial)
+        ->and($futurePartial->canceled_reason)->toBeNull()
         ->and($futurePaid->refresh()->status)->toBe(DueStatus::Paid)
         ->and($futureCanceled->refresh()->canceled_reason)->toBeNull();
 
@@ -441,4 +443,132 @@ test('SRS scenario 5: a postponed due shows its history with old date, new date,
 
     $this->get(route('home', ['tab' => 'month']))
         ->assertInertia(fn (Assert $page) => $page->has('dues.data.0.postponements', 2));
+});
+
+test('resuming a paused contract brings back the dues the pause canceled', function () {
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    $owner = $this->actingAsRole(Role::Owner);
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $contract = Contract::factory()->create([
+        'client_id' => $client->id,
+        'office_id' => $client->office_id,
+        'cycle' => 'monthly',
+        'starts_on' => '2026-01-15',
+        'amount_cents' => 1_000_000,
+    ]);
+    app(GenerateDues::class)->forContract($contract);
+    $manuallyCanceled = dueFor($contract, '2026-02-20', ['status' => DueStatus::Canceled, 'canceled_reason' => 'Waived']);
+
+    $this->patch(route('contracts.status', $contract), ['status' => 'paused', 'reason' => 'Break'])->assertStatus(303);
+    expect(Due::query()->where('contract_id', $contract->id)->where('canceled_by_contract', true)->count())->toBe(1);
+
+    // The amount changes while paused: revived dues use the current amount.
+    $contract->update(['amount_cents' => 1_200_000]);
+    $this->patch(route('contracts.status', $contract), ['status' => 'active'])->assertStatus(303);
+
+    $revived = Due::query()->where('contract_id', $contract->id)->whereDate('due_on', '2026-02-15')->sole();
+    expect($revived->status)->toBe(DueStatus::Pending)
+        ->and($revived->amount_due_cents)->toBe(1_200_000)
+        ->and($revived->canceled_reason)->toBeNull()
+        ->and($revived->canceled_by_contract)->toBeFalse()
+        ->and($manuallyCanceled->refresh()->status)->toBe(DueStatus::Canceled);
+
+    app(GenerateDues::class)->handle();
+    expect(Due::query()->where('contract_id', $contract->id)->whereDate('due_on', '2026-02-15')->count())->toBe(1);
+});
+
+test('editing the schedule of a contract replaces its unpaid future dues', function () {
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    $owner = $this->actingAsRole(Role::Owner);
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $contract = Contract::factory()->create([
+        'client_id' => $client->id,
+        'office_id' => $client->office_id,
+        'cycle' => 'monthly',
+        'starts_on' => '2026-01-15',
+        'amount_cents' => 1_000_000,
+        'ends_on' => null,
+    ]);
+    app(GenerateDues::class)->forContract($contract);
+    $original = Due::query()->where('contract_id', $contract->id)->sole();
+    expect($original->due_on->toDateString())->toBe('2026-02-15');
+
+    // Ending the contract before that due cancels it.
+    $this->patch(route('contracts.update', $contract), duesContractPayload($client, [
+        'starts_on' => '2026-01-15',
+        'ends_on' => '2026-02-10',
+    ]))->assertSessionHasNoErrors();
+
+    expect($original->refresh()->status)->toBe(DueStatus::Canceled)
+        ->and($original->canceled_by_contract)->toBeTrue();
+
+    // Raising only the amount touches nothing that already exists (FR-CON-04).
+    $this->patch(route('contracts.update', $contract), duesContractPayload($client, [
+        'starts_on' => '2026-01-15',
+        'ends_on' => null,
+        'amount_cents' => 2_000_000,
+    ]))->assertSessionHasNoErrors();
+    expect($original->refresh()->status)->toBe(DueStatus::Pending)
+        ->and($original->amount_due_cents)->toBe(2_000_000);
+
+    $this->patch(route('contracts.update', $contract), duesContractPayload($client, [
+        'starts_on' => '2026-01-15',
+        'ends_on' => null,
+        'amount_cents' => 3_000_000,
+    ]))->assertSessionHasNoErrors();
+    expect($original->refresh()->amount_due_cents)->toBe(2_000_000);
+});
+
+test('a due part-paid cannot be canceled by changing its contract', function () {
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $contract = Contract::factory()->create(['client_id' => $client->id, 'office_id' => $client->office_id]);
+    $partial = dueFor($contract, '2026-03-15', ['status' => DueStatus::Partial, 'amount_paid_cents' => 100_000]);
+
+    app(CancelOpenFutureDues::class)->handle($contract, 'Contract ended');
+
+    expect($partial->refresh()->status)->toBe(DueStatus::Partial);
+});
+
+test('generation includes a due that falls exactly thirty days ahead', function () {
+    CarbonImmutable::setTestNow('2026-11-14 09:00:00');
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $contract = Contract::factory()->create([
+        'client_id' => $client->id,
+        'office_id' => $client->office_id,
+        'cycle' => 'monthly',
+        'starts_on' => '2026-06-14',
+    ]);
+
+    $report = app(GenerateDues::class)->forContract($contract);
+
+    expect(Due::query()->where('contract_id', $contract->id)->pluck('due_on')->map->toDateString()->all())
+        ->toBe(['2026-11-14', '2026-12-14'])
+        ->and($report->created)->toBe(2);
+});
+
+test('trashed clients stop generating dues and cannot be deleted while they owe or contract', function () {
+    CarbonImmutable::setTestNow('2026-02-01 12:00:00');
+    $owner = $this->actingAsRole(Role::Owner);
+    $client = Client::factory()->forOffice(Office::factory()->create())->create();
+    $contract = Contract::factory()->create([
+        'client_id' => $client->id,
+        'office_id' => $client->office_id,
+        'cycle' => 'monthly',
+        'starts_on' => '2026-01-15',
+    ]);
+
+    $this->delete(route('clients.destroy', $client))->assertSessionHas('error');
+    expect($client->refresh()->trashed())->toBeFalse();
+
+    $contract->update(['status' => 'canceled']);
+    $client->dues()->update(['status' => DueStatus::Canceled]);
+    $this->delete(route('clients.destroy', $client))->assertSessionHas('success');
+    expect(Client::withTrashed()->find($client->id)->trashed())->toBeTrue();
+
+    $contract->update(['status' => 'active']);
+    $report = app(GenerateDues::class)->handle();
+
+    expect($report->created)->toBe(0)
+        ->and(app(GenerateDues::class)->forContract($contract->refresh())->created)->toBe(0);
 });

@@ -95,13 +95,27 @@ const hint = computed(() =>
 
         <div class="flex flex-wrap items-baseline justify-between gap-2">
             <p class="text-sm text-muted-foreground">{{ hint }}</p>
-            <p v-if="active.totalCents !== null" class="text-sm">
-                {{ active.count }} open ·
-                <MoneyText
-                    :cents="active.totalCents"
-                    :symbol="page.props.settings.currencySymbol"
-                />
-                remaining
+            <p
+                v-if="active.collectCents !== null"
+                class="flex flex-wrap items-baseline gap-x-3 text-sm"
+            >
+                <span>{{ active.count }} open</span>
+                <span v-if="active.collectCents > 0">
+                    To collect
+                    <MoneyText
+                        :cents="active.collectCents"
+                        :symbol="page.props.settings.currencySymbol"
+                        direction="in"
+                    />
+                </span>
+                <span v-if="active.payCents !== null && active.payCents > 0">
+                    To pay
+                    <MoneyText
+                        :cents="active.payCents"
+                        :symbol="page.props.settings.currencySymbol"
+                        direction="out"
+                    />
+                </span>
             </p>
         </div>
 

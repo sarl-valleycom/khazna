@@ -40,7 +40,7 @@ class ChangeContractStatus
             ]));
 
             if ($target === ContractStatus::Active) {
-                $this->generateDues->forContract($contract);
+                $this->generateDues->forContract($contract, revive: true);
 
                 return;
             }

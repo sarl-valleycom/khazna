@@ -130,13 +130,21 @@ class ClientImportController extends Controller
                 ->with('error', __('There are no valid rows to import.'));
         }
 
-        $count = $importer->handle($payload['valid_rows']);
+        // pull() reads and deletes in one step, so a double-click or a retry cannot import twice.
+        if (Cache::pull(self::CACHE_PREFIX.$validated['token']) === null) {
+            return to_route('clients.import', [], 303)
+                ->with('error', __('This import was already confirmed or has expired.'));
+        }
 
-        Cache::forget(self::CACHE_PREFIX.$validated['token']);
+        $result = $importer->handle($payload['valid_rows']);
 
-        $message = $count === 1
+        $message = $result['imported'] === 1
             ? __('Imported 1 client.')
-            : __('Imported :count clients.', ['count' => $count]);
+            : __('Imported :count clients.', ['count' => $result['imported']]);
+
+        if ($result['skipped'] > 0) {
+            $message .= ' '.__(':count skipped because the phone number was added in the meantime.', ['count' => $result['skipped']]);
+        }
 
         return to_route('clients.index', [], 303)->with('success', $message);
     }

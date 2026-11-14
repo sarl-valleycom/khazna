@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Direction;
 use App\Models\Due;
 use App\Models\User;
 
@@ -33,10 +34,12 @@ class DuePolicy
         return $this->canSee($user, $due) && $due->status->isOpen();
     }
 
-    /** Preparing a WhatsApp reminder, for any open due the user can see. */
+    /** A reminder asks a client to pay us, so it only exists for money coming in. */
     public function remind(User $user, Due $due): bool
     {
-        return $this->canSee($user, $due) && $due->status->isOpen();
+        return $due->direction === Direction::In
+            && $this->canSee($user, $due)
+            && $due->status->isOpen();
     }
 
     public function cancel(User $user, Due $due): bool

@@ -31,9 +31,10 @@ class DueTriageQuery
     public function __construct(private readonly GenerateDues $generateDues) {}
 
     /**
-     * Count and remaining amount per tab, from one grouped query.
+     * Count and remaining amounts per tab, from one grouped query. Money to
+     * collect and money to pay are kept apart: adding them would be meaningless.
      *
-     * @return array<string, array{count: int, totalCents: int}>
+     * @return array<string, array{count: int, collectCents: int, payCents: int}>
      */
     public function summary(User $user, TriageFiltersData $filters, CarbonImmutable $today): array
     {
@@ -48,7 +49,8 @@ class DueTriageQuery
                     WHEN due_on <= ? THEN 'month'
                  END AS bucket,
                  COUNT(*) AS due_count,
-                 COALESCE(SUM(CAST(amount_due_cents AS SIGNED) - CAST(amount_paid_cents AS SIGNED)), 0) AS remaining_cents",
+                 COALESCE(SUM(CASE WHEN direction = 'in' THEN CAST(amount_due_cents AS SIGNED) - CAST(amount_paid_cents AS SIGNED) ELSE 0 END), 0) AS collect_cents,
+                 COALESCE(SUM(CASE WHEN direction = 'out' THEN CAST(amount_due_cents AS SIGNED) - CAST(amount_paid_cents AS SIGNED) ELSE 0 END), 0) AS pay_cents",
                 [$today->toDateString(), $today->toDateString(), $weekEnd->toDateString(), $monthEnd->toDateString()],
             )
             ->groupBy('bucket')
@@ -60,7 +62,8 @@ class DueTriageQuery
             $row = $rows->firstWhere('bucket', $tab);
             $summary[$tab] = [
                 'count' => (int) ($row->due_count ?? 0),
-                'totalCents' => (int) ($row->remaining_cents ?? 0),
+                'collectCents' => (int) ($row->collect_cents ?? 0),
+                'payCents' => (int) ($row->pay_cents ?? 0),
             ];
         }
 

@@ -34,6 +34,7 @@ use LogicException;
  * @property DueStatus $status
  * @property string|null $description
  * @property string|null $canceled_reason
+ * @property bool $canceled_by_contract
  */
 #[Fillable([
     'kind',
@@ -48,6 +49,7 @@ use LogicException;
     'status',
     'description',
     'canceled_reason',
+    'canceled_by_contract',
 ])]
 class Due extends Model
 {
@@ -67,6 +69,7 @@ class Due extends Model
             'amount_due_cents' => 'integer',
             'amount_paid_cents' => 'integer',
             'status' => DueStatus::class,
+            'canceled_by_contract' => 'boolean',
         ];
     }
 

@@ -330,8 +330,8 @@ declare namespace App {
             value: string;
             label: string;
             count: number;
-            totalCents: number | null;
-            totalFormatted: string | null;
+            collectCents: number | null;
+            payCents: number | null;
         };
         export type UserData = {
             id: number;

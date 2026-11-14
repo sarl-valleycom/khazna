@@ -10,6 +10,7 @@ use App\Data\ContractData;
 use App\Data\DueRowData;
 use App\Data\OfficeOptionData;
 use App\Data\PaymentRowData;
+use App\Enums\ContractStatus;
 use App\Enums\Direction;
 use App\Enums\DueKind;
 use App\Enums\DueStatus;
@@ -166,6 +167,17 @@ class ClientController extends Controller
     public function destroy(Client $client): RedirectResponse
     {
         $this->authorize('delete', $client);
+
+        $hasOpenDues = $client->dues()
+            ->whereIn('status', [DueStatus::Pending->value, DueStatus::Partial->value])
+            ->exists();
+        $hasLiveContracts = $client->contracts()
+            ->whereIn('status', [ContractStatus::Active->value, ContractStatus::Paused->value])
+            ->exists();
+
+        if ($hasOpenDues || $hasLiveContracts) {
+            return back(303)->with('error', __('This client still has open dues or live contracts. Cancel the contracts and settle or cancel the dues first.'));
+        }
 
         $client->delete();
 

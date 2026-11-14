@@ -8,8 +8,11 @@ use App\Enums\ContractType;
 use App\Enums\Cycle;
 use App\Enums\DueKind;
 use App\Enums\DueStatus;
+use App\Models\Client;
 use App\Models\Contract;
+use App\Models\Due;
 use App\Support\AlgerianDate;
+use App\Support\AuditContext;
 use App\Support\CycleArithmetic;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -23,20 +26,34 @@ class GenerateDues
 
         Contract::query()
             ->where('status', ContractStatus::Active)
+            ->whereHas('client')
             ->lazyById(200)
             ->each(function (Contract $contract) use ($today, &$report): void {
-                $report = $report->merge($this->forContract($contract, $today));
+                $report = $report->merge($this->generate($contract, $today, false));
             });
 
         return $report;
     }
 
-    public function forContract(Contract $contract, ?CarbonImmutable $today = null): DueGenerationReport
+    /**
+     * @param  bool  $revive  Bring back dues that a pause or reschedule canceled, for
+     *                        periods this contract bills again. Only the explicit
+     *                        resume and edit paths pass this, never the nightly run.
+     */
+    public function forContract(Contract $contract, ?CarbonImmutable $today = null, bool $revive = false): DueGenerationReport
     {
-        if ($contract->status !== ContractStatus::Active) {
+        // The nightly run already filters out trashed clients in its query; a single
+        // contract is checked here with one cheap query instead of lazy-loading.
+        if ($contract->status !== ContractStatus::Active
+            || ! Client::query()->whereKey($contract->client_id)->exists()) {
             return DueGenerationReport::empty();
         }
 
+        return $this->generate($contract, $today, $revive);
+    }
+
+    private function generate(Contract $contract, ?CarbonImmutable $today, bool $revive): DueGenerationReport
+    {
         $today = $today?->startOfDay() ?? AlgerianDate::today();
         $from = $contract->starts_on->gt($today) ? $contract->starts_on : $today;
         $to = $today->addDays(30);
@@ -72,7 +89,13 @@ class GenerateDues
                 'updated_at' => now(),
             ]);
 
-            $inserted === 1 ? $created++ : $skipped++;
+            if ($inserted === 1) {
+                $created++;
+            } elseif ($revive && $this->revive($contract, $date)) {
+                $created++;
+            } else {
+                $skipped++;
+            }
         }
 
         return new DueGenerationReport(
@@ -80,6 +103,31 @@ class GenerateDues
             skipped: $skipped,
             contractIds: $created > 0 ? [$contract->id] : [],
         );
+    }
+
+    private function revive(Contract $contract, CarbonImmutable $date): bool
+    {
+        $due = Due::query()
+            ->where('contract_id', $contract->id)
+            ->whereDate('period', $date->toDateString())
+            ->where('status', DueStatus::Canceled)
+            ->where('canceled_by_contract', true)
+            ->where('amount_paid_cents', 0)
+            ->lockForUpdate()
+            ->first();
+
+        if ($due === null) {
+            return false;
+        }
+
+        app(AuditContext::class)->withReason(__('Contract reactivated or rescheduled.'), fn () => $due->update([
+            'status' => DueStatus::Pending,
+            'amount_due_cents' => $contract->amount_cents,
+            'canceled_reason' => null,
+            'canceled_by_contract' => false,
+        ]));
+
+        return true;
     }
 
     /**
@@ -122,14 +170,15 @@ class GenerateDues
         $step = intdiv(max(0, $monthOffset), $months);
         $date = CycleArithmetic::addMonths($anchor, $step * $months);
 
-        while ($date->lt($from)) {
+        while ($date->toDateString() < $from->toDateString()) {
             $step++;
             $date = CycleArithmetic::addMonths($anchor, $step * $months);
         }
 
         $dates = [];
 
-        while ($date->lte($to)) {
+        // Calendar dates, not instants: the anchor carries a time of day and `to` does not.
+        while ($date->toDateString() <= $to->toDateString()) {
             $dates[] = $date;
             $step++;
             $date = CycleArithmetic::addMonths($anchor, $step * $months);
