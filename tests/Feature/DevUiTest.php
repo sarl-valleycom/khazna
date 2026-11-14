@@ -61,3 +61,32 @@ test('the UI kit route is hidden outside local and staging', function () {
 
     $this->get(route('dev.ui'))->assertNotFound();
 });
+
+test('the UI kit route is owner-only', function (Role $role) {
+    $this->actingAsRole($role);
+
+    $this->get(route('dev.ui'))->assertForbidden();
+})->with([
+    'finance' => [Role::Finance],
+    'account manager' => [Role::AccountManager],
+]);
+
+test('the UI kit route requires a verified email', function () {
+    $this->actingAsRole(Role::Owner, ['email_verified_at' => null]);
+
+    $this->get(route('dev.ui'))->assertRedirect(route('verification.notice'));
+});
+
+test('the UI kit route looks nonexistent in production to everyone', function (?Role $role) {
+    $this->app->detectEnvironment(fn (): string => 'production');
+
+    if ($role !== null) {
+        $this->actingAsRole($role);
+    }
+
+    $this->get(route('dev.ui'))->assertNotFound();
+})->with([
+    'guest' => [null],
+    'finance' => [Role::Finance],
+    'owner' => [Role::Owner],
+]);

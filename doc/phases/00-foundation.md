@@ -206,7 +206,7 @@ Notes:
 Notes:
 - `deploy/deploy.sh` is portable and parameterised by `APP_DIR`, `PHP_BIN`, `COMPOSER_BIN` and `NPM_BIN`; it uses maintenance mode, `composer install --no-dev`, asset build, migrations, cache warm-up and a queue restart.
 - `deploy/supervisor/khazna-worker.conf` and `deploy/cron/khazna` contain placeholder paths; change them to the chosen host before installing.
-- `deploy/backup.sh` dumps MySQL and `storage/app/private`, optionally copies through rclone, and applies a 30-day retention. Supply credentials from a secret manager, never from the cron line.
+- `deploy/backup.sh` dumps MySQL and `storage/app/private`, optionally copies through rclone, and applies a 30-day retention. Supply credentials from a secret manager, never from the cron line. `deploy/cron/khazna` is a ready `/etc/cron.d` file (user column included) that runs the scheduler every minute and the backup daily at 02:30, reading `DB_*` from the app `.env`. A failed deploy leaves the app in maintenance mode on purpose.
 - Error tracking, uptime monitoring, HTTPS renewal and the three real environments still need the host decision. The `/up` health endpoint already exists.
 - The backup restore test is user-owned and remains on the exit checklist.
 ## 0.11 Seed data

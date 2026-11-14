@@ -75,51 +75,83 @@ export function toCalendarDate(value: Date): string {
 
 export { DISPLAY_TIMEZONE };
 
-/**
- * Parse a typed amount back to integer centimes.
- *
- * Accepts spaces, dots and commas as grouping or decimal separators. The last
- * separator is decimal only when it is followed by one or two digits; a
- * separator followed by three digits is treated as a grouping separator.
- * Returns null for empty input and NaN for text with no digits.
- */
-export function parseMoneyInput(value: string): number | null {
-    const trimmed = value.trim();
+function isGroupedInteger(value: string, grouping: string): boolean {
+    const separator = grouping === '.' ? '\\.' : ',';
 
-    if (trimmed === '') {
+    return new RegExp(`^[1-9]\\d{0,2}(${separator}\\d{3})+$`).test(value);
+}
+
+/**
+ * Parse a typed amount back to integer centimes. Mirrors App\Support\Money::parse
+ * so the browser and the server always agree.
+ *
+ * Accepts an optional "DA" suffix, spaces, apostrophes, dots and commas. A last
+ * separator followed by one or two digits is the decimal mark. A separator
+ * followed by exactly three digits is only accepted as thousands grouping when
+ * every group is well formed ("1,000", "12.345.678") and never after a leading
+ * zero, so "0.125" is rejected instead of being read as 125 DA.
+ *
+ * Returns null for empty input and NaN for anything invalid.
+ */
+export function parseMoneyInput(input: string): number | null {
+    let value = input.trim().replace(/\s*DA\s*$/i, '');
+    value = value.replace(/[\u00A0\u202F\u2009 '_]/g, '');
+
+    if (value === '') {
         return null;
     }
 
-    const negative = trimmed.startsWith('-');
-    const cleaned = trimmed.replace(/[^\d.,]/g, '');
+    const negative = value.startsWith('-');
+    value = value.replace(/^[+-]+/, '');
 
-    if (!/\d/.test(cleaned)) {
+    if (value === '' || /[^0-9.,]/.test(value)) {
         return Number.NaN;
     }
 
     const lastSeparator = Math.max(
-        cleaned.lastIndexOf(','),
-        cleaned.lastIndexOf('.'),
+        value.lastIndexOf(','),
+        value.lastIndexOf('.'),
     );
 
     let whole: string;
     let fraction = '';
 
     if (lastSeparator === -1) {
-        whole = cleaned;
+        whole = value;
     } else {
-        const after = cleaned.slice(lastSeparator + 1);
+        const after = value.slice(lastSeparator + 1);
 
         if (/^\d{1,2}$/.test(after)) {
-            whole = cleaned.slice(0, lastSeparator);
+            const integer = value.slice(0, lastSeparator);
+            const grouping = value[lastSeparator] === ',' ? '.' : ',';
+
+            if (integer === '' || /^\d+$/.test(integer)) {
+                whole = integer === '' ? '0' : integer;
+            } else if (isGroupedInteger(integer, grouping)) {
+                whole = integer.split(grouping).join('');
+            } else {
+                return Number.NaN;
+            }
+
             fraction = after.padEnd(2, '0');
         } else {
-            whole = cleaned;
+            const grouping = [',', '.'].find((mark) =>
+                isGroupedInteger(value, mark),
+            );
+
+            if (grouping === undefined) {
+                return Number.NaN;
+            }
+
+            whole = value.split(grouping).join('');
         }
     }
 
-    const wholeDigits = whole.replace(/\D/g, '') || '0';
-    const cents = Number(wholeDigits) * 100 + Number(fraction || '0');
+    if (whole.replace(/^0+/, '').length > 13) {
+        return Number.NaN;
+    }
 
-    return negative ? -cents : cents;
+    const cents = Number(whole) * 100 + Number(fraction || '0');
+
+    return negative && cents !== 0 ? -cents : cents;
 }

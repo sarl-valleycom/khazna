@@ -18,8 +18,6 @@ class DevUiController extends Controller
 {
     public function __invoke(Request $request): Response
     {
-        abort_unless(app()->environment(['local', 'staging']), 404);
-
         $money = fn (int $cents): string => Money::fromCents($cents)->format();
 
         $offices = [

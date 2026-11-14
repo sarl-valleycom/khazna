@@ -20,6 +20,7 @@ const emits = defineEmits<{ invalid: [message: string] }>();
 
 const display = ref('');
 const focused = ref(false);
+const invalid = ref(false);
 
 function toDisplay(cents: number | null): string {
     if (cents === null) {
@@ -32,7 +33,15 @@ function toDisplay(cents: number | null): string {
 watch(
     model,
     (value) => {
-        if (!focused.value) {
+        // A non-null value arriving while the text is invalid did not come from
+        // typing (typing invalid text sets null), so the parent replaced it.
+        if (invalid.value && value !== null) {
+            invalid.value = false;
+            display.value = toDisplay(value);
+            return;
+        }
+
+        if (!focused.value && !invalid.value) {
             display.value = toDisplay(value);
         }
     },
@@ -46,24 +55,33 @@ function onInput(event: Event) {
     const parsed = parseMoneyInput(value);
 
     if (parsed !== null && Number.isNaN(parsed)) {
+        // Clear the model so a parent form can never submit a stale amount
+        // that differs from what the user can see in the field.
+        invalid.value = true;
+        model.value = null;
         emits('invalid', 'Enter a valid amount.');
         return;
     }
 
+    invalid.value = false;
     model.value = parsed;
 }
 
 function onFocus() {
     focused.value = true;
 
-    if (model.value !== null) {
+    if (!invalid.value && model.value !== null) {
         display.value = (model.value / 100).toFixed(2).replace('.', ',');
     }
 }
 
 function onBlur() {
     focused.value = false;
-    display.value = toDisplay(model.value);
+
+    // Leave invalid text visible (flagged) rather than silently discarding it.
+    if (!invalid.value) {
+        display.value = toDisplay(model.value);
+    }
 }
 </script>
 
@@ -75,6 +93,7 @@ function onBlur() {
             :disabled="disabled"
             :placeholder="placeholder"
             inputmode="decimal"
+            :aria-invalid="invalid || undefined"
             autocomplete="off"
             class="pr-10 text-right tabular-nums"
             @input="onInput"

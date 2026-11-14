@@ -33,6 +33,27 @@ test('parse rejects invalid input', function () {
         ->and(Money::parse('10,00,0.5x'))->toBeNull();
 });
 
+test('parse reads well-formed thousands grouping as whole amounts', function () {
+    expect(Money::parse('1,000')?->cents)->toBe(100_000)
+        ->and(Money::parse('12.345')?->cents)->toBe(1_234_500)
+        ->and(Money::parse('12.345.678')?->cents)->toBe(1_234_567_800)
+        ->and(Money::parse('1.234.567,89')?->cents)->toBe(123_456_789)
+        ->and(Money::parse('0,50')?->cents)->toBe(50)
+        ->and(Money::parse('.5')?->cents)->toBe(50);
+});
+
+test('parse rejects ambiguous or malformed grouping instead of guessing', function (string $input) {
+    expect(Money::parse($input))->toBeNull();
+})->with(['0.125', '0,125', '1.2345', '1,234.567', '1.000.50', '12abc3', '1,00,000', ',', '-']);
+
+test('parse rejects amounts too large to hold exactly instead of overflowing', function () {
+    expect(Money::parse('99999999999999999999'))->toBeNull()
+        ->and(Money::parse('10000000000000'))->toBeNull()
+        ->and(Money::parse('9999999999999')?->cents)->toBe(999_999_999_999_900)
+        ->and(Money::parse('-0')?->cents)->toBe(0)
+        ->and(Money::parse("1\t000"))->toBeNull();
+});
+
 test('format uses English grouping and two decimal places', function () {
     expect(Money::fromCents(1_000_050)->format())->toBe('10,000.50 DA')
         ->and(Money::fromCents(-1_000_050)->format())->toBe('-10,000.50 DA')

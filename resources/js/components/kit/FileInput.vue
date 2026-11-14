@@ -67,9 +67,7 @@ watch(model, (file) => {
 
 onBeforeUnmount(resetPreview);
 
-function onChange(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
-
+function acceptFile(file: File | null) {
     if (!file) {
         model.value = null;
         return;
@@ -77,19 +75,58 @@ function onChange(event: Event) {
 
     if (!matchesAccept(file)) {
         emits('invalid', `Choose a file of type ${props.accept}.`);
-        (event.target as HTMLInputElement).value = '';
-        model.value = null;
+        reject();
         return;
     }
 
     if (file.size > props.maxSizeMb * 1024 * 1024) {
         emits('invalid', `The file must be ${props.maxSizeMb} MB or smaller.`);
-        (event.target as HTMLInputElement).value = '';
-        model.value = null;
+        reject();
         return;
     }
 
     model.value = file;
+}
+
+function reject() {
+    if (input.value) {
+        input.value.value = '';
+    }
+
+    model.value = null;
+}
+
+function onChange(event: Event) {
+    acceptFile((event.target as HTMLInputElement).files?.[0] ?? null);
+}
+
+const dragging = ref(false);
+
+function onDrop(event: DragEvent) {
+    dragging.value = false;
+
+    if (props.disabled) {
+        return;
+    }
+
+    const files = event.dataTransfer?.files;
+    const file = files?.[0] ?? null;
+
+    acceptFile(file);
+
+    // Keep the native input in step so re-picking the previous file still
+    // fires a change event.
+    if (file && files && input.value && model.value === file) {
+        input.value.files = files;
+    }
+}
+
+function onDragLeave(event: DragEvent) {
+    const next = event.relatedTarget as Node | null;
+
+    if (!next || !(event.currentTarget as HTMLElement).contains(next)) {
+        dragging.value = false;
+    }
 }
 
 function clear() {
@@ -105,7 +142,14 @@ function clear() {
     <div class="space-y-2">
         <label
             class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-6 text-center transition-colors hover:bg-muted/50"
-            :class="disabled && 'pointer-events-none opacity-50'"
+            :class="[
+                disabled && 'pointer-events-none opacity-50',
+                dragging && 'border-primary bg-muted/50',
+            ]"
+            @dragover.prevent="dragging = true"
+            @dragenter.prevent="dragging = true"
+            @dragleave.prevent="onDragLeave"
+            @drop.prevent="onDrop"
         >
             <input
                 ref="input"

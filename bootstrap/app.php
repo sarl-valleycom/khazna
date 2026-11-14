@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Middleware\EnsureDevToolsEnabled;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+
+        // Dev-only pages must 404 before auth can redirect or authorize.
+        $middleware->prependToPriorityList(before: AuthenticatesRequests::class, prepend: EnsureDevToolsEnabled::class);
 
         $middleware->web(append: [
             HandleAppearance::class,

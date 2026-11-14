@@ -17,6 +17,43 @@ test('an inactive user cannot sign in', function () {
     $this->assertGuest();
 });
 
+test('a deactivated user with the right password is told why', function () {
+    $user = User::factory()->inactive()->create();
+
+    $this->from(route('login'))->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertSessionHasErrors(['email' => __('khazna.errors.inactive_user')]);
+
+    $this->assertGuest();
+});
+
+test('a wrong password for a deactivated user gives the generic error', function () {
+    $user = User::factory()->inactive()->create();
+
+    $this->from(route('login'))->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'not-the-password',
+    ])->assertSessionHasErrors('email')
+        ->assertSessionDoesntHaveErrors(['email' => __('khazna.errors.inactive_user')]);
+});
+
+test('attempts against a deactivated account count toward the login throttle', function () {
+    $user = User::factory()->inactive()->create();
+
+    foreach (range(1, 5) as $attempt) {
+        $this->post(route('login.store'), [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('email');
+    }
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertStatus(429);
+});
+
 test('a signed-in user who is deactivated is logged out on the next request', function () {
     $user = User::factory()->inactive()->create();
 

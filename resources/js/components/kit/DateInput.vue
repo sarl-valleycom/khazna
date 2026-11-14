@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import {
-    getLocalTimeZone,
-    parseDate,
-    today,
-    type DateValue,
-} from '@internationalized/date';
+import { parseDate, type DateValue } from '@internationalized/date';
 import { CalendarIcon } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -14,7 +9,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { formatDate } from '@/lib/format';
+import { formatDate, toCalendarDate } from '@/lib/format';
 
 type Props = {
     id?: string;
@@ -52,7 +47,8 @@ function selectDate(date: DateValue | undefined) {
 }
 
 function selectToday() {
-    model.value = today(getLocalTimeZone()).toString();
+    // Calendar dates are Algiers dates, whatever the browser timezone is.
+    model.value = toCalendarDate(new Date());
     open.value = false;
 }
 

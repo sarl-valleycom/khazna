@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Settings;
 
+use App\Models\Activity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -120,6 +121,47 @@ class ProfileUpdateTest extends TestCase
 
         $this->assertGuest();
         $this->assertNull($user->fresh());
+    }
+
+    public function test_deleting_an_account_is_audited_with_the_user_as_causer()
+    {
+        $user = User::factory()->accountManager()->create();
+
+        $this->actingAs($user)
+            ->delete(route('profile.destroy'), ['password' => 'password']);
+
+        $activity = Activity::query()
+            ->where('event', 'deleted')
+            ->where('subject_id', $user->id)
+            ->firstOrFail();
+
+        $this->assertSame($user->id, $activity->causer_id);
+    }
+
+    public function test_the_only_active_owner_cannot_delete_their_account()
+    {
+        $owner = User::factory()->owner()->create();
+
+        $this->actingAs($owner)
+            ->from(route('profile.edit'))
+            ->delete(route('profile.destroy'), ['password' => 'password'])
+            ->assertSessionHasErrors(['password' => __('khazna.errors.last_owner')]);
+
+        $this->assertNotNull($owner->fresh());
+        $this->assertAuthenticatedAs($owner);
+    }
+
+    public function test_an_owner_can_delete_their_account_when_another_active_owner_exists()
+    {
+        $owner = User::factory()->owner()->create();
+        User::factory()->owner()->create();
+
+        $this->actingAs($owner)
+            ->delete(route('profile.destroy'), ['password' => 'password'])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('home'));
+
+        $this->assertNull($owner->fresh());
     }
 
     public function test_correct_password_must_be_provided_to_delete_account()

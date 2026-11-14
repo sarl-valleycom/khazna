@@ -22,7 +22,7 @@ class DemoSeeder extends Seeder
             throw new RuntimeException('DemoSeeder must never run in production.');
         }
 
-        $password = Hash::make((string) config('demo.password'));
+        $password = Hash::make($this->demoPassword());
 
         $users = [
             [
@@ -64,5 +64,29 @@ class DemoSeeder extends Seeder
                 ],
             );
         }
+    }
+
+    /**
+     * Local and testing may use the well-known default. Anywhere else (such as
+     * a public staging server) the password must be supplied explicitly, so a
+     * guessable owner login is never created.
+     */
+    private function demoPassword(): string
+    {
+        $configured = config('demo.password');
+
+        if (is_string($configured) && $configured !== '') {
+            if (! app()->environment(['local', 'testing']) && $configured === 'password') {
+                throw new RuntimeException('DEMO_PASSWORD must not be "password" outside local and testing.');
+            }
+
+            return $configured;
+        }
+
+        if (app()->environment(['local', 'testing'])) {
+            return 'password';
+        }
+
+        throw new RuntimeException('Set DEMO_PASSWORD before running DemoSeeder outside local and testing.');
     }
 }

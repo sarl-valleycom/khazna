@@ -11,6 +11,9 @@ use Stringable;
  */
 final class Money implements JsonSerializable, Stringable
 {
+    /** Whole-DA digits accepted when parsing text (under 10 trillion DA). */
+    private const MAX_WHOLE_DIGITS = 13;
+
     public function __construct(
         public readonly int $cents,
         public readonly string $currency = 'DZD',
@@ -64,29 +67,37 @@ final class Money implements JsonSerializable, Stringable
             return null;
         }
 
-        [$integerPart, $fractionPart] = self::splitDecimal($value);
+        $parts = self::splitDecimal($value);
 
-        if ($integerPart === '' && $fractionPart === '') {
+        if ($parts === null) {
             return null;
         }
 
-        $integerPart = preg_replace('/\D/', '', $integerPart) ?? '';
-        $fractionPart = preg_replace('/\D/', '', $fractionPart) ?? '';
+        [$integerPart, $fractionPart] = $parts;
 
-        if (strlen($fractionPart) > 2) {
+        // Keep amounts inside what both PHP ints and JS numbers hold exactly.
+        if (strlen(ltrim($integerPart, '0')) > self::MAX_WHOLE_DIGITS) {
             return null;
         }
 
-        $cents = (int) ($integerPart === '' ? 0 : $integerPart) * 100
-            + (int) str_pad($fractionPart, 2, '0');
+        $cents = (int) $integerPart * 100 + (int) str_pad($fractionPart, 2, '0');
 
         return new self($negative ? -$cents : $cents, $currency, $symbol);
     }
 
     /**
-     * @return array{0: string, 1: string}
+     * Split cleaned input (digits, dots and commas only) into whole digits and
+     * decimal digits. Returns null when the grouping is not unambiguous, so a
+     * typo is rejected rather than silently read as a different amount.
+     *
+     * A last separator followed by one or two digits is the decimal mark. A
+     * separator followed by exactly three digits is only accepted as thousands
+     * grouping when every group is well formed ("1,000", "12.345.678"), never
+     * after a leading zero ("0.125" is rejected, not read as 125 DA).
+     *
+     * @return array{0: string, 1: string}|null
      */
-    private static function splitDecimal(string $value): array
+    private static function splitDecimal(string $value): ?array
     {
         $lastComma = strrpos($value, ',');
         $lastDot = strrpos($value, '.');
@@ -97,15 +108,39 @@ final class Money implements JsonSerializable, Stringable
         }
 
         $after = substr($value, $lastSeparator + 1);
-        $digitsAfter = preg_replace('/\D/', '', $after) ?? '';
 
-        $isDecimal = strlen($digitsAfter) > 0 && strlen($digitsAfter) <= 2;
+        if (preg_match('/^\d{1,2}$/', $after) === 1) {
+            $integer = substr($value, 0, $lastSeparator);
+            $decimalMark = $value[$lastSeparator];
 
-        if (! $isDecimal) {
-            return [$value, ''];
+            if ($integer === '' || preg_match('/^\d+$/', $integer) === 1) {
+                return [$integer === '' ? '0' : $integer, $after];
+            }
+
+            // The integer part may itself be grouped, but only with the other mark.
+            $grouping = $decimalMark === ',' ? '.' : ',';
+
+            if (self::isGroupedInteger($integer, $grouping)) {
+                return [str_replace($grouping, '', $integer), $after];
+            }
+
+            return null;
         }
 
-        return [substr($value, 0, $lastSeparator), $after];
+        foreach ([',', '.'] as $grouping) {
+            if (self::isGroupedInteger($value, $grouping)) {
+                return [str_replace($grouping, '', $value), ''];
+            }
+        }
+
+        return null;
+    }
+
+    private static function isGroupedInteger(string $value, string $grouping): bool
+    {
+        $separator = preg_quote($grouping, '/');
+
+        return preg_match('/^[1-9]\d{0,2}('.$separator.'\d{3})+$/', $value) === 1;
     }
 
     public function add(self $other): self

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Models\User;
+use Illuminate\Auth\Events\Failed;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -12,9 +13,11 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\LoginRateLimiter;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -57,12 +60,24 @@ class FortifyServiceProvider extends ServiceProvider
                 ->where('email', $request->input(Fortify::username()))
                 ->first();
 
-            if ($user === null || ! $user->isActive()) {
+            if ($user === null || ! Hash::check((string) $request->input('password'), $user->password)) {
                 return null;
             }
 
-            if (! Hash::check((string) $request->input('password'), $user->password)) {
-                return null;
+            // Only reveal the reason after the password is proven, so the
+            // message cannot be used to discover which emails have accounts.
+            if (! $user->isActive()) {
+                // Throwing skips Fortify's own failed-login handling, so do the
+                // two things it would have done: count the attempt against the
+                // login limiter and fire the Failed event.
+                app(LoginRateLimiter::class)->increment($request);
+                event(new Failed('web', $user, [
+                    Fortify::username() => $request->input(Fortify::username()),
+                ]));
+
+                throw ValidationException::withMessages([
+                    Fortify::username() => __('khazna.errors.inactive_user'),
+                ]);
             }
 
             if (Hash::needsRehash($user->password)) {

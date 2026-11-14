@@ -4,6 +4,7 @@ use App\Enums\Role;
 use App\Models\User;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
@@ -31,4 +32,27 @@ test('the demo seeder refuses to run in production', function () {
 
     expect(fn () => (new DemoSeeder)->run())
         ->toThrow(RuntimeException::class);
+});
+
+test('the demo seeder refuses the default password outside local and testing', function () {
+    $this->app->detectEnvironment(fn (): string => 'staging');
+    config()->set('demo.password', null);
+
+    expect(fn () => (new DemoSeeder)->run())->toThrow(RuntimeException::class);
+
+    config()->set('demo.password', 'password');
+
+    expect(fn () => (new DemoSeeder)->run())->toThrow(RuntimeException::class);
+});
+
+test('the demo seeder accepts an explicit password on staging', function () {
+    $this->app->detectEnvironment(fn (): string => 'staging');
+    config()->set('demo.password', 'a-long-unguessable-passphrase');
+
+    $this->seed(DemoSeeder::class);
+
+    $owner = User::query()->where('email', 'owner@khazna.test')->firstOrFail();
+
+    expect(Hash::check('a-long-unguessable-passphrase', $owner->password))->toBeTrue()
+        ->and(Hash::check('password', $owner->password))->toBeFalse();
 });
