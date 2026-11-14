@@ -83,6 +83,24 @@ class GenerateDues
     }
 
     /**
+     * The next date, today or later, on which this contract would bill, or null
+     * when it never will again (ended, or a finished one-time contract).
+     */
+    public function nextScheduledDate(Contract $contract, ?CarbonImmutable $today = null): ?CarbonImmutable
+    {
+        $today = $today?->startOfDay() ?? AlgerianDate::today();
+        $from = $contract->starts_on->gt($today) ? $contract->starts_on : $today;
+
+        if ($contract->ends_on !== null && $contract->ends_on->lt($from)) {
+            return null;
+        }
+
+        $to = $contract->ends_on ?? $from->addYears(2);
+
+        return $this->dates($contract, $from, $to)[0] ?? null;
+    }
+
+    /**
      * @return list<CarbonImmutable>
      */
     private function dates(Contract $contract, CarbonImmutable $from, CarbonImmutable $to): array

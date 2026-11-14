@@ -14,7 +14,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 class DueRowData extends Data
 {
     /**
-     * @param  array{postpone: bool, cancel: bool, pay: bool}  $abilities
+     * @param  array{postpone: bool, cancel: bool, pay: bool, remind: bool}  $abilities
      */
     public function __construct(
         public int $id,
@@ -67,6 +67,7 @@ class DueRowData extends Data
                 'postpone' => $viewer->can('postpone', $due),
                 'cancel' => $viewer->can('cancel', $due),
                 'pay' => $viewer->can('pay', $due),
+                'remind' => $viewer->can('remind', $due),
             ],
         );
     }

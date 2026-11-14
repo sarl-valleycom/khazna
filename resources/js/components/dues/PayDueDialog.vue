@@ -190,6 +190,7 @@ function submit() {
             <FileInput
                 v-model="form.receipt"
                 accept="image/jpeg,image/png,image/webp,.pdf"
+                hint="JPG, PNG, WebP or PDF"
                 @invalid="(message) => form.setError('receipt', message)"
             />
         </div>

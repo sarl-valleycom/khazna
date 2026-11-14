@@ -250,7 +250,7 @@ test('unrestricted users see every office while restricted users see only theirs
 
     $this->actingAsRole(Role::Finance, ['office_id' => $first->id]);
     $this->get(route('settings.edit'))->assertForbidden();
-    $this->get(route('dashboard'))->assertInertia(fn (Assert $page) => $page
+    $this->get(route('home'))->assertInertia(fn (Assert $page) => $page
         ->has('offices', 1)
         ->where('offices.0.id', $first->id));
 });

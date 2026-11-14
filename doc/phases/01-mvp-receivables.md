@@ -122,16 +122,16 @@ Query object `DueTriageQuery`, with `today = AlgerianDate::today()`:
 
 The tabs are **mutually exclusive** so their counts add up. Confirm this reading of the SRS (see open questions).
 
-- [ ] Counts and totals for all tabs from one grouped query.
-- [ ] Filters: direction, kind, client, office, assignee. Stored in the URL.
-- [ ] Row actions:
+- [x] Counts and totals for all tabs from one grouped query.
+- [x] Filters: direction, kind, client, office, assignee. Stored in the URL.
+- [x] Row actions:
   - **Pay**: a dialog with the remaining amount prefilled and editable, **account** (defaults to the last account used for this client, and only lists accounts the user may see), method, date (today by default), reference, receipt.
   - **Postpone**: new date, reason.
   - **WhatsApp**: calls `POST /dues/{due}/reminders`, which logs the reminder and returns a `wa.me` link built from the normalized phone digits and the template. The browser then opens the link.
-- [ ] Default template, editable in settings:
+- [x] Default template, editable in settings:
   `Hello {client}, this is a friendly reminder that {amount} for {contract} is due on {date}. Thank you.`
-- [ ] Account managers only see their own clients (`visibleTo($user)` applied in the query object, and re-checked by the policy).
-- [ ] Phone layout: dues as cards with the three actions reachable with one thumb.
+- [x] Account managers only see their own clients (`visibleTo($user)` applied in the query object, and re-checked by the policy).
+- [x] Phone layout: dues as cards with the three actions reachable with one thumb.
 
 ## 1.7 Hardening
 

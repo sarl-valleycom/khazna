@@ -10,10 +10,12 @@ type Props = {
     due: App.Data.DueRowData;
     symbol: string;
     showClient?: boolean;
+    showCancel?: boolean;
 };
 
 const props = withDefaults(defineProps<Props>(), {
     showClient: false,
+    showCancel: true,
 });
 
 const tone = computed(() =>
@@ -87,7 +89,7 @@ const label = computed(() =>
                     credit
                 </p>
             </div>
-            <DueActions :due="props.due" />
+            <DueActions :due="props.due" :show-cancel="props.showCancel" />
         </div>
     </div>
 </template>

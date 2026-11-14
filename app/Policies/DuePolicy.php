@@ -33,6 +33,12 @@ class DuePolicy
         return $this->canSee($user, $due) && $due->status->isOpen();
     }
 
+    /** Preparing a WhatsApp reminder, for any open due the user can see. */
+    public function remind(User $user, Due $due): bool
+    {
+        return $this->canSee($user, $due) && $due->status->isOpen();
+    }
+
     public function cancel(User $user, Due $due): bool
     {
         return $this->canSee($user, $due) && $due->status->isOpen();

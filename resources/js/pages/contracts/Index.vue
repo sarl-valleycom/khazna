@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Plus } from '@lucide/vue';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import ContractFormDialog from '@/components/contracts/ContractFormDialog.vue';
 import ContractStatusActions from '@/components/contracts/ContractStatusActions.vue';
@@ -13,6 +12,10 @@ import PageHeader from '@/components/kit/PageHeader.vue';
 import StatusBadge from '@/components/kit/StatusBadge.vue';
 import type { DataTableColumn, SelectFilter } from '@/components/kit/types';
 import { formatDate } from '@/lib/format';
+
+defineOptions({
+    layout: { breadcrumbs: [{ title: 'Contracts', href: '/contracts' }] },
+});
 
 type Props = {
     contracts: App.Data.ContractData[];
@@ -67,114 +70,113 @@ function openEdit(contract: App.Data.ContractData) {
 
 <template>
     <Head title="Contracts" />
-    <AppLayout :breadcrumbs="[{ title: 'Contracts', href: '/contracts' }]">
-        <div class="flex flex-1 flex-col gap-4 p-4">
-            <PageHeader
-                title="Contracts"
-                description="SaaS renewals, their cycles and their current state."
-            >
-                <template #actions>
-                    <Button
-                        :disabled="props.clients.length === 0"
-                        @click="openCreate"
-                    >
-                        <Plus class="mr-1 size-4" /> New contract
-                    </Button>
-                </template>
-            </PageHeader>
 
-            <p
-                v-if="props.clients.length === 0"
-                class="text-sm text-muted-foreground"
-            >
-                Add a client before creating a contract.
-            </p>
+    <div class="flex flex-1 flex-col gap-4 p-4">
+        <PageHeader
+            title="Contracts"
+            description="SaaS renewals, their cycles and their current state."
+        >
+            <template #actions>
+                <Button
+                    :disabled="props.clients.length === 0"
+                    @click="openCreate"
+                >
+                    <Plus class="mr-1 size-4" /> New contract
+                </Button>
+            </template>
+        </PageHeader>
 
-            <FilterBar
-                :search="props.filters.q"
-                search-placeholder="Search by client name"
-                :select="statusFilter"
-            />
+        <p
+            v-if="props.clients.length === 0"
+            class="text-sm text-muted-foreground"
+        >
+            Add a client before creating a contract.
+        </p>
 
-            <DataTable
-                :data="props.contracts"
-                :columns="columns"
-                :total="props.total"
-                :page="props.page"
-                :per-page="props.perPage"
-                :sort="props.sort"
-                :direction="props.direction"
-                empty-title="No contracts yet"
-                empty-description="Create the first SaaS renewal for a client."
-            >
-                <template #cell="{ row, column }">
-                    <template v-if="column.key === 'client'">
-                        <Link
-                            :href="`/contracts/${row.id}`"
-                            class="font-medium hover:underline"
-                        >
-                            {{ row.clientName }}
-                        </Link>
-                        <p class="text-xs text-muted-foreground">
-                            {{ row.officeName }}
-                        </p>
-                    </template>
-                    <template v-else-if="column.key === 'amount_cents'">
-                        <MoneyText
-                            :cents="Number(row.amountCents)"
-                            :symbol="page.props.settings.currencySymbol"
-                            direction="in"
-                        />
-                    </template>
-                    <template v-else-if="column.key === 'starts_on'">
-                        {{ formatDate(String(row.startsOn)) }}
-                        <span class="text-muted-foreground">
-                            –
-                            {{
-                                row.endsOn
-                                    ? formatDate(String(row.endsOn))
-                                    : 'ongoing'
-                            }}
-                        </span>
-                    </template>
-                    <template v-else-if="column.key === 'status'">
-                        <StatusBadge
-                            :status="String(row.status)"
-                            :labels="{
-                                [String(row.status)]: String(row.statusLabel),
-                            }"
-                        />
-                    </template>
-                    <template v-else-if="column.key === 'actions'">
-                        <div class="flex flex-wrap justify-end gap-1">
-                            <Button variant="ghost" size="sm" as-child>
-                                <Link :href="`/contracts/${row.id}`">View</Link>
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                @click="openEdit(row as App.Data.ContractData)"
-                            >
-                                Edit
-                            </Button>
-                            <ContractStatusActions
-                                :contract-id="Number(row.id)"
-                                :status="row.status as App.Enums.ContractStatus"
-                            />
-                        </div>
-                    </template>
-                    <template v-else>{{ row[column.key] }}</template>
-                </template>
-            </DataTable>
-        </div>
-
-        <ContractFormDialog
-            v-model:open="dialogOpen"
-            :clients="props.clients"
-            :offices="props.offices"
-            :cycles="props.cycles"
-            :can-choose-office="props.canChooseOffice"
-            :contract="editing"
+        <FilterBar
+            :search="props.filters.q"
+            search-placeholder="Search by client name"
+            :select="statusFilter"
         />
-    </AppLayout>
+
+        <DataTable
+            :data="props.contracts"
+            :columns="columns"
+            :total="props.total"
+            :page="props.page"
+            :per-page="props.perPage"
+            :sort="props.sort"
+            :direction="props.direction"
+            empty-title="No contracts yet"
+            empty-description="Create the first SaaS renewal for a client."
+        >
+            <template #cell="{ row, column }">
+                <template v-if="column.key === 'client'">
+                    <Link
+                        :href="`/contracts/${row.id}`"
+                        class="font-medium hover:underline"
+                    >
+                        {{ row.clientName }}
+                    </Link>
+                    <p class="text-xs text-muted-foreground">
+                        {{ row.officeName }}
+                    </p>
+                </template>
+                <template v-else-if="column.key === 'amount_cents'">
+                    <MoneyText
+                        :cents="Number(row.amountCents)"
+                        :symbol="page.props.settings.currencySymbol"
+                        direction="in"
+                    />
+                </template>
+                <template v-else-if="column.key === 'starts_on'">
+                    {{ formatDate(String(row.startsOn)) }}
+                    <span class="text-muted-foreground">
+                        –
+                        {{
+                            row.endsOn
+                                ? formatDate(String(row.endsOn))
+                                : 'ongoing'
+                        }}
+                    </span>
+                </template>
+                <template v-else-if="column.key === 'status'">
+                    <StatusBadge
+                        :status="String(row.status)"
+                        :labels="{
+                            [String(row.status)]: String(row.statusLabel),
+                        }"
+                    />
+                </template>
+                <template v-else-if="column.key === 'actions'">
+                    <div class="flex flex-wrap justify-end gap-1">
+                        <Button variant="ghost" size="sm" as-child>
+                            <Link :href="`/contracts/${row.id}`">View</Link>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="openEdit(row as App.Data.ContractData)"
+                        >
+                            Edit
+                        </Button>
+                        <ContractStatusActions
+                            :contract-id="Number(row.id)"
+                            :status="row.status as App.Enums.ContractStatus"
+                        />
+                    </div>
+                </template>
+                <template v-else>{{ row[column.key] }}</template>
+            </template>
+        </DataTable>
+    </div>
+
+    <ContractFormDialog
+        v-model:open="dialogOpen"
+        :clients="props.clients"
+        :offices="props.offices"
+        :cycles="props.cycles"
+        :can-choose-office="props.canChooseOffice"
+        :contract="editing"
+    />
 </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -15,6 +14,10 @@ import DateInput from '@/components/kit/DateInput.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import type { DataTableColumn } from '@/components/kit/types';
 import { formatDateTime } from '@/lib/format';
+
+defineOptions({
+    layout: { breadcrumbs: [{ title: 'Audit log', href: '/audit-log' }] },
+});
 
 type Option = { value: string; label: string };
 type Props = {
@@ -79,100 +82,99 @@ function changeSummary(changes: unknown): string {
 
 <template>
     <Head title="Audit log" />
-    <AppLayout :breadcrumbs="[{ title: 'Audit log', href: '/audit-log' }]">
-        <div class="flex flex-1 flex-col gap-4 p-4">
-            <PageHeader
-                title="Audit log"
-                description="Read-only history of changes to money, contracts, dues, payments, users and settings."
-            />
 
-            <div
-                class="flex flex-col gap-2 rounded-xl border bg-card p-3 sm:flex-row sm:items-end"
-            >
-                <div class="min-w-44">
-                    <label class="mb-1 block text-xs text-muted-foreground"
-                        >User</label
-                    >
-                    <Select v-model="user">
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All users</SelectItem>
-                            <SelectItem
-                                v-for="option in props.users"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div class="min-w-40">
-                    <label class="mb-1 block text-xs text-muted-foreground"
-                        >Entity</label
-                    >
-                    <Select v-model="entity">
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All entities</SelectItem>
-                            <SelectItem
-                                v-for="option in props.entities"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div class="w-40">
-                    <label class="mb-1 block text-xs text-muted-foreground"
-                        >From</label
-                    >
-                    <DateInput v-model="from" placeholder="From" />
-                </div>
-                <div class="w-40">
-                    <label class="mb-1 block text-xs text-muted-foreground"
-                        >To</label
-                    >
-                    <DateInput v-model="to" placeholder="To" />
-                </div>
-                <Button type="button" @click="apply">Apply</Button>
+    <div class="flex flex-1 flex-col gap-4 p-4">
+        <PageHeader
+            title="Audit log"
+            description="Read-only history of changes to money, contracts, dues, payments, users and settings."
+        />
+
+        <div
+            class="flex flex-col gap-2 rounded-xl border bg-card p-3 sm:flex-row sm:items-end"
+        >
+            <div class="min-w-44">
+                <label class="mb-1 block text-xs text-muted-foreground"
+                    >User</label
+                >
+                <Select v-model="user">
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All users</SelectItem>
+                        <SelectItem
+                            v-for="option in props.users"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
-
-            <DataTable
-                :data="props.rows"
-                :columns="columns"
-                :total="props.total"
-                :page="props.currentPage"
-                :per-page="props.perPage"
-                empty-title="No audit entries"
-            >
-                <template #cell="{ row, column }">
-                    <template v-if="column.key === 'createdAt'">
-                        {{ formatDateTime(String(row.createdAt)) }}
-                    </template>
-                    <template v-else-if="column.key === 'causerName'">
-                        {{ row.causerName ?? 'System' }}
-                    </template>
-                    <template v-else-if="column.key === 'subjectType'">
-                        {{
-                            row.subjectType
-                                ? String(row.subjectType).split('\\').pop()
-                                : '—'
-                        }}
-                    </template>
-                    <template v-else-if="column.key === 'reason'">
-                        {{ row.reason ?? '—' }}
-                    </template>
-                    <template v-else-if="column.key === 'changes'">
-                        <span class="block max-w-md truncate text-xs">{{
-                            changeSummary(row.changes)
-                        }}</span>
-                    </template>
-                    <template v-else>{{ row[column.key] }}</template>
-                </template>
-            </DataTable>
+            <div class="min-w-40">
+                <label class="mb-1 block text-xs text-muted-foreground"
+                    >Entity</label
+                >
+                <Select v-model="entity">
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All entities</SelectItem>
+                        <SelectItem
+                            v-for="option in props.entities"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ option.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div class="w-40">
+                <label class="mb-1 block text-xs text-muted-foreground"
+                    >From</label
+                >
+                <DateInput v-model="from" placeholder="From" />
+            </div>
+            <div class="w-40">
+                <label class="mb-1 block text-xs text-muted-foreground"
+                    >To</label
+                >
+                <DateInput v-model="to" placeholder="To" />
+            </div>
+            <Button type="button" @click="apply">Apply</Button>
         </div>
-    </AppLayout>
+
+        <DataTable
+            :data="props.rows"
+            :columns="columns"
+            :total="props.total"
+            :page="props.currentPage"
+            :per-page="props.perPage"
+            empty-title="No audit entries"
+        >
+            <template #cell="{ row, column }">
+                <template v-if="column.key === 'createdAt'">
+                    {{ formatDateTime(String(row.createdAt)) }}
+                </template>
+                <template v-else-if="column.key === 'causerName'">
+                    {{ row.causerName ?? 'System' }}
+                </template>
+                <template v-else-if="column.key === 'subjectType'">
+                    {{
+                        row.subjectType
+                            ? String(row.subjectType).split('\\').pop()
+                            : '—'
+                    }}
+                </template>
+                <template v-else-if="column.key === 'reason'">
+                    {{ row.reason ?? '—' }}
+                </template>
+                <template v-else-if="column.key === 'changes'">
+                    <span class="block max-w-md truncate text-xs">{{
+                        changeSummary(row.changes)
+                    }}</span>
+                </template>
+                <template v-else>{{ row[column.key] }}</template>
+            </template>
+        </DataTable>
+    </div>
 </template>

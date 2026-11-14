@@ -10,14 +10,15 @@ use App\Http\Controllers\Clients\ClientImportController;
 use App\Http\Controllers\Contracts\ContractController;
 use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Controllers\Dues\DueController;
+use App\Http\Controllers\Dues\DueReminderController;
 use App\Http\Controllers\Payments\PaymentController;
+use App\Http\Controllers\Triage\TriageController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
-
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('/', TriageController::class)->name('home');
+    Route::redirect('dashboard', '/')->name('dashboard');
 
     Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
     Route::get('clients/import', [ClientImportController::class, 'create'])->name('clients.import');
@@ -41,6 +42,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
 
     Route::patch('dues/{due}/postpone', [DueController::class, 'postpone'])->whereNumber('due')->name('dues.postpone');
+    Route::post('dues/{due}/reminders', [DueReminderController::class, 'store'])->whereNumber('due')->name('dues.reminders.store');
     Route::patch('dues/{due}/cancel', [DueController::class, 'cancel'])->whereNumber('due')->name('dues.cancel');
 
     Route::post('dues/{due}/payments', [PaymentController::class, 'store'])->whereNumber('due')->name('payments.store');

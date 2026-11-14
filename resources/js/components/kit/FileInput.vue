@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 
 type Props = {
     accept?: string;
+    /** Friendly text for the accepted types, shown instead of the raw accept list. */
+    hint?: string;
     maxSizeMb?: number;
     disabled?: boolean;
 };
@@ -175,7 +177,7 @@ function clear() {
                     >Choose a file or drop it here</span
                 >
                 <span class="text-xs text-muted-foreground">
-                    {{ accept }} · up to {{ maxSizeMb }} MB
+                    {{ hint ?? accept }} · up to {{ maxSizeMb }} MB
                 </span>
             </template>
         </label>

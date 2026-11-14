@@ -88,7 +88,7 @@ test('a signed-in user who is deactivated is logged out on the next request', fu
     $user = User::factory()->inactive()->create();
 
     $this->actingAs($user)
-        ->get(route('dashboard'))
+        ->get(route('home'))
         ->assertRedirect(route('login'));
 
     $this->assertGuest();
@@ -98,7 +98,7 @@ test('an active user stays signed in', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)
-        ->get(route('dashboard'))
+        ->get(route('home'))
         ->assertOk();
 
     $this->assertAuthenticatedAs($user);

@@ -46,6 +46,17 @@ declare namespace App {
             runningCents: number;
             runningFormatted: string;
         };
+        export type AttentionContractData = {
+            id: number;
+            clientId: number;
+            clientName: string;
+            officeName: string;
+            amountCents: number;
+            cycleLabel: string;
+            startsOn: string;
+            endsOn: string | null;
+            reason: string;
+        };
         export type AuditLogRowData = {
             id: number;
             event: string;
@@ -230,6 +241,7 @@ declare namespace App {
                 postpone: boolean;
                 cancel: boolean;
                 pay: boolean;
+                remind: boolean;
             };
         };
         export type FlashData = {
@@ -297,6 +309,21 @@ declare namespace App {
             currencyLabel: string;
             salaryDueDay: number;
             weekStartOptions: Record<string, string>;
+        };
+        export type TriageFiltersData = {
+            tab: string;
+            direction: string;
+            kind: string;
+            client: number | null;
+            office: number | null;
+            assignee: number | null;
+        };
+        export type TriageTabData = {
+            value: string;
+            label: string;
+            count: number;
+            totalCents: number | null;
+            totalFormatted: string | null;
         };
         export type UserData = {
             id: number;

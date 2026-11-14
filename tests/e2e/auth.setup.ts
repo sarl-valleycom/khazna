@@ -15,6 +15,6 @@ setup('authenticate as the owner', async ({ page }) => {
     await page.getByLabel('Password', { exact: true }).fill(password!);
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page).toHaveURL(/\/$/);
     await page.context().storageState({ path: authFile });
 });

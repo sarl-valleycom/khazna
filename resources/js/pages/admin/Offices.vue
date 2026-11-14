@@ -2,7 +2,6 @@
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Plus } from '@lucide/vue';
 import { ref } from 'vue';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -13,6 +12,10 @@ import FormDialog from '@/components/kit/FormDialog.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import StatusBadge from '@/components/kit/StatusBadge.vue';
 import type { DataTableColumn } from '@/components/kit/types';
+
+defineOptions({
+    layout: { breadcrumbs: [{ title: 'Offices', href: '/offices' }] },
+});
 
 type Props = { offices: App.Data.OfficeRowData[] };
 
@@ -83,87 +86,84 @@ function deactivate() {
 
 <template>
     <Head title="Offices" />
-    <AppLayout :breadcrumbs="[{ title: 'Offices', href: '/offices' }]">
-        <div class="flex flex-1 flex-col gap-4 p-4">
-            <PageHeader
-                title="Offices"
-                description="The company's locations. At least one active office is required."
-            >
-                <template #actions>
-                    <Button @click="openCreate">
-                        <Plus class="mr-1 size-4" /> New office
-                    </Button>
-                </template>
-            </PageHeader>
 
-            <DataTable :data="props.offices" :columns="columns">
-                <template #cell="{ row, column }">
-                    <template v-if="column.key === 'active'">
-                        <StatusBadge
-                            :status="row.active ? 'active' : 'inactive'"
-                        />
-                    </template>
-                    <template v-else-if="column.key === 'actions'">
-                        <div class="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                @click="openEdit(row as App.Data.OfficeRowData)"
-                            >
-                                Edit
-                            </Button>
-                            <Button
-                                v-if="row.active"
-                                variant="ghost"
-                                size="sm"
-                                @click="
-                                    askDeactivate(row as App.Data.OfficeRowData)
-                                "
-                            >
-                                Deactivate
-                            </Button>
-                        </div>
-                    </template>
-                    <template v-else>{{ row[column.key] }}</template>
-                </template>
-            </DataTable>
-        </div>
-
-        <FormDialog
-            v-model:open="dialogOpen"
-            :title="editing ? 'Edit office' : 'New office'"
-            :processing="form.processing"
-            :errors="form.errors"
-            @submit="submit"
+    <div class="flex flex-1 flex-col gap-4 p-4">
+        <PageHeader
+            title="Offices"
+            description="The company's locations. At least one active office is required."
         >
-            <div class="space-y-2">
-                <Label for="office-name">Name</Label>
-                <Input id="office-name" v-model="form.name" />
-                <p v-if="form.errors.name" class="text-sm text-destructive">
-                    {{ form.errors.name }}
-                </p>
-            </div>
-            <div class="space-y-2">
-                <Label for="office-city">City</Label>
-                <Input id="office-city" v-model="form.city" />
-                <p v-if="form.errors.city" class="text-sm text-destructive">
-                    {{ form.errors.city }}
-                </p>
-            </div>
-            <div class="flex items-center gap-2">
-                <Checkbox id="office-active" v-model="form.active" />
-                <Label for="office-active">Active</Label>
-            </div>
-        </FormDialog>
+            <template #actions>
+                <Button @click="openCreate">
+                    <Plus class="mr-1 size-4" /> New office
+                </Button>
+            </template>
+        </PageHeader>
 
-        <ConfirmDialog
-            v-model:open="confirmOpen"
-            title="Deactivate office?"
-            description="The office stays in history but will no longer be offered for new records."
-            confirm-label="Deactivate"
-            destructive
-            :processing="false"
-            @confirm="deactivate"
-        />
-    </AppLayout>
+        <DataTable :data="props.offices" :columns="columns">
+            <template #cell="{ row, column }">
+                <template v-if="column.key === 'active'">
+                    <StatusBadge :status="row.active ? 'active' : 'inactive'" />
+                </template>
+                <template v-else-if="column.key === 'actions'">
+                    <div class="flex justify-end gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="openEdit(row as App.Data.OfficeRowData)"
+                        >
+                            Edit
+                        </Button>
+                        <Button
+                            v-if="row.active"
+                            variant="ghost"
+                            size="sm"
+                            @click="
+                                askDeactivate(row as App.Data.OfficeRowData)
+                            "
+                        >
+                            Deactivate
+                        </Button>
+                    </div>
+                </template>
+                <template v-else>{{ row[column.key] }}</template>
+            </template>
+        </DataTable>
+    </div>
+
+    <FormDialog
+        v-model:open="dialogOpen"
+        :title="editing ? 'Edit office' : 'New office'"
+        :processing="form.processing"
+        :errors="form.errors"
+        @submit="submit"
+    >
+        <div class="space-y-2">
+            <Label for="office-name">Name</Label>
+            <Input id="office-name" v-model="form.name" />
+            <p v-if="form.errors.name" class="text-sm text-destructive">
+                {{ form.errors.name }}
+            </p>
+        </div>
+        <div class="space-y-2">
+            <Label for="office-city">City</Label>
+            <Input id="office-city" v-model="form.city" />
+            <p v-if="form.errors.city" class="text-sm text-destructive">
+                {{ form.errors.city }}
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <Checkbox id="office-active" v-model="form.active" />
+            <Label for="office-active">Active</Label>
+        </div>
+    </FormDialog>
+
+    <ConfirmDialog
+        v-model:open="confirmOpen"
+        title="Deactivate office?"
+        description="The office stays in history but will no longer be offered for new records."
+        confirm-label="Deactivate"
+        destructive
+        :processing="false"
+        @confirm="deactivate"
+    />
 </template>
