@@ -19,7 +19,7 @@ class AuditLogController extends Controller
         $this->authorize('view-audit-log');
 
         $causer = $request->integer('user') ?: null;
-        $subject = $request->string('entity')->toString() ?: null;
+        $subject = $this->queryString($request, 'entity') ?: null;
         $from = $this->date($request->query('from'));
         $to = $this->date($request->query('to'));
         $page = max(1, $request->integer('page', 1));

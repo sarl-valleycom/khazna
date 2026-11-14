@@ -30,6 +30,9 @@ type Props = {
     statuses: Array<{ value: string; label: string }>;
     cycles: Array<{ value: string; label: string }>;
     canChooseOffice: boolean;
+    types: Array<{ value: string; label: string }>;
+    suppliers: Array<{ id: number; name: string }>;
+    categories: Array<{ id: number; name: string }>;
 };
 
 const props = defineProps<Props>();
@@ -116,7 +119,7 @@ function openEdit(contract: App.Data.ContractData) {
                         :href="`/contracts/${row.id}`"
                         class="font-medium hover:underline"
                     >
-                        {{ row.clientName }}
+                        {{ row.partyName }}
                     </Link>
                     <p class="text-xs text-muted-foreground">
                         {{ row.officeName }}
@@ -177,6 +180,9 @@ function openEdit(contract: App.Data.ContractData) {
         :offices="props.offices"
         :cycles="props.cycles"
         :can-choose-office="props.canChooseOffice"
+        :types="props.types"
+        :suppliers="props.suppliers"
+        :categories="props.categories"
         :contract="editing"
     />
 </template>

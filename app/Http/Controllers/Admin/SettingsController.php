@@ -24,6 +24,7 @@ class SettingsController extends Controller
                 reminderTemplate: (string) Setting::current(Setting::REMINDER_TEMPLATE, (string) config('khazna.reminder_template')),
                 currencyLabel: (string) Setting::current(Setting::CURRENCY_LABEL, (string) config('khazna.currency_symbol')),
                 salaryDueDay: (int) Setting::current(Setting::SALARY_DUE_DAY, (string) config('khazna.salary_due_day')),
+                milestonePaymentTermDays: (int) Setting::current(Setting::MILESTONE_PAYMENT_TERM_DAYS, '0'),
                 weekStartOptions: [
                     'saturday' => 'Saturday',
                     'sunday' => 'Sunday',
@@ -45,6 +46,10 @@ class SettingsController extends Controller
                 Setting::put(Setting::REMINDER_TEMPLATE, $validated['reminder_template']);
                 Setting::put(Setting::CURRENCY_LABEL, $validated['currency_label']);
                 Setting::put(Setting::SALARY_DUE_DAY, (string) $validated['salary_due_day']);
+
+                if (isset($validated['milestone_payment_term_days'])) {
+                    Setting::put(Setting::MILESTONE_PAYMENT_TERM_DAYS, (string) $validated['milestone_payment_term_days']);
+                }
             });
         });
 

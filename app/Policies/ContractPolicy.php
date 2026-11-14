@@ -27,6 +27,12 @@ class ContractPolicy
         return $this->canSee($user, $contract);
     }
 
+    /** Delivering, requesting and rebalancing milestones: anyone who can see the project. */
+    public function manageMilestones(User $user, Contract $contract): bool
+    {
+        return $this->canSee($user, $contract);
+    }
+
     public function changeStatus(User $user, Contract $contract): bool
     {
         return $this->canSee($user, $contract);

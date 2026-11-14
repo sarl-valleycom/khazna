@@ -3,7 +3,14 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     BookOpen,
     Building2,
+    ChartColumn,
+    TrendingUp,
     Landmark,
+    Store,
+    Tags,
+    UserRoundCog,
+    Wallet,
+    FileSpreadsheet,
     ClipboardList,
     FileText,
     FolderGit2,
@@ -57,6 +64,23 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Dashboard',
+        href: '/dashboard',
+        icon: ChartColumn,
+    },
+    {
+        title: 'Forecast',
+        href: '/forecast',
+        icon: TrendingUp,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Cash report',
+        href: '/reports/cash',
+        icon: FileSpreadsheet,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
         title: 'Clients',
         href: '/clients',
         icon: Users,
@@ -70,6 +94,30 @@ const mainNavItems: NavItem[] = [
         title: 'Accounts',
         href: '/accounts',
         icon: Landmark,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Employees',
+        href: '/employees',
+        icon: UserRoundCog,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Payroll',
+        href: '/payroll/close',
+        icon: Wallet,
+        ability: 'view-salaries',
+    },
+    {
+        title: 'Suppliers',
+        href: '/suppliers',
+        icon: Store,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Categories',
+        href: '/categories',
+        icon: Tags,
         roles: ['owner', 'finance'] as App.Enums.Role[],
     },
     {
@@ -108,11 +156,14 @@ const mainNavItems: NavItem[] = [
         : []),
 ];
 
+const abilities = computed(() => page.props.auth.user?.abilities ?? {});
+
 const visibleMainNavItems = computed(() =>
     mainNavItems.filter(
         (item) =>
-            !item.roles ||
-            (role.value !== null && item.roles.includes(role.value)),
+            (!item.roles ||
+                (role.value !== null && item.roles.includes(role.value))) &&
+            (!item.ability || abilities.value[item.ability] === true),
     ),
 );
 

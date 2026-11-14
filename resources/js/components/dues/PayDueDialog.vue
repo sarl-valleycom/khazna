@@ -39,6 +39,8 @@ const methods = [
 ];
 
 const accounts = computed(() => page.props.paymentAccounts ?? []);
+// For money going out the same dialog reads the other way round.
+const isOut = computed(() => props.due.direction === 'out');
 const symbol = computed(() => page.props.settings.currencySymbol);
 const today = computed(() => toCalendarDate(new Date()));
 
@@ -54,7 +56,10 @@ const form = useForm({
 });
 
 function defaultAccount(): number | null {
-    const remembered = page.props.paymentDefaults?.[props.due.clientId];
+    const remembered =
+        props.due.clientId === null
+            ? undefined
+            : page.props.paymentDefaults?.[props.due.clientId];
 
     if (remembered !== undefined) {
         return remembered;
@@ -64,7 +69,13 @@ function defaultAccount(): number | null {
         (account) => account.officeId === props.due.officeId,
     );
 
-    return sameOffice.length === 1 ? sameOffice[0].id : null;
+    // A client's last account wins; otherwise the office's own account if it has just one,
+    // and for a salary or supplier due (no client) the office's first account.
+    if (sameOffice.length === 1) {
+        return sameOffice[0].id;
+    }
+
+    return props.due.clientId === null ? (sameOffice[0]?.id ?? null) : null;
 }
 
 watch(open, (value) => {
@@ -110,9 +121,9 @@ function submit() {
 <template>
     <FormDialog
         v-model:open="open"
-        title="Record payment"
-        :description="`${props.due.clientName} · ${props.due.kindLabel} due ${props.due.dueOn}. Remaining ${formatMoney(props.due.remainingCents, symbol)}.`"
-        submit-label="Record payment"
+        :title="isOut ? 'Pay out' : 'Record payment'"
+        :description="`${props.due.partyName} · ${props.due.kindLabel}${props.due.dueOn ? ` due ${props.due.dueOn}` : ''}. Remaining ${formatMoney(props.due.remainingCents, symbol)}.`"
+        :submit-label="isOut ? 'Pay' : 'Record payment'"
         :processing="form.processing"
         :submit-disabled="needsConfirmation && !form.confirm_overpayment"
         :errors="form.errors"
@@ -121,7 +132,9 @@ function submit() {
     >
         <div class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-2">
-                <Label for="pay-amount">Amount received</Label>
+                <Label for="pay-amount">{{
+                    isOut ? 'Amount paid' : 'Amount received'
+                }}</Label>
                 <MoneyInput
                     id="pay-amount"
                     v-model="form.amount_cents"
@@ -149,7 +162,11 @@ function submit() {
                     v-model="form.account_id"
                     :accounts="accounts"
                     :allow-all="false"
-                    placeholder="Where did the money go?"
+                    :placeholder="
+                        isOut
+                            ? 'Which account did it leave?'
+                            : 'Where did the money go?'
+                    "
                 />
                 <p
                     v-if="accounts.length === 0"

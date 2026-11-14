@@ -12,7 +12,6 @@ use App\Http\Requests\Accounts\AccountRequest;
 use App\Models\Account;
 use App\Models\AccountEntry;
 use App\Models\Office;
-use App\Models\User;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -119,7 +118,19 @@ class AccountController extends Controller
         $totalIn = (int) ($totals->total_in ?? 0);
         $totalOut = (int) ($totals->total_out ?? 0);
 
-        $entries = (clone $inRange)
+        // Payroll is hidden from anyone without the salary permission: all of a day's
+        // payroll movements in one direction collapse into a single "Payroll" line,
+        // so neither a name nor an individual salary shows. Balances still add up.
+        $source = $actor->can('view-salaries')
+            ? (clone $inRange)
+            : AccountEntry::query()->fromSub(
+                (clone $inRange)->toBase()
+                    ->selectRaw("MIN(id) AS id, account_id, direction, SUM(amount_cents) AS amount_cents, entry_date, CASE WHEN is_payroll = 1 THEN 'Payroll' ELSE MAX(description) END AS description")
+                    ->groupByRaw('account_id, entry_date, direction, is_payroll, CASE WHEN is_payroll = 1 THEN 0 ELSE id END'),
+                'account_entries',
+            );
+
+        $entries = $source
             ->select('account_entries.*')
             ->selectRaw("? + SUM({$signed}) OVER (ORDER BY account_entries.entry_date, account_entries.id) AS running_cents", [$start])
             ->orderBy('account_entries.entry_date')
@@ -164,16 +175,5 @@ class AccountController extends Controller
         $save->update($account, $request->validated());
 
         return back(303)->with('success', __('Account updated.'));
-    }
-
-    private function actor(Request $request): User
-    {
-        $actor = $request->user();
-
-        if (! $actor instanceof User) {
-            abort(403);
-        }
-
-        return $actor;
     }
 }

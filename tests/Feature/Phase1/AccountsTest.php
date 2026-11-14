@@ -178,13 +178,16 @@ test('the opening balance and date lock once an account has entries', function (
 
     $this->patch(route('accounts.update', $account), $payload(['name' => 'Renamed', 'opening_balance_cents' => 1_000, 'opening_date' => '2026-01-01']))
         ->assertSessionHasErrors('opening_balance_cents');
-    $this->patch(route('accounts.update', $account), $payload(['name' => 'Renamed again', 'opening_balance_cents' => 999, 'opening_date' => '2026-01-01', 'active' => false]))
+    $this->patch(route('accounts.update', $account), $payload(['name' => 'Renamed again', 'opening_balance_cents' => 999, 'opening_date' => '2026-01-01']))
         ->assertSessionHasNoErrors();
+    // It still holds money, so it cannot be switched off (FR-ACC-12).
+    $this->patch(route('accounts.update', $account), $payload(['name' => 'Renamed again', 'opening_balance_cents' => 999, 'opening_date' => '2026-01-01', 'active' => false]))
+        ->assertSessionHasErrors('active');
 
     $account->refresh();
     expect($account->opening_balance_cents)->toBe(999)
         ->and($account->name)->toBe('Renamed again')
-        ->and($account->active)->toBeFalse();
+        ->and($account->active)->toBeTrue();
 });
 
 test('account changes are audited', function () {

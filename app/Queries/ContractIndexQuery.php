@@ -17,12 +17,14 @@ class ContractIndexQuery
     {
         $query = Contract::query()
             ->visibleTo($user)
-            ->with(['client:id,name,account_manager_id', 'office:id,name']);
+            ->withParties();
 
         if ($filters->q !== '') {
             $term = '%'.addcslashes($filters->q, '\\%_').'%';
 
-            $query->whereHas('client', fn (Builder $query): Builder => $query->where('name', 'like', $term));
+            $query->where(fn (Builder $query): Builder => $query
+                ->whereHas('client', fn (Builder $client): Builder => $client->where('name', 'like', $term))
+                ->orWhereHas('supplier', fn (Builder $supplier): Builder => $supplier->where('name', 'like', $term)));
         }
 
         if ($filters->status !== '') {

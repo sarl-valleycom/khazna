@@ -15,13 +15,15 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 class DueRowData extends Data
 {
     /**
-     * @param  array{postpone: bool, cancel: bool, pay: bool, remind: bool}  $abilities
+     * @param  array{postpone: bool, cancel: bool, pay: bool, remind: bool, advance: bool}  $abilities
      */
     public function __construct(
         public int $id,
         public ?int $contractId,
-        public int $clientId,
-        public string $clientName,
+        public ?int $clientId,
+        public ?int $employeeId,
+        public string $partyName,
+        public string $partyType,
         public int $officeId,
         public string $officeName,
         public ?string $description,
@@ -29,7 +31,8 @@ class DueRowData extends Data
         public string $kindLabel,
         public Direction $direction,
         public string $directionLabel,
-        public string $dueOn,
+        public ?string $period,
+        public ?string $dueOn,
         public int $amountDueCents,
         public int $amountPaidCents,
         public int $remainingCents,
@@ -49,7 +52,9 @@ class DueRowData extends Data
             id: $due->id,
             contractId: $due->contract_id,
             clientId: $due->client_id,
-            clientName: $due->client->name ?? '',
+            employeeId: $due->employee_id,
+            partyName: $due->partyName(),
+            partyType: $due->partyType(),
             officeId: $due->office_id,
             officeName: $due->office->name ?? '',
             description: $due->description,
@@ -57,7 +62,8 @@ class DueRowData extends Data
             kindLabel: $due->kind->label(),
             direction: $due->direction,
             directionLabel: $due->direction->label(),
-            dueOn: $due->due_on->toDateString(),
+            period: $due->period?->toDateString(),
+            dueOn: $due->due_on?->toDateString(),
             amountDueCents: $due->amount_due_cents,
             amountPaidCents: $due->amount_paid_cents,
             remainingCents: $due->remainingCents(),
@@ -75,6 +81,8 @@ class DueRowData extends Data
                 'cancel' => $viewer->can('cancel', $due),
                 'pay' => $viewer->can('pay', $due),
                 'remind' => $viewer->can('remind', $due),
+                // FR-TRI-08: an advance can be given from a salary due, by whoever may see salaries.
+                'advance' => $due->employee_id !== null && $due->status->isOpen() && $viewer->can('view-salaries'),
             ],
         );
     }

@@ -19,6 +19,7 @@ class LedgerWriter
 {
     /**
      * @param  string  $dateField  The form field to blame when the date is refused.
+     * @param  bool  $isPayroll  Salary payments and advances: hidden from anyone without the salary permission.
      */
     public function record(
         Account $account,
@@ -29,12 +30,17 @@ class LedgerWriter
         ?User $by,
         ?string $description = null,
         string $dateField = 'entry_date',
+        ?int $categoryId = null,
+        bool $isPayroll = false,
+        bool $isTransfer = false,
+        bool $isReversal = false,
     ): AccountEntry {
         if ($amountCents <= 0) {
             throw new InvalidArgumentException('A ledger entry needs a positive amount.');
         }
 
-        if ($entryDate->startOfDay()->lt($account->opening_date->startOfDay())) {
+        // Calendar days, not instants: Algiers midnight is the evening before in UTC.
+        if ($entryDate->toDateString() < $account->opening_date->toDateString()) {
             throw ValidationException::withMessages([
                 $dateField => __('This account starts on :date. Choose that date or a later one.', [
                     'date' => $account->opening_date->format('d M Y'),
@@ -50,6 +56,10 @@ class LedgerWriter
             'source_type' => $source->getMorphClass(),
             'source_id' => $source->getKey(),
             'description' => $description,
+            'category_id' => $categoryId,
+            'is_payroll' => $isPayroll,
+            'is_transfer' => $isTransfer,
+            'is_reversal' => $isReversal,
             'created_by' => $by?->id,
         ]);
     }

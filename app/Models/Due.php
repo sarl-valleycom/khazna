@@ -25,10 +25,14 @@ use LogicException;
  * @property DueKind $kind
  * @property Direction $direction
  * @property int|null $contract_id
- * @property int $client_id
+ * @property int|null $client_id
+ * @property int|null $supplier_id
+ * @property int|null $employee_id
+ * @property int|null $milestone_id
+ * @property int|null $category_id
  * @property int $office_id
- * @property CarbonImmutable $period
- * @property CarbonImmutable $due_on
+ * @property CarbonImmutable|null $period
+ * @property CarbonImmutable|null $due_on Null only for a milestone still waiting for delivery.
  * @property int $amount_due_cents
  * @property int $amount_paid_cents
  * @property DueStatus $status
@@ -41,6 +45,10 @@ use LogicException;
     'direction',
     'contract_id',
     'client_id',
+    'supplier_id',
+    'employee_id',
+    'milestone_id',
+    'category_id',
     'office_id',
     'period',
     'due_on',
@@ -63,6 +71,10 @@ class Due extends Model
             'direction' => Direction::class,
             'contract_id' => 'integer',
             'client_id' => 'integer',
+            'supplier_id' => 'integer',
+            'employee_id' => 'integer',
+            'milestone_id' => 'integer',
+            'category_id' => 'integer',
             'office_id' => 'integer',
             'period' => 'immutable_date',
             'due_on' => 'immutable_date',
@@ -85,6 +97,30 @@ class Due extends Model
         return $this->belongsTo(Client::class);
     }
 
+    /** @return BelongsTo<Supplier, $this> */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /** @return BelongsTo<Employee, $this> */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    /** @return BelongsTo<Milestone, $this> */
+    public function milestone(): BelongsTo
+    {
+        return $this->belongsTo(Milestone::class);
+    }
+
+    /** @return BelongsTo<Category, $this> */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     /** @return BelongsTo<Office, $this> */
     public function office(): BelongsTo
     {
@@ -102,6 +138,12 @@ class Due extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
+        // Salary dues exist only for people who may see salaries. Everyone else gets
+        // them filtered out at the query, so they cannot appear in any list or total.
+        if (! $user->can('view-salaries')) {
+            $query->whereNull($this->qualifyColumn('employee_id'));
+        }
+
         if ($user->office_id !== null) {
             $query->where($this->qualifyColumn('office_id'), $user->office_id);
         }
@@ -111,9 +153,48 @@ class Due extends Model
         }
     }
 
+    /**
+     * Eager-load everything a due row shows, so a list never lazy-loads a party.
+     *
+     * @param  Builder<Due>  $query
+     */
+    public function scopeWithParties(Builder $query): void
+    {
+        $query->with([
+            'client:id,name,account_manager_id',
+            'supplier:id,name',
+            'employee:id,name',
+            'office:id,name',
+        ]);
+    }
+
+    /** The client, supplier or employee this due is with. Needs the relations loaded (see withParties). */
+    public function partyName(): string
+    {
+        return $this->client->name ?? $this->supplier->name ?? $this->employee->name ?? '';
+    }
+
+    public function partyType(): string
+    {
+        return match (true) {
+            $this->client_id !== null => 'client',
+            $this->supplier_id !== null => 'supplier',
+            $this->employee_id !== null => 'employee',
+            default => 'none',
+        };
+    }
+
+    /** True for a milestone still waiting for delivery: it has no date, so no time-based tab holds it. */
+    public function isWaitingForDelivery(): bool
+    {
+        return $this->due_on === null;
+    }
+
     public function isOverdue(): bool
     {
-        return $this->status->isOpen() && $this->due_on->lt(AlgerianDate::today());
+        return $this->status->isOpen()
+            && $this->due_on !== null
+            && $this->due_on->lt(AlgerianDate::today());
     }
 
     public function remainingCents(): int

@@ -12,4 +12,6 @@ export type NavItem = {
     icon?: LucideIcon;
     isActive?: boolean;
     roles?: App.Enums.Role[];
+    /** Needs this ability from the signed-in user (for example `view-salaries`). */
+    ability?: string;
 };

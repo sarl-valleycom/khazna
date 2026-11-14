@@ -3,10 +3,10 @@
 namespace App\Actions\Contracts;
 
 use App\Actions\Dues\GenerateDues;
+use App\Actions\Milestones\CreateMilestones;
 use App\Data\ContractInput;
 use App\Enums\ContractStatus;
 use App\Enums\ContractType;
-use App\Enums\Direction;
 use App\Models\Contract;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +19,7 @@ class CreateContract
         private readonly ResolveContractAttributes $attributes,
         private readonly StoreContractAttachment $storeAttachment,
         private readonly GenerateDues $generateDues,
+        private readonly CreateMilestones $createMilestones,
     ) {}
 
     public function handle(User $actor, ContractInput $input): Contract
@@ -29,16 +30,18 @@ class CreateContract
             : [];
 
         try {
-            return DB::transaction(function () use ($attributes, $attachment): Contract {
+            return DB::transaction(function () use ($attributes, $attachment, $input): Contract {
                 $contract = Contract::query()->create([
                     ...$attributes,
                     ...$attachment,
-                    'type' => ContractType::SaasRenewal,
-                    'direction' => Direction::In,
                     'status' => ContractStatus::Active,
                 ]);
 
-                $this->generateDues->forContract($contract);
+                if ($contract->type === ContractType::CustomProject) {
+                    $this->createMilestones->handle($contract, $input->milestones);
+                } else {
+                    $this->generateDues->forContract($contract);
+                }
 
                 return $contract;
             });

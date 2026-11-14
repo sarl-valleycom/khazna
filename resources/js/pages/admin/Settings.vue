@@ -23,6 +23,7 @@ const form = useForm({
     reminder_template: props.page.reminderTemplate,
     currency_label: props.page.currencyLabel,
     salary_due_day: props.page.salaryDueDay,
+    milestone_payment_term_days: props.page.milestonePaymentTermDays,
 });
 
 function submit() {
@@ -84,7 +85,24 @@ function submit() {
                     max="28"
                 />
                 <p class="text-xs text-muted-foreground">
-                    Stored now; used when month-close arrives in phase 2.
+                    The day of the following month each salary falls due.
+                </p>
+            </div>
+
+            <div class="space-y-2">
+                <Label for="milestone-term"
+                    >Milestone payment term (days)</Label
+                >
+                <Input
+                    id="milestone-term"
+                    v-model.number="form.milestone_payment_term_days"
+                    type="number"
+                    min="0"
+                    max="365"
+                />
+                <p class="text-xs text-muted-foreground">
+                    How many days after delivery a milestone falls due. 0 means
+                    the day it is delivered.
                 </p>
             </div>
 

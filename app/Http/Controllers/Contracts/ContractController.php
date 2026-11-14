@@ -10,16 +10,22 @@ use App\Data\ContractData;
 use App\Data\ContractFiltersData;
 use App\Data\ContractInput;
 use App\Data\DueRowData;
+use App\Data\MilestoneData;
 use App\Data\OfficeOptionData;
+use App\Enums\CategoryKind;
 use App\Enums\ContractStatus;
+use App\Enums\ContractType;
 use App\Enums\Cycle;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Contracts\ContractRequest;
 use App\Http\Requests\Contracts\ContractStatusRequest;
+use App\Models\Category;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Due;
+use App\Models\Milestone;
 use App\Models\Office;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Queries\ContractIndexQuery;
 use App\Queries\PaymentAccountOptionsQuery;
@@ -60,6 +66,9 @@ class ContractController extends Controller
             'offices' => $this->offices($actor),
             'statuses' => $this->statuses(),
             'cycles' => $this->cycles(),
+            'types' => $this->types($actor),
+            'suppliers' => $this->suppliers($actor),
+            'categories' => $this->categories($actor),
             'canChooseOffice' => $this->canChooseOffice($actor),
         ]);
     }
@@ -74,16 +83,18 @@ class ContractController extends Controller
             abort(403);
         }
 
-        $contract->load(['client:id,name,account_manager_id', 'office:id,name']);
+        $contract->load(['client:id,name,account_manager_id', 'supplier:id,name', 'category:id,name', 'office:id,name']);
 
         $dues = $contract->dues()
             ->visibleTo($actor)
-            ->with(['client:id,name,account_manager_id', 'office:id,name', 'postponements.user:id,name'])
+            ->withParties()
+            ->with('postponements.user:id,name')
+            ->orderByRaw('due_on is null')
             ->orderBy('due_on')
             ->orderBy('id')
             ->get();
 
-        $paymentOptions = app(PaymentAccountOptionsQuery::class)->handle($actor, [$contract->client_id]);
+        $paymentOptions = app(PaymentAccountOptionsQuery::class)->handle($actor, $contract->client_id === null ? [] : [$contract->client_id]);
 
         return Inertia::render('contracts/Show', [
             'contract' => ContractData::fromContract($contract, $actor),
@@ -93,9 +104,18 @@ class ContractController extends Controller
                 ->map(fn (Due $due): DueRowData => DueRowData::fromDue($due, $actor))
                 ->values()
                 ->all(),
+            'milestones' => $contract->type === ContractType::CustomProject
+                ? $contract->milestones()->with('due')->get()
+                    ->map(fn (Milestone $milestone): MilestoneData => MilestoneData::fromMilestone($milestone, $actor->can('manageMilestones', $contract)))
+                    ->values()
+                    ->all()
+                : [],
             'clients' => $this->clients($actor),
             'offices' => $this->offices($actor),
             'cycles' => $this->cycles(),
+            'types' => $this->types($actor),
+            'suppliers' => $this->suppliers($actor),
+            'categories' => $this->categories($actor),
             'canChooseOffice' => $this->canChooseOffice($actor),
         ]);
     }
@@ -181,6 +201,57 @@ class ContractController extends Controller
             ->all();
 
         return array_values($clients);
+    }
+
+    /**
+     * Contract types the user may create. Costs are not for account managers.
+     *
+     * @return array<int, array{value: string, label: string}>
+     */
+    private function types(User $actor): array
+    {
+        return collect(ContractRequest::creatableTypes())
+            ->map(fn (string $value): ContractType => ContractType::from($value))
+            ->reject(fn (ContractType $type): bool => $type === ContractType::RecurringCost && $actor->isAccountManager())
+            ->map(fn (ContractType $type): array => ['value' => $type->value, 'label' => $type->label()])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function suppliers(User $actor): array
+    {
+        if ($actor->isAccountManager()) {
+            return [];
+        }
+
+        return Supplier::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Supplier $supplier): array => ['id' => $supplier->id, 'name' => $supplier->name])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function categories(User $actor): array
+    {
+        if ($actor->isAccountManager()) {
+            return [];
+        }
+
+        return Category::query()
+            ->where('kind', CategoryKind::Cost)
+            ->where('active', true)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (Category $category): array => ['id' => $category->id, 'name' => $category->name])
+            ->values()
+            ->all();
     }
 
     /**

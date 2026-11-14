@@ -23,7 +23,8 @@ class CancelOpenFutureDues
             ->where('contract_id', $contract->id)
             ->where('status', DueStatus::Pending)
             ->where('amount_paid_cents', 0)
-            ->whereDate('due_on', '>', AlgerianDate::todayString())
+            // Future dues, and milestones still waiting for delivery (no date yet).
+            ->where(fn ($query) => $query->whereNull('due_on')->orWhereDate('due_on', '>', AlgerianDate::todayString()))
             ->lockForUpdate()
             ->get();
 

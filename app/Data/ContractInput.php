@@ -2,13 +2,19 @@
 
 namespace App\Data;
 
+use App\Enums\ContractType;
+use App\Enums\Cycle;
 use App\Http\Requests\Contracts\ContractRequest;
+use App\Models\Contract;
 use Illuminate\Http\UploadedFile;
 
 final readonly class ContractInput
 {
     public function __construct(
-        public int $clientId,
+        public ContractType $type,
+        public ?int $clientId,
+        public ?int $supplierId,
+        public ?int $categoryId,
         public int $amountCents,
         public string $cycle,
         public string $startsOn,
@@ -17,7 +23,21 @@ final readonly class ContractInput
         public ?string $notes,
         public ?int $officeId,
         public ?UploadedFile $attachment,
+        /** @var list<array{label: string, mode: string, value: int|float|string|null, trigger: string, due_on?: string|null}> */
+        public array $milestones = [],
     ) {}
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private static function typeFrom(ContractRequest $request, array $validated): ContractType
+    {
+        $existing = $request->route('contract');
+
+        return $existing instanceof Contract
+            ? $existing->type
+            : ContractType::from((string) ($validated['type'] ?? ContractType::SaasRenewal->value));
+    }
 
     public static function fromRequest(ContractRequest $request): self
     {
@@ -25,15 +45,19 @@ final readonly class ContractInput
         $attachment = $request->file('attachment');
 
         return new self(
-            clientId: (int) $validated['client_id'],
+            type: self::typeFrom($request, $validated),
+            clientId: isset($validated['client_id']) ? (int) $validated['client_id'] : null,
+            supplierId: isset($validated['supplier_id']) ? (int) $validated['supplier_id'] : null,
+            categoryId: isset($validated['category_id']) ? (int) $validated['category_id'] : null,
             amountCents: (int) $validated['amount_cents'],
-            cycle: (string) $validated['cycle'],
+            cycle: (string) ($validated['cycle'] ?? Cycle::Once->value),
             startsOn: (string) $validated['starts_on'],
             endsOn: isset($validated['ends_on']) ? (string) $validated['ends_on'] : null,
-            autoRenew: (bool) $validated['auto_renew'],
+            autoRenew: (bool) ($validated['auto_renew'] ?? false),
             notes: isset($validated['notes']) ? (string) $validated['notes'] : null,
             officeId: isset($validated['office_id']) ? (int) $validated['office_id'] : null,
             attachment: $attachment instanceof UploadedFile ? $attachment : null,
+            milestones: array_values($validated['milestones'] ?? []),
         );
     }
 }

@@ -11,7 +11,7 @@ class AttentionContractData extends Data
 {
     public function __construct(
         public int $id,
-        public int $clientId,
+        public ?int $clientId,
         public string $clientName,
         public string $officeName,
         public int $amountCents,
@@ -21,18 +21,18 @@ class AttentionContractData extends Data
         public string $reason,
     ) {}
 
-    public static function fromContract(Contract $contract): self
+    public static function fromContract(Contract $contract, string $reason): self
     {
         return new self(
             id: $contract->id,
             clientId: $contract->client_id,
-            clientName: $contract->client->name ?? '',
+            clientName: $contract->partyName(),
             officeName: $contract->office->name ?? '',
             amountCents: $contract->amount_cents,
             cycleLabel: $contract->cycle->label(),
             startsOn: $contract->starts_on->toDateString(),
             endsOn: $contract->ends_on?->toDateString(),
-            reason: __('Active, but no further due is scheduled. Renew it or close it.'),
+            reason: $reason,
         );
     }
 }

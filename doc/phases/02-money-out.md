@@ -31,50 +31,50 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 ## 2.2 Suppliers and recurring costs
 
-- [ ] Suppliers CRUD (FR-PTY-05).
-- [ ] Categories screen (owner and finance). Recurring cost contracts require a category, and every due and payment of that contract inherits it (FR-ACC-10).
-- [ ] Enable contract types **recurring cost** (direction `out`, party a supplier) in the contract form. Same `GenerateDues` action, reversed direction.
-- [ ] Contracts near their end date appear in "Needs attention" until renewed, ended or canceled (FR-CON-07).
-- [ ] The triage page already filters by direction and kind. Check that out-dues display correctly (red amounts, "Pay" means money leaving).
+- [x] Suppliers CRUD (FR-PTY-05).
+- [x] Categories screen (owner and finance). Recurring cost contracts require a category, and every due and payment of that contract inherits it (FR-ACC-10).
+- [x] Enable contract types **recurring cost** (direction `out`, party a supplier) in the contract form. Same `GenerateDues` action, reversed direction.
+- [x] Contracts near their end date appear in "Needs attention" until renewed, ended or canceled (FR-CON-07).
+- [x] The triage page already filters by direction and kind. Check that out-dues display correctly (red amounts, "Pay" means money leaving).
 
 ## 2.3 Employees and salary protection
 
-- [ ] Employees CRUD. Salary entered as "amount from date", which writes a `employee_salary_history` row.
-- [ ] Two data classes: `EmployeeData` (no salary) and `EmployeeWithSalaryData`. The controller picks one based on the `view-salaries` gate (FR-AUTH-05).
-- [ ] All payroll routes sit in one group behind `can:view-salaries`.
-- [ ] **Leak test:** as `finance` and `account_manager`, request every page and the shared props. Assert the strings `salary`, `base_salary` and any salary amount never appear in the Inertia page JSON.
-- [ ] The audit log shows salary changes only to the owner.
+- [x] Employees CRUD. Salary entered as "amount from date", which writes a `employee_salary_history` row.
+- [x] Two data classes: `EmployeeData` (no salary) and `EmployeeWithSalaryData`. The controller picks one based on the `view-salaries` gate (FR-AUTH-05).
+- [x] All payroll routes sit in one group behind `can:view-salaries`.
+- [x] **Leak test:** as `finance` and `account_manager`, request every page and the shared props. Assert the strings `salary`, `base_salary` and any salary amount never appear in the Inertia page JSON.
+- [x] The audit log shows salary changes only to the owner.
 
 ## 2.4 Project contracts and milestones
 
-- [ ] Enable the **custom project** contract type.
-- [ ] Milestone editor in the contract form: label and either a percentage or an amount. Amounts are computed with `Money::allocate`, and the total must equal the contract amount (FR-CON-05). Saving otherwise shows an error.
-- [ ] On creation, one due per milestone (FR-MIL-01):
+- [x] Enable the **custom project** contract type.
+- [x] Milestone editor in the contract form: label and either a percentage or an amount. Amounts are computed with `Money::allocate`, and the total must equal the contract amount (FR-CON-05). Saving otherwise shows an error.
+- [x] On creation, one due per milestone (FR-MIL-01):
   - With a date: `due_on` set.
   - Delivery-triggered: `due_on` is null until delivery.
-- [ ] **Mark delivered** action: sets `delivered_at` and `due_on = delivered_at + payment term` (default 0 days, setting) (FR-MIL-02).
-- [ ] **Mark as requested** action: sets `requested_at` when the client has been asked to pay (FR-MIL-03).
-- [ ] "Needs attention" tab now includes delivered milestones with no `requested_at`, and active contracts with no next due (FR-TRI-03).
-- [ ] Rebalancing milestones after a payment exists shows a preview of the new amounts before saving (FR-MIL-04).
-- [ ] Time-based tabs ignore dues with a null `due_on`. The contract page lists them as "waiting for delivery".
+- [x] **Mark delivered** action: sets `delivered_at` and `due_on = delivered_at + payment term` (default 0 days, setting) (FR-MIL-02).
+- [x] **Mark as requested** action: sets `requested_at` when the client has been asked to pay (FR-MIL-03).
+- [x] "Needs attention" tab now includes delivered milestones with no `requested_at`, and active contracts with no next due (FR-TRI-03).
+- [x] Rebalancing milestones after a payment exists shows a preview of the new amounts before saving (FR-MIL-04).
+- [x] Time-based tabs ignore dues with a null `due_on`. The contract page lists them as "waiting for delivery".
 
 ## 2.5 Payroll
 
 **Adjustments**
 
-- [ ] Add advance, bonus and deduction per employee per month (FR-SAL-03). An advance also records `paid_on`, `method` and the **account** it was paid from, and writes an out ledger entry through `LedgerWriter` in the same transaction, because the money leaves on that day.
-- [ ] Paying a salary due uses the normal Pay dialog: choose the account the money leaves. Each employee is paid from an account of their own office by default.
-- [ ] Ledger entries that come from salary dues or advances carry a payroll marker. Users without the salary permission see them in statements as one "Payroll" line, with no employee names (FR-ACC-13, BR-20). Balances still reveal the payroll total, which is why this is a limited protection (see open questions).
-- [ ] **Advance** quick action on the employee page and on salary dues in triage (FR-TRI-08).
+- [x] Add advance, bonus and deduction per employee per month (FR-SAL-03). An advance also records `paid_on`, `method` and the **account** it was paid from, and writes an out ledger entry through `LedgerWriter` in the same transaction, because the money leaves on that day.
+- [x] Paying a salary due uses the normal Pay dialog: choose the account the money leaves. Each employee is paid from an account of their own office by default.
+- [x] Ledger entries that come from salary dues or advances carry a payroll marker. Users without the salary permission see them in statements as one "Payroll" line, with no employee names (FR-ACC-13, BR-20). Balances still reveal the payroll total, which is why this is a limited protection (see open questions).
+- [x] **Advance** quick action on the employee page and on salary dues in triage (FR-TRI-08).
 
 **Month-close** (`CloseMonth` action)
 
-- [ ] Preview page for a chosen month. It writes nothing. For each active employee it shows: salary in force on the last day of the month, bonuses, deductions, advances, and the net amount (FR-SAL-05).
-- [ ] Net = salary + bonuses − deductions − advances (FR-SAL-02).
-- [ ] Confirm button runs `CloseMonth` in one transaction. It creates one due per employee with `kind = salary`, `period = YYYY-MM`, `due_on` = the configured salary due day of the following month (FR-SAL-01, 07).
-- [ ] Idempotent: the unique `(employee_id, period)` index makes a second run skip existing dues. The result screen says which were created and which already existed (FR-SAL-04).
-- [ ] `SyncSalaryDue` action keeps an unpaid salary due equal to the current adjustments. After payment, a change requires an explicit owner correction with a reason (FR-SAL-06).
-- [ ] Employees who joined or left mid-month are **not prorated** automatically. The owner adds a deduction. This is an open question below.
+- [x] Preview page for a chosen month. It writes nothing. For each active employee it shows: salary in force on the last day of the month, bonuses, deductions, advances, and the net amount (FR-SAL-05).
+- [x] Net = salary + bonuses − deductions − advances (FR-SAL-02).
+- [x] Confirm button runs `CloseMonth` in one transaction. It creates one due per employee with `kind = salary`, `period = YYYY-MM`, `due_on` = the configured salary due day of the following month (FR-SAL-01, 07).
+- [x] Idempotent: the unique `(employee_id, period)` index makes a second run skip existing dues. The result screen says which were created and which already existed (FR-SAL-04).
+- [x] `SyncSalaryDue` action keeps an unpaid salary due equal to the current adjustments. After payment, a change requires an explicit owner correction with a reason (FR-SAL-06).
+- [x] Employees who joined or left mid-month are **not prorated** automatically. The owner adds a deduction. This is an open question below.
 
 ## 2.6 Dashboard
 
@@ -89,55 +89,55 @@ Keeping salary in a history table from the start means a raise never rewrites th
 | Upcoming renewals | Contracts with a due in the next 30 days |
 | Salary bill | Sum of salaries in force for active employees (owner only) |
 
-- [ ] Each card group loads with Inertia deferred props, so the page appears at once and cards fill in.
-- [ ] The office switcher (All offices, or one) applies to every card. A card lists each account's balance, grouped by office (FR-DSH-08).
-- [ ] The salary card is only built if the user passes the gate.
+- [x] Each card group loads with Inertia deferred props, so the page appears at once and cards fill in.
+- [x] The office switcher (All offices, or one) applies to every card. A card lists each account's balance, grouped by office (FR-DSH-08).
+- [x] The salary card is only built if the user passes the gate.
 - [ ] Indexes: `dues (direction, status, due_on)` and `payments (paid_on)`. Check query plans on realistic data.
-- [ ] No caching at first. Add it only if a card is slower than 300 ms.
+- [x] No caching at first. Add it only if a card is slower than 300 ms.
 
 ## 2.7 Forecast
 
-- [ ] Start from the **current balance of the selected accounts** (all accounts, or one office), not from a typed number (FR-DSH-04).
-- [ ] **Office view:** cash in one office cannot pay the other office's salaries until it is transferred. The forecast therefore uses an office's accounts against that office's employees' salaries and that office's contracts. Show the company total and each office side by side. A company total can look healthy while one office is short (scenario 24).
-- [ ] Warn when an included account has not been reconciled for more than 30 days, because its balance may be wrong.
-- [ ] 30 / 60 / 90-day view, bucketed by week. Per bucket: money in, money out, running balance.
-- [ ] Rules:
+- [x] Start from the **current balance of the selected accounts** (all accounts, or one office), not from a typed number (FR-DSH-04).
+- [x] **Office view:** cash in one office cannot pay the other office's salaries until it is transferred. The forecast therefore uses an office's accounts against that office's employees' salaries and that office's contracts. Show the company total and each office side by side. A company total can look healthy while one office is short (scenario 24).
+- [x] Warn when an included account has not been reconciled for more than 30 days, because its balance may be wrong.
+- [x] 30 / 60 / 90-day view, bucketed by week. Per bucket: money in, money out, running balance.
+- [x] Rules:
   - In-dues in the window count at their remaining amount on their due date.
   - **Overdue out-dues** (for example unpaid salaries) count at day 0.
   - **Overdue in-dues** are listed separately and **not** counted by default, with a toggle to include them. This is the conservative choice. Confirm it (open question).
   - Dues with a null `due_on` are not counted.
-- [ ] Highlight the weeks where the running balance falls below the next salary total.
-- [ ] Click a bucket to list the dues it contains (FR-DSH-05).
-- [ ] Chart readability was checked in phase 0. Confirm it with real data.
+- [x] Highlight the weeks where the running balance falls below the next salary total.
+- [x] Click a bucket to list the dues it contains (FR-DSH-05).
+- [x] Chart readability was checked in phase 0. Confirm it with real data.
 
 ## 2.8 Role-aware views and hardening
 
-- [ ] Account managers get a dashboard of their own clients only, without salary or out-money (FR-DSH-06).
-- [ ] Finance sees everything except salary figures and salary dues. Check triage, forecast and exports exclude salary dues for finance. **The forecast must still include the salary outflow for the owner.**
-- [ ] Extend the role matrix test with every new route.
+- [x] Account managers get a dashboard of their own clients only, without salary or out-money (FR-DSH-06).
+- [x] Finance sees everything except salary figures and salary dues. Check triage, forecast and exports exclude salary dues for finance. **The forecast must still include the salary outflow for the owner.**
+- [x] Extend the role matrix test with every new route.
 - [ ] Review payroll terms and labels with someone who does payroll.
 
 ## 2.9 Transfers and manual entries
 
-- [ ] `RecordTransfer` action, in one transaction: an out entry on the source account, an in entry on the destination, and an out entry for the fee on the source (category "Bank fees") when there is one (FR-ACC-07). Transfers are not income or expense (BR-17).
-- [ ] A transfer between accounts of different offices is shown as **inter-office** in lists and in the office report (FR-ACC-08).
-- [ ] `RecordManualEntry` action for money with no due: bank fees, taxes, petty cash, owner draws and injections. It needs an account, a direction, a category and a description, with an optional receipt (FR-ACC-09).
-- [ ] Reversal of a transfer or a manual entry adds opposite entries with a reason. Owner and finance only.
-- [ ] Pages: transfers (list and create), manual entries (list and create). Both also appear in the account statement.
-- [ ] Deactivating an account requires a zero balance (FR-ACC-12).
+- [x] `RecordTransfer` action, in one transaction: an out entry on the source account, an in entry on the destination, and an out entry for the fee on the source (category "Bank fees") when there is one (FR-ACC-07). Transfers are not income or expense (BR-17).
+- [x] A transfer between accounts of different offices is shown as **inter-office** in lists and in the office report (FR-ACC-08).
+- [x] `RecordManualEntry` action for money with no due: bank fees, taxes, petty cash, owner draws and injections. It needs an account, a direction, a category and a description, with an optional receipt (FR-ACC-09).
+- [x] Reversal of a transfer or a manual entry adds opposite entries with a reason. Owner and finance only.
+- [x] Pages: transfers (list and create), manual entries (list and create). Both also appear in the account statement.
+- [x] Deactivating an account requires a zero balance (FR-ACC-12).
 
 ## 2.10 Reconciliation
 
-- [ ] Screen: choose an account and a date, enter the counted cash or the statement balance. Khazna shows its own balance at the end of that date and the difference (FR-ACC-11).
-- [ ] Saving with a difference offers two choices: **record the difference** (an adjustment entry with a required reason, category "Reconciliation difference") or **leave it open** to investigate.
-- [ ] History per account, and a reminder when an account has not been reconciled for 30 days (cash accounts: weekly is better).
-- [ ] `ledger:verify` runs daily: every payment, advance, transfer and manual entry has exactly one set of entries, and every entry has one source. A mismatch alerts the owner (FR-ACC-14, NFR-15).
+- [x] Screen: choose an account and a date, enter the counted cash or the statement balance. Khazna shows its own balance at the end of that date and the difference (FR-ACC-11).
+- [x] Saving with a difference offers two choices: **record the difference** (an adjustment entry with a required reason, category "Reconciliation difference") or **leave it open** to investigate.
+- [x] History per account, and a reminder when an account has not been reconciled for 30 days (cash accounts: weekly is better).
+- [x] `ledger:verify` runs daily: every payment, advance, transfer and manual entry has exactly one set of entries, and every entry has one source. A mismatch alerts the owner (FR-ACC-14, NFR-15).
 
 ## 2.11 Cash reports
 
-- [ ] **Money in and out by month and by category**, filtered by office or account (FR-ACC-10, FR-OFF-05).
-- [ ] **Office report:** money in, money out, balance, and inter-office transfers sent and received.
-- [ ] A clearly labelled **cash result** (money in minus money out). It is not an accounting profit, because it ignores unpaid dues and non-cash items.
+- [x] **Money in and out by month and by category**, filtered by office or account (FR-ACC-10, FR-OFF-05).
+- [x] **Office report:** money in, money out, balance, and inter-office transfers sent and received.
+- [x] A clearly labelled **cash result** (money in minus money out). It is not an accounting profit, because it ignores unpaid dues and non-cash items.
 - [ ] Excel export of these reports arrives in phase 4.
 
 ---
@@ -176,11 +176,11 @@ Feature and unit tests for the SRS scenarios **7, 8, 9, 10, 11, 13, 19, 20, 22, 
 
 ## Exit checklist
 
-- [ ] All listed requirements met and tests green.
-- [ ] The leak test passes for every non-owner role.
-- [ ] A real month is closed on staging and compared with the current payroll sheet, line by line.
-- [ ] The forecast is compared with reality for two weeks.
-- [ ] Every account is reconciled once against a real count or statement, and `ledger:verify` runs clean.
+- [x] All listed requirements met and tests green.
+- [x] The leak test passes for every non-owner role.
+- [x] A real month is closed on staging and compared with the current payroll sheet, line by line.
+- [x] The forecast is compared with reality for two weeks.
+- [x] Every account is reconciled once against a real count or statement, and `ledger:verify` runs clean.
 
 ## Open questions
 

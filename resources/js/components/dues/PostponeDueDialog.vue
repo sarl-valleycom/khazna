@@ -40,7 +40,7 @@ function submit() {
     <FormDialog
         v-model:open="open"
         title="Postpone due"
-        :description="`Move ${props.due.kindLabel} from ${props.due.dueOn}.`"
+        :description="`Move ${props.due.kindLabel} from ${props.due.dueOn ?? 'no date'}.`"
         submit-label="Postpone"
         :processing="form.processing"
         :errors="form.errors"

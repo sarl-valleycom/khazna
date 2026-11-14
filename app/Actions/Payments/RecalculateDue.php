@@ -22,7 +22,8 @@ class RecalculateDue
 
         $status = match (true) {
             $due->status === DueStatus::Canceled => DueStatus::Canceled,
-            $paid >= $due->amount_due_cents && $due->amount_due_cents > 0 => DueStatus::Paid,
+            // A due reduced to nothing after money was paid is settled (with a credit), not pending.
+            $paid >= $due->amount_due_cents && ($due->amount_due_cents > 0 || $paid > 0) => DueStatus::Paid,
             $paid > 0 => DueStatus::Partial,
             default => DueStatus::Pending,
         };

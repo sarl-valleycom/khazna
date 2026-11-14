@@ -97,10 +97,14 @@ const option = computed(() => ({
 </script>
 
 <template>
-    <VChart
-        class="h-80 w-full"
-        :option="option"
-        :theme="resolvedAppearance === 'dark' ? 'dark' : undefined"
-        autoresize
-    />
+    <!-- The wrapper owns the height: vue-echarts sets its own height:100%, which would
+         otherwise grow with the canvas and never settle. -->
+    <div class="h-80 w-full min-w-0">
+        <VChart
+            class="h-full w-full"
+            :option="option"
+            :theme="resolvedAppearance === 'dark' ? 'dark' : undefined"
+            autoresize
+        />
+    </div>
 </template>

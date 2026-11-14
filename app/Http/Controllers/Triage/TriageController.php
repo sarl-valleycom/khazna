@@ -9,13 +9,15 @@ use App\Data\DueRowData;
 use App\Data\OfficeOptionData;
 use App\Data\TriageFiltersData;
 use App\Data\TriageTabData;
+use App\Enums\AdjustmentType;
 use App\Enums\Direction;
 use App\Enums\DueKind;
+use App\Enums\EmployeeStatus;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
-use App\Models\Contract;
 use App\Models\Due;
+use App\Models\Employee;
 use App\Models\Office;
 use App\Models\User;
 use App\Queries\DueTriageQuery;
@@ -71,10 +73,10 @@ class TriageController extends Controller
 
         $clientIds = $rows === null
             ? []
-            : array_values(array_unique(array_map(
-                fn (Due $due): int => $due->client_id,
+            : array_values(array_unique(array_filter(array_map(
+                fn (Due $due): ?int => $due->client_id,
                 $rows->items(),
-            )));
+            ))));
         $paymentOptions = $accountOptions->handle($actor, $clientIds);
 
         return Inertia::render('triage/Index', [
@@ -82,10 +84,18 @@ class TriageController extends Controller
             'tabs' => $tabs,
             'dues' => $rows?->through(fn (Due $due): DueRowData => DueRowData::fromDue($due, $actor)),
             'attention' => $filters->tab === 'attention'
-                ? $attention->map(fn (Contract $contract): AttentionContractData => AttentionContractData::fromContract($contract))->all()
+                ? $attention->map(fn (array $item): AttentionContractData => AttentionContractData::fromContract($item['contract'], $item['reason']))->all()
                 : [],
             'weekEnd' => $triage->bounds($today)[0]->toDateString(),
             'paymentAccounts' => $paymentOptions['accounts'],
+            // For the Advance action on a salary due: only built for someone who may see salaries.
+            'payrollEmployees' => $actor->can('view-salaries')
+                ? Employee::query()->visibleTo($actor)->where('status', EmployeeStatus::Active)->orderBy('name')->get(['id', 'name'])
+                    ->map(fn (Employee $employee): array => ['id' => $employee->id, 'name' => $employee->name])->values()->all()
+                : [],
+            'payrollTypes' => $actor->can('view-salaries')
+                ? collect(AdjustmentType::cases())->map(fn (AdjustmentType $type): array => ['value' => $type->value, 'label' => $type->label()])->all()
+                : [],
             'paymentDefaults' => $paymentOptions['defaults'],
             'clients' => Client::query()
                 ->visibleTo($actor)
@@ -110,7 +120,9 @@ class TriageController extends Controller
                     ->get()
                     ->map(fn (User $user): AccountManagerOptionData => AccountManagerOptionData::fromUser($user))
                     ->all(),
+            // Salary is not even offered as a filter to anyone who may not see salary dues.
             'kinds' => collect(DueKind::cases())
+                ->reject(fn (DueKind $kind): bool => $kind === DueKind::Salary && ! $actor->can('view-salaries'))
                 ->map(fn (DueKind $kind): array => ['value' => $kind->value, 'label' => $kind->label()])
                 ->all(),
             'directions' => collect(Direction::cases())

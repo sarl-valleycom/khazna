@@ -35,7 +35,7 @@ class PaymentRowData extends Data
         return new self(
             id: $payment->id,
             dueId: $payment->due_id,
-            dueLabel: $due !== null ? $due->kind->label().' · '.$due->due_on->format('d M Y') : '',
+            dueLabel: $due !== null ? $due->kind->label().' · '.($due->due_on?->format('d M Y') ?? __('waiting for delivery')) : '',
             amountCents: $payment->amount_cents,
             amountFormatted: Money::fromCents($payment->amount_cents)->format(),
             paidOn: $payment->paid_on->toDateString(),

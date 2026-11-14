@@ -48,7 +48,7 @@ declare namespace App {
         };
         export type AttentionContractData = {
             id: number;
-            clientId: number;
+            clientId: number | null;
             clientName: string;
             officeName: string;
             amountCents: number;
@@ -146,8 +146,12 @@ declare namespace App {
         };
         export type ContractData = {
             id: number;
-            clientId: number;
+            clientId: number | null;
             clientName: string;
+            partyName: string;
+            supplierId: number | null;
+            categoryId: number | null;
+            categoryName: string | null;
             officeId: number;
             officeName: string;
             type: App.Enums.ContractType;
@@ -226,8 +230,10 @@ declare namespace App {
         export type DueRowData = {
             id: number;
             contractId: number | null;
-            clientId: number;
-            clientName: string;
+            clientId: number | null;
+            employeeId: number | null;
+            partyName: string;
+            partyType: string;
             officeId: number;
             officeName: string;
             description: string | null;
@@ -235,7 +241,8 @@ declare namespace App {
             kindLabel: string;
             direction: App.Enums.Direction;
             directionLabel: string;
-            dueOn: string;
+            period: string | null;
+            dueOn: string | null;
             amountDueCents: number;
             amountPaidCents: number;
             remainingCents: number;
@@ -250,7 +257,25 @@ declare namespace App {
                 cancel: boolean;
                 pay: boolean;
                 remind: boolean;
+                advance: boolean;
             };
+        };
+        export type EmployeeData = {
+            id: number;
+            name: string;
+            phone: string | null;
+            title: string | null;
+            hireDate: string | null;
+            status: App.Enums.EmployeeStatus;
+            statusLabel: string;
+            officeId: number;
+            officeName: string;
+        };
+        export type EmployeeWithSalaryData = {
+            employee: App.Data.EmployeeData;
+            currentSalaryCents: number | null;
+            currentSalaryFormatted: string | null;
+            salaryHistory: App.Data.SalaryHistoryData[];
         };
         export type FlashData = {
             success: string | null;
@@ -267,6 +292,22 @@ declare namespace App {
             inflow: number;
             outflow: number;
             balance: number;
+        };
+        export type MilestoneData = {
+            id: number;
+            position: number;
+            label: string;
+            amountCents: number;
+            paidCents: number;
+            dueOn: string | null;
+            trigger: App.Enums.MilestoneTrigger;
+            deliveredAt: string | null;
+            requestedAt: string | null;
+            dueStatus: App.Enums.DueStatus | null;
+            waitingForDelivery: boolean;
+            locked: boolean;
+            canDeliver: boolean;
+            canRequest: boolean;
         };
         export type OfficeOptionData = {
             id: number;
@@ -303,6 +344,25 @@ declare namespace App {
             reversalReason: string | null;
             canReverse: boolean;
         };
+        export type PayrollLineData = {
+            employeeId: number;
+            employeeName: string;
+            officeName: string;
+            salaryCents: number;
+            bonusCents: number;
+            deductionCents: number;
+            advanceCents: number;
+            netCents: number;
+            state: string;
+            dueId: number | null;
+            note: string | null;
+        };
+        export type SalaryHistoryData = {
+            id: number;
+            amountCents: number;
+            amountFormatted: string;
+            effectiveFrom: string;
+        };
         export type SettingsData = {
             appName: string;
             locale: string;
@@ -316,6 +376,7 @@ declare namespace App {
             reminderTemplate: string;
             currencyLabel: string;
             salaryDueDay: number;
+            milestonePaymentTermDays: number;
             weekStartOptions: Record<string, string>;
         };
         export type TriageFiltersData = {
@@ -361,6 +422,8 @@ declare namespace App {
     }
     namespace Enums {
         export type AccountType = 'cash' | 'ccp' | 'bank' | 'other';
+        export type AdjustmentType = 'advance' | 'bonus' | 'deduction';
+        export type CategoryKind = 'cost' | 'income';
         export type ContractStatus = 'active' | 'paused' | 'canceled';
         export type ContractType =
             | 'saas_renewal'
@@ -375,6 +438,8 @@ declare namespace App {
             | 'expense'
             | 'other';
         export type DueStatus = 'pending' | 'partial' | 'paid' | 'canceled';
+        export type EmployeeStatus = 'active' | 'inactive';
+        export type MilestoneTrigger = 'date' | 'delivery';
         export type PaymentMethod =
             | 'cash'
             | 'ccp'
