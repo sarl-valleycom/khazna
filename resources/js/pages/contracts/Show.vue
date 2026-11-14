@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ContractFormDialog from '@/components/contracts/ContractFormDialog.vue';
 import ContractStatusActions from '@/components/contracts/ContractStatusActions.vue';
+import DueRow from '@/components/dues/DueRow.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
@@ -15,6 +16,7 @@ import { formatDate, formatDateTime } from '@/lib/format';
 
 type Props = {
     contract: App.Data.ContractData;
+    dues: App.Data.DueRowData[];
     clients: App.Data.ContractClientOptionData[];
     offices: App.Data.OfficeOptionData[];
     cycles: Array<{ value: string; label: string }>;
@@ -199,7 +201,17 @@ const title = computed(
                 <CardHeader>
                     <CardTitle>Dues</CardTitle>
                 </CardHeader>
-                <CardContent class="p-0">
+                <CardContent v-if="props.dues.length > 0" class="p-0">
+                    <div class="divide-y">
+                        <DueRow
+                            v-for="due in props.dues"
+                            :key="due.id"
+                            :due="due"
+                            :symbol="page.props.settings.currencySymbol"
+                        />
+                    </div>
+                </CardContent>
+                <CardContent v-else class="p-0">
                     <EmptyState
                         title="No dues yet"
                         description="Generated and manual dues will appear here."

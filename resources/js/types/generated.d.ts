@@ -176,6 +176,30 @@ declare namespace App {
             from: string | null;
             to: string | null;
         };
+        export type DueRowData = {
+            id: number;
+            contractId: number | null;
+            clientId: number;
+            clientName: string;
+            officeName: string;
+            description: string | null;
+            kind: App.Enums.DueKind;
+            kindLabel: string;
+            direction: App.Enums.Direction;
+            directionLabel: string;
+            dueOn: string;
+            amountDueCents: number;
+            amountPaidCents: number;
+            remainingCents: number;
+            status: App.Enums.DueStatus;
+            statusLabel: string;
+            isOverdue: boolean;
+            canceledReason: string | null;
+            abilities: {
+                postpone: boolean;
+                cancel: boolean;
+            };
+        };
         export type FlashData = {
             success: string | null;
             error: string | null;

@@ -3,6 +3,7 @@
 use App\Enums\Role;
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\Due;
 use App\Models\Office;
 use App\Models\User;
 use Database\Seeders\DemoSeeder;
@@ -39,7 +40,9 @@ test('the demo seeder creates the four role/office accounts', function () {
         ->and(Client::query()->where('office_id', $algiersOffice->id)->count())->toBe(2)
         ->and(Client::query()->where('office_id', $oranOffice->id)->count())->toBe(1)
         ->and(Contract::query()->where('office_id', $algiersOffice->id)->count())->toBe(2)
-        ->and(Contract::query()->where('office_id', $oranOffice->id)->count())->toBe(1);
+        ->and(Contract::query()->where('office_id', $oranOffice->id)->count())->toBe(1)
+        ->and(Due::query()->count())->toBeGreaterThanOrEqual(1)
+        ->and(Due::query()->where('status', 'canceled')->count())->toBe(0);
 });
 
 test('the demo seeder refuses to run in production', function () {

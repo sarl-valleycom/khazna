@@ -7,12 +7,17 @@ use App\Data\ClientFiltersData;
 use App\Data\ClientRowData;
 use App\Data\ClientShowData;
 use App\Data\ContractData;
+use App\Data\DueRowData;
 use App\Data\OfficeOptionData;
+use App\Enums\Direction;
+use App\Enums\DueKind;
+use App\Enums\DueStatus;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Clients\ClientRequest;
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\Due;
 use App\Models\Office;
 use App\Models\User;
 use App\Queries\ClientIndexQuery;
@@ -75,12 +80,27 @@ class ClientController extends Controller
             ->orderByDesc('starts_on')
             ->get();
 
+        $openDues = $client->dues()
+            ->visibleTo($actor)
+            ->whereIn('status', [DueStatus::Pending->value, DueStatus::Partial->value])
+            ->with(['client:id,name,account_manager_id', 'office:id,name'])
+            ->orderBy('due_on')
+            ->orderBy('id')
+            ->get();
+
         return Inertia::render('clients/Show', [
             'client' => ClientShowData::fromClient($client, $actor),
             'contracts' => $contracts
                 ->map(fn (Contract $contract): ContractData => ContractData::fromContract($contract, $actor))
                 ->values()
                 ->all(),
+            'openDues' => $openDues
+                ->map(fn (Due $due): DueRowData => DueRowData::fromDue($due, $actor))
+                ->values()
+                ->all(),
+            'canCreateDue' => $actor->can('create', Due::class),
+            'dueKinds' => $this->dueKinds(),
+            'dueDirections' => $this->dueDirections(),
         ]);
     }
 
@@ -180,6 +200,28 @@ class ClientController extends Controller
         $value = trim($value);
 
         return $value === '' ? null : $value;
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function dueKinds(): array
+    {
+        return array_map(fn (DueKind $kind): array => [
+            'value' => $kind->value,
+            'label' => $kind->label(),
+        ], DueKind::cases());
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private function dueDirections(): array
+    {
+        return array_map(fn (Direction $direction): array => [
+            'value' => $direction->value,
+            'label' => $direction->label(),
+        ], Direction::cases());
     }
 
     /**

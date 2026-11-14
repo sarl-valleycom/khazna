@@ -1,21 +1,31 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, Mail, MapPin, Phone, UserRound } from '@lucide/vue';
+import { ArrowLeft, Mail, MapPin, Phone, Plus, UserRound } from '@lucide/vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DueRow from '@/components/dues/DueRow.vue';
+import ManualDueDialog from '@/components/dues/ManualDueDialog.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import { formatDate } from '@/lib/format';
 
+type Option = { value: string; label: string };
+
 type Props = {
     client: App.Data.ClientShowData;
     contracts: App.Data.ContractData[];
+    openDues: App.Data.DueRowData[];
+    canCreateDue: boolean;
+    dueKinds: Option[];
+    dueDirections: Option[];
 };
 
 const props = defineProps<Props>();
 const page = usePage();
+const manualDueOpen = ref(false);
 </script>
 
 <template>
@@ -170,10 +180,30 @@ const page = usePage();
 
             <div class="grid gap-4 lg:grid-cols-2">
                 <Card>
-                    <CardHeader>
+                    <CardHeader
+                        class="flex flex-row items-center justify-between"
+                    >
                         <CardTitle>Open dues</CardTitle>
+                        <Button
+                            v-if="props.canCreateDue"
+                            variant="outline"
+                            size="sm"
+                            @click="manualDueOpen = true"
+                        >
+                            <Plus class="mr-1 size-4" /> Add due
+                        </Button>
                     </CardHeader>
-                    <CardContent class="p-0">
+                    <CardContent v-if="props.openDues.length > 0" class="p-0">
+                        <div class="divide-y">
+                            <DueRow
+                                v-for="due in props.openDues"
+                                :key="due.id"
+                                :due="due"
+                                :symbol="page.props.settings.currencySymbol"
+                            />
+                        </div>
+                    </CardContent>
+                    <CardContent v-else class="p-0">
                         <EmptyState
                             title="No open dues"
                             description="Unpaid and partially paid dues will appear here."
@@ -193,5 +223,13 @@ const page = usePage();
                 </Card>
             </div>
         </div>
+
+        <ManualDueDialog
+            v-model:open="manualDueOpen"
+            :client-id="props.client.id"
+            :symbol="page.props.settings.currencySymbol"
+            :kinds="props.dueKinds"
+            :directions="props.dueDirections"
+        />
     </AppLayout>
 </template>

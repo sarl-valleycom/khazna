@@ -67,6 +67,12 @@ class Client extends Model
         return $this->hasMany(Contract::class);
     }
 
+    /** @return HasMany<Due, $this> */
+    public function dues(): HasMany
+    {
+        return $this->hasMany(Due::class);
+    }
+
     public function visibilityOwnerColumn(): ?string
     {
         return 'account_manager_id';

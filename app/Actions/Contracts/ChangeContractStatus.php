@@ -2,6 +2,8 @@
 
 namespace App\Actions\Contracts;
 
+use App\Actions\Dues\CancelOpenFutureDues;
+use App\Actions\Dues\GenerateDues;
 use App\Enums\ContractStatus;
 use App\Models\Contract;
 use App\Support\AuditContext;
@@ -10,6 +12,11 @@ use Illuminate\Validation\ValidationException;
 
 class ChangeContractStatus
 {
+    public function __construct(
+        private readonly CancelOpenFutureDues $cancelDues,
+        private readonly GenerateDues $generateDues,
+    ) {}
+
     public function handle(Contract $contract, ContractStatus $target, ?string $reason): Contract
     {
         if (! $contract->status->canTransitionTo($target)) {
@@ -31,6 +38,14 @@ class ChangeContractStatus
             app(AuditContext::class)->withReason($reason, fn () => $contract->update([
                 'status' => $target,
             ]));
+
+            if ($target === ContractStatus::Active) {
+                $this->generateDues->forContract($contract);
+
+                return;
+            }
+
+            $this->cancelDues->handle($contract, (string) $reason);
         });
 
         return $contract->refresh();

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Actions\Dues\GenerateDues;
 use App\Enums\ContractStatus;
 use App\Enums\ContractType;
 use App\Enums\Cycle;
@@ -22,8 +23,8 @@ class DemoSeeder extends Seeder
     /**
      * Seed the local/staging demo accounts.
      *
-     * Offices are Algiers HQ and Oran Office; accounts and dues are added
-     * by later phases. Clients and contracts exist so the CRM is usable locally.
+     * Offices are Algiers HQ and Oran Office; accounts are added by later
+     * phases. Clients, contracts and generated dues exist so the CRM is usable locally.
      */
     public function run(): void
     {
@@ -148,6 +149,8 @@ class DemoSeeder extends Seeder
                 ],
             );
         }
+
+        app(GenerateDues::class)->handle();
     }
 
     /**

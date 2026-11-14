@@ -9,6 +9,7 @@ use App\Data\ContractClientOptionData;
 use App\Data\ContractData;
 use App\Data\ContractFiltersData;
 use App\Data\ContractInput;
+use App\Data\DueRowData;
 use App\Data\OfficeOptionData;
 use App\Enums\ContractStatus;
 use App\Enums\Cycle;
@@ -17,6 +18,7 @@ use App\Http\Requests\Contracts\ContractRequest;
 use App\Http\Requests\Contracts\ContractStatusRequest;
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\Due;
 use App\Models\Office;
 use App\Models\User;
 use App\Queries\ContractIndexQuery;
@@ -73,8 +75,19 @@ class ContractController extends Controller
 
         $contract->load(['client:id,name,account_manager_id', 'office:id,name']);
 
+        $dues = $contract->dues()
+            ->visibleTo($actor)
+            ->with(['client:id,name,account_manager_id', 'office:id,name'])
+            ->orderBy('due_on')
+            ->orderBy('id')
+            ->get();
+
         return Inertia::render('contracts/Show', [
             'contract' => ContractData::fromContract($contract, $actor),
+            'dues' => $dues
+                ->map(fn (Due $due): DueRowData => DueRowData::fromDue($due, $actor))
+                ->values()
+                ->all(),
             'clients' => $this->clients($actor),
             'offices' => $this->offices($actor),
             'cycles' => $this->cycles(),

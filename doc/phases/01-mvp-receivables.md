@@ -54,7 +54,7 @@ Notes:
 - [x] Migration: `contracts` (type, direction, client_id, `office_id` required, amount, cycle, starts_on, ends_on, status, auto_renew, notes), soft deletes. Attachment stored on the private disk.
 - [x] Form for a SaaS renewal: client, amount, cycle (monthly, quarterly, yearly), start date, end date (optional), auto-renew.
 - [x] Status transitions: active ↔ paused → canceled, with a required reason for pause/cancel and an audit trail.
-- [ ] Cancelling or pausing cancels open future dues with a reason (FR-CON-03). Wired in 1.4 when dues exist.
+- [x] Cancelling or pausing cancels open future dues with a reason (FR-CON-03). Wired in 1.4 when dues exist.
 - [x] Changing the amount affects only dues generated afterwards (FR-CON-04). Show a notice on the form saying so.
 - [x] Every change goes to the audit log (FR-CON-08).
 
@@ -69,20 +69,20 @@ Notes:
 
 ## 1.4 Dues engine
 
-- [ ] Migration: `dues` (kind, direction, contract_id nullable, client_id, period, due_on, amount_due, amount_paid, status, canceled_reason), soft deletes.
+- [x] Migration: `dues` (kind, direction, contract_id nullable, client_id, period, due_on, amount_due, amount_paid, status, canceled_reason), soft deletes.
   - Unique index on `(contract_id, period)`.
   - Indexes on `(status, due_on)` and `(direction, due_on)`.
-- [ ] Migration: `due_postponements` (due_id, old_due_on, new_due_on, reason, user_id).
-- [ ] `GenerateDues` action:
+- [x] Migration: `due_postponements` (due_id, old_due_on, new_due_on, reason, user_id).
+- [x] `GenerateDues` action:
   - For each active contract, compute every due date between `max(starts_on, today)` and `today + 30 days`, anchored on the start date's day of the month, using the cycle arithmetic from phase 0.
   - Respect `ends_on` and `auto_renew = false`.
   - Insert with `insertOrIgnore` (or an upsert) on the unique key, so a second run creates nothing.
   - Return a report: created, skipped, contracts touched.
-- [ ] `dues:generate` command, scheduled daily at 01:00 Algiers time with `withoutOverlapping()`. Log the report.
-- [ ] Also run the action for one contract as soon as it is created or reactivated, so the user does not wait until the night.
-- [ ] Status rules (FR-DUE-04, 05): `pending`, `partial`, `paid`, `canceled` are stored. "Overdue" is computed from `due_on < AlgerianDate::today()` on open dues, never stored.
-- [ ] Manual due (one-off, without a contract) (FR-DUE-06).
-- [ ] `PostponeDue` action (new date + reason, history row) and `CancelDue` action (reason).
+- [x] `dues:generate` command, scheduled daily at 01:00 Algiers time with `withoutOverlapping()`. Log the report.
+- [x] Also run the action for one contract as soon as it is created or reactivated, so the user does not wait until the night.
+- [x] Status rules (FR-DUE-04, 05): `pending`, `partial`, `paid`, `canceled` are stored. "Overdue" is computed from `due_on < AlgerianDate::today()` on open dues, never stored.
+- [x] Manual due (one-off, without a contract) (FR-DUE-06).
+- [x] `PostponeDue` action (new date + reason, history row) and `CancelDue` action (reason).
 
 ## 1.5 Accounts, ledger and payments
 
