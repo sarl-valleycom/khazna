@@ -2,6 +2,7 @@
 
 namespace App\Actions\Milestones;
 
+use App\Enums\DueStatus;
 use App\Models\Contract;
 use App\Models\Due;
 use App\Models\Milestone;
@@ -21,7 +22,7 @@ class RebalanceMilestones
      * screen can show the change before the user confirms (FR-MIL-04).
      *
      * @param  list<array{id: int, label?: string, mode?: string, value: int|float|string|null, due_on?: string|null}>  $rows  Only the unpaid milestones, in the order to keep.
-     * @return array<int, array{id: int, label: string, oldCents: int, newCents: int, locked: bool}>
+     * @return array<int, array{id: int, label: string, oldCents: int, newCents: int, locked: bool, canceled: bool}>
      */
     public function handle(Contract $contract, array $rows, bool $apply): array
     {
@@ -45,7 +46,7 @@ class RebalanceMilestones
 
     /**
      * @param  list<array{id: int, label?: string, mode?: string, value: int|float|string|null, due_on?: string|null}>  $rows
-     * @return array<int, array{id: int, label: string, oldCents: int, newCents: int, locked: bool}>
+     * @return array<int, array{id: int, label: string, oldCents: int, newCents: int, locked: bool, canceled: bool}>
      */
     private function plan(Contract $contract, array $rows, bool $apply): array
     {
@@ -54,12 +55,14 @@ class RebalanceMilestones
             'milestones' => __('That milestone does not belong to this contract.'),
         ]);
 
-        $locked = $milestones->filter(fn (Milestone $milestone): bool => $milestone->due !== null && $milestone->due->amount_paid_cents > 0);
+        // A canceled milestone no longer takes a share; the rest of the contract is split among the others.
+        $canceled = $milestones->filter(fn (Milestone $milestone): bool => $milestone->due?->status === DueStatus::Canceled);
+        $locked = $milestones->filter(fn (Milestone $milestone): bool => $milestone->due !== null && $milestone->due->amount_paid_cents > 0 && ! $canceled->has($milestone->id));
         $lockedCents = (int) $locked->sum('amount_cents');
         $remaining = $contract->amount_cents - $lockedCents;
 
         $submittedIds = array_map(fn (array $row): int => (int) $row['id'], $rows);
-        $expectedIds = $milestones->keys()->diff($locked->keys())->values()->all();
+        $expectedIds = $milestones->keys()->diff($locked->keys())->diff($canceled->keys())->values()->all();
 
         if (collect($submittedIds)->sort()->values()->all() !== collect($expectedIds)->sort()->values()->all()) {
             throw ValidationException::withMessages([
@@ -72,7 +75,11 @@ class RebalanceMilestones
         $plan = [];
 
         foreach ($locked as $milestone) {
-            $plan[$milestone->id] = ['id' => $milestone->id, 'label' => $milestone->label, 'oldCents' => $milestone->amount_cents, 'newCents' => $milestone->amount_cents, 'locked' => true];
+            $plan[$milestone->id] = ['id' => $milestone->id, 'label' => $milestone->label, 'oldCents' => $milestone->amount_cents, 'newCents' => $milestone->amount_cents, 'locked' => true, 'canceled' => false];
+        }
+
+        foreach ($canceled as $milestone) {
+            $plan[$milestone->id] = ['id' => $milestone->id, 'label' => $milestone->label, 'oldCents' => $milestone->amount_cents, 'newCents' => $milestone->amount_cents, 'locked' => true, 'canceled' => true];
         }
 
         foreach ($rows as $index => $row) {
@@ -83,6 +90,7 @@ class RebalanceMilestones
                 'oldCents' => $milestone->amount_cents,
                 'newCents' => $amounts[$index],
                 'locked' => false,
+                'canceled' => false,
             ];
         }
 

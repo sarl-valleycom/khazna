@@ -19,7 +19,7 @@ class CloseController extends Controller
     public function show(Request $request, CloseMonth $close): Response
     {
         $month = $this->month($request->string('month')->toString());
-        $lines = $close->preview($month);
+        $lines = $close->preview($month, $this->actor($request));
 
         $ready = array_filter($lines, fn (PayrollLineData $line): bool => $line->state === 'ready');
         $total = array_sum(array_map(fn (PayrollLineData $line): int => $line->netCents, $ready));
@@ -42,7 +42,7 @@ class CloseController extends Controller
         ]);
 
         $month = CarbonImmutable::parse($validated['month'].'-01');
-        $result = $close->handle($month);
+        $result = $close->handle($month, $this->actor($request));
 
         return to_route('payroll.close', ['month' => $validated['month']], 303)
             ->with('close_result', [

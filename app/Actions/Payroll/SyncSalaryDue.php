@@ -33,7 +33,14 @@ class SyncSalaryDue
             ->lockForUpdate()
             ->first();
 
-        if ($due === null || $due->status === DueStatus::Canceled) {
+        if ($due === null) {
+            return null;
+        }
+
+        // Only a due this class withdrew itself can come back; one someone canceled by hand stays canceled.
+        $withdrawn = $due->status === DueStatus::Canceled && $due->canceled_by_contract;
+
+        if ($due->status === DueStatus::Canceled && ! $withdrawn) {
             return $due;
         }
 
@@ -46,7 +53,7 @@ class SyncSalaryDue
         // Nothing is owed once advances and deductions cover the salary: never a negative due.
         $net = max(0, $line['net']);
 
-        if ($net === $due->amount_due_cents) {
+        if ($net === $due->amount_due_cents && ! ($withdrawn && $net > 0)) {
             return $due;
         }
 
@@ -66,12 +73,19 @@ class SyncSalaryDue
                     'amount_due_cents' => 0,
                     'status' => DueStatus::Canceled,
                     'canceled_reason' => __('Advances and deductions cover the whole salary.'),
+                    'canceled_by_contract' => true,
                 ]);
 
                 return;
             }
 
-            $due->update(['amount_due_cents' => $net]);
+            // Back in play: a bonus (or anything that lifts the net above zero) revives a withdrawn due.
+            $due->update([
+                'amount_due_cents' => $net,
+                'status' => DueStatus::Pending,
+                'canceled_reason' => null,
+                'canceled_by_contract' => false,
+            ]);
             $this->recalculate->handle($due);
         });
 

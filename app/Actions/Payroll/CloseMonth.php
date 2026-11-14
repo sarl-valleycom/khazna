@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Due;
 use App\Models\Employee;
 use App\Models\Setting;
+use App\Models\User;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -20,11 +21,12 @@ class CloseMonth
     public function __construct(private readonly PayrollCalculator $calculator) {}
 
     /**
-     * What closing the month would do. Writes nothing (FR-SAL-05).
+     * What closing the month would do. Writes nothing (FR-SAL-05). With an actor, only the
+     * employees that user may see are included; without one (a console run) everyone is.
      *
      * @return array<int, PayrollLineData>
      */
-    public function preview(CarbonImmutable $month): array
+    public function preview(CarbonImmutable $month, ?User $actor = null): array
     {
         $first = $month->startOfMonth();
         $existing = Due::query()
@@ -35,7 +37,7 @@ class CloseMonth
 
         $lines = [];
 
-        foreach ($this->calculator->payableEmployees($first) as $employee) {
+        foreach ($this->calculator->payableEmployees($first, $actor) as $employee) {
             $line = $this->calculator->forEmployee($employee, $first);
             $due = $existing->get($employee->id);
 
@@ -63,17 +65,17 @@ class CloseMonth
      *
      * @return array{created: array<int, PayrollLineData>, existing: array<int, PayrollLineData>, skipped: array<int, PayrollLineData>}
      */
-    public function handle(CarbonImmutable $month): array
+    public function handle(CarbonImmutable $month, ?User $actor = null): array
     {
         $first = $month->startOfMonth();
         $dueDay = max(1, min(28, (int) Setting::current(Setting::SALARY_DUE_DAY, (string) config('khazna.salary_due_day'))));
         $dueOn = $first->addMonthNoOverflow()->day($dueDay)->toDateString();
         $category = Category::named(Category::SALARIES);
 
-        return DB::transaction(function () use ($first, $dueOn, $category): array {
+        return DB::transaction(function () use ($first, $dueOn, $category, $actor): array {
             $result = ['created' => [], 'existing' => [], 'skipped' => []];
 
-            foreach ($this->preview($first) as $line) {
+            foreach ($this->preview($first, $actor) as $line) {
                 if ($line->state !== 'ready') {
                     $result[$line->state === 'exists' ? 'existing' : 'skipped'][] = $line;
 

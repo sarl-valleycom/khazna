@@ -37,9 +37,24 @@ class ReverseTransfer
 
             $today = AlgerianDate::today();
 
-            foreach (AccountEntry::query()->where('source_type', $transfer->getMorphClass())->where('source_id', $transfer->id)->orderBy('id')->get() as $entry) {
+            $entries = AccountEntry::query()
+                ->where('source_type', $transfer->getMorphClass())
+                ->where('source_id', $transfer->id)
+                ->orderBy('id')
+                ->get();
+
+            // Lock the accounts in ascending id order, the same order RecordTransfer uses, so two
+            // opposite transfers being recorded or reversed can never wait on each other.
+            $accounts = Account::query()
+                ->whereIn('id', $entries->pluck('account_id')->unique()->all())
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($entries as $entry) {
                 $this->ledger->record(
-                    Account::query()->lockForUpdate()->findOrFail($entry->account_id),
+                    $accounts->get($entry->account_id) ?? throw ValidationException::withMessages(['reason' => __('An account of this transfer no longer exists.')]),
                     $entry->direction === Direction::In ? Direction::Out : Direction::In,
                     $entry->amount_cents,
                     $today,

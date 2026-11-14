@@ -106,15 +106,4 @@ class AdjustmentController extends Controller
             ? CarbonImmutable::parse($value.'-01')
             : AlgerianDate::today()->startOfMonth();
     }
-
-    private function actor(Request $request): User
-    {
-        $actor = $request->user();
-
-        if (! $actor instanceof User) {
-            abort(403);
-        }
-
-        return $actor;
-    }
 }

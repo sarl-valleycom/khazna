@@ -10,7 +10,6 @@ use App\Http\Requests\Ledger\ReconciliationRequest;
 use App\Http\Requests\Ledger\ReversalRequest;
 use App\Models\Account;
 use App\Models\Reconciliation;
-use App\Models\User;
 use App\Support\AlgerianDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -131,16 +130,5 @@ class ReconciliationController extends Controller
         $date = CarbonImmutable::parse($value)->startOfDay();
 
         return $date->gt($fallback) ? $fallback : $date;
-    }
-
-    private function actor(Request $request): User
-    {
-        $actor = $request->user();
-
-        if (! $actor instanceof User) {
-            abort(403);
-        }
-
-        return $actor;
     }
 }

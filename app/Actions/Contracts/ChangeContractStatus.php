@@ -4,7 +4,9 @@ namespace App\Actions\Contracts;
 
 use App\Actions\Dues\CancelOpenFutureDues;
 use App\Actions\Dues\GenerateDues;
+use App\Actions\Milestones\ReviveMilestoneDues;
 use App\Enums\ContractStatus;
+use App\Enums\ContractType;
 use App\Models\Contract;
 use App\Support\AuditContext;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +17,7 @@ class ChangeContractStatus
     public function __construct(
         private readonly CancelOpenFutureDues $cancelDues,
         private readonly GenerateDues $generateDues,
+        private readonly ReviveMilestoneDues $reviveMilestones,
     ) {}
 
     public function handle(Contract $contract, ContractStatus $target, ?string $reason): Contract
@@ -40,7 +43,11 @@ class ChangeContractStatus
             ]));
 
             if ($target === ContractStatus::Active) {
-                $this->generateDues->forContract($contract, revive: true);
+                if ($contract->type === ContractType::CustomProject) {
+                    $this->reviveMilestones->handle($contract);
+                } else {
+                    $this->generateDues->forContract($contract, revive: true);
+                }
 
                 return;
             }

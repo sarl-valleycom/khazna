@@ -6,6 +6,7 @@ use App\Enums\AdjustmentType;
 use App\Enums\EmployeeStatus;
 use App\Models\Employee;
 use App\Models\SalaryAdjustment;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -61,12 +62,13 @@ class PayrollCalculator
      *
      * @return Collection<int, Employee>
      */
-    public function payableEmployees(CarbonImmutable $month): Collection
+    public function payableEmployees(CarbonImmutable $month, ?User $actor = null): Collection
     {
         $first = $month->startOfMonth()->toDateString();
         $last = $month->startOfMonth()->endOfMonth()->toDateString();
 
         return Employee::query()
+            ->when($actor, fn ($query, User $user) => $query->visibleTo($user))
             ->with('office:id,name')
             ->where(fn ($query) => $query
                 ->where('status', EmployeeStatus::Active)

@@ -279,9 +279,9 @@ test('FR-MIL-04: rebalancing after a payment previews the change and leaves paid
     $preview = $this->actingAs($owner)->postJson(route('contracts.milestones.preview', $contract), ['milestones' => $rows])->assertOk();
 
     expect($preview->json('plan'))->toBe([
-        ['id' => $deposit->id, 'label' => 'Deposit', 'oldCents' => 4_000_000, 'newCents' => 4_000_000, 'locked' => true],
-        ['id' => $beta->id, 'label' => 'Beta', 'oldCents' => 3_000_000, 'newCents' => 1_500_000, 'locked' => false],
-        ['id' => $launch->id, 'label' => 'Launch', 'oldCents' => 3_000_000, 'newCents' => 4_500_000, 'locked' => false],
+        ['id' => $deposit->id, 'label' => 'Deposit', 'oldCents' => 4_000_000, 'newCents' => 4_000_000, 'locked' => true, 'canceled' => false],
+        ['id' => $beta->id, 'label' => 'Beta', 'oldCents' => 3_000_000, 'newCents' => 1_500_000, 'locked' => false, 'canceled' => false],
+        ['id' => $launch->id, 'label' => 'Launch', 'oldCents' => 3_000_000, 'newCents' => 4_500_000, 'locked' => false, 'canceled' => false],
     ]);
 
     // A preview writes nothing.

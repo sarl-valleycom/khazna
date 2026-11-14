@@ -12,7 +12,6 @@ use App\Http\Requests\Accounts\AccountRequest;
 use App\Models\Account;
 use App\Models\AccountEntry;
 use App\Models\Office;
-use App\Models\User;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -176,16 +175,5 @@ class AccountController extends Controller
         $save->update($account, $request->validated());
 
         return back(303)->with('success', __('Account updated.'));
-    }
-
-    private function actor(Request $request): User
-    {
-        $actor = $request->user();
-
-        if (! $actor instanceof User) {
-            abort(403);
-        }
-
-        return $actor;
     }
 }

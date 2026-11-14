@@ -10,7 +10,6 @@ use App\Http\Requests\Payments\PaymentRequest;
 use App\Http\Requests\Payments\ReversePaymentRequest;
 use App\Models\Due;
 use App\Models\Payment;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -62,16 +61,5 @@ class PaymentController extends Controller
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
         ], 'inline');
-    }
-
-    private function actor(Request $request): User
-    {
-        $actor = $request->user();
-
-        if (! $actor instanceof User) {
-            abort(403);
-        }
-
-        return $actor;
     }
 }

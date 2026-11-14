@@ -112,6 +112,8 @@ class DueTriageQuery
     public function attention(User $user, TriageFiltersData $filters, CarbonImmutable $today): Collection
     {
         $unscheduled = $this->attentionBase($user, $filters)
+            // A project bills by milestone, not by cycle, so "no further due" says nothing about it.
+            ->where('type', '!=', ContractType::CustomProject->value)
             ->whereDoesntHave('dues', fn (Builder $due): Builder => $due
                 ->where('status', '!=', DueStatus::Canceled->value)
                 ->where('due_on', '>=', $today->toDateString()))

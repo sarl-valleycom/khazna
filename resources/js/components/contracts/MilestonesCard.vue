@@ -40,6 +40,7 @@ type PlanLine = {
     oldCents: number;
     newCents: number;
     locked: boolean;
+    canceled: boolean;
 };
 
 const open = ref(false);
@@ -50,7 +51,9 @@ const previewError = ref<string | null>(null);
 type Payload = { id: number; label: string; mode: string; value: number };
 const form = useForm({ milestones: [] as Payload[] });
 
-const unpaid = computed(() => props.milestones.filter((m) => !m.locked));
+const unpaid = computed(() =>
+    props.milestones.filter((m) => !m.locked && m.dueStatus !== 'canceled'),
+);
 
 function deliver(milestone: App.Data.MilestoneData) {
     router.post(
@@ -279,7 +282,11 @@ function save() {
                         v-if="item.locked"
                         class="text-xs text-muted-foreground"
                     >
-                        (paid, unchanged)
+                        ({{
+                            item.canceled
+                                ? 'canceled, not counted'
+                                : 'paid, unchanged'
+                        }})
                     </span>
                 </span>
                 <span class="tabular-nums">
