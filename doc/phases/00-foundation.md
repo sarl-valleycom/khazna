@@ -211,11 +211,16 @@ Notes:
 - The backup restore test is user-owned and remains on the exit checklist.
 ## 0.11 Seed data
 
-- [ ] Factories for every model added in later phases (add them as you go).
+- [x] Factories for every model added in later phases (add them as you go).
 - [ ] A `DemoSeeder` with two offices in different cities, their accounts, realistic Algerian names, phone numbers, amounts in DA, paid and unpaid dues across months. Used for UI work and for the staging demo. Never run it in production.
 
 ---
 
+Notes:
+- `UserFactory` is the only factory needed in phase 0; add one factory with each model in later phases.
+- `DemoSeeder` creates the owner, finance, and two account-manager accounts, with office ids 1 (Algiers) and 2 (Oran).
+- Offices, accounts, and dues are deferred to phase 1 because those tables do not exist yet; this follows the decision to defer office rows.
+- `DatabaseSeeder` calls `DemoSeeder` outside production, and `DemoSeeder` throws in production. The demo password defaults to `password`; override it with `DEMO_PASSWORD`.
 ## Exit checklist
 
 - [ ] Staging is online over HTTPS, login works, registration is closed.
