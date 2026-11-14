@@ -34,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view-salaries', fn (User $user): bool => $user->canViewSalaries());
         Gate::define('view-audit-log', fn (User $user): bool => $user->isOwner());
         Gate::define('view-dev-tools', fn (User $user): bool => $user->isOwner());
+        Gate::define('view-forecast', fn (User $user): bool => $user->isOwner() || $user->isFinance());
     }
 
     /**

@@ -4,6 +4,7 @@ import {
     BookOpen,
     Building2,
     ChartColumn,
+    TrendingUp,
     Landmark,
     Store,
     Tags,
@@ -65,6 +66,12 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: ChartColumn,
+    },
+    {
+        title: 'Forecast',
+        href: '/forecast',
+        icon: TrendingUp,
+        roles: ['owner', 'finance'] as App.Enums.Role[],
     },
     {
         title: 'Clients',

@@ -16,6 +16,7 @@ use App\Http\Controllers\Dues\DueController;
 use App\Http\Controllers\Dues\DueReminderController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
+use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Payroll\AdjustmentController;
 use App\Http\Controllers\Payroll\CloseController;
@@ -81,6 +82,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('payroll/close', [CloseController::class, 'show'])->name('payroll.close');
         Route::post('payroll/close', [CloseController::class, 'store'])->name('payroll.close.store');
     });
+
+    Route::get('forecast', ForecastController::class)->middleware('can:view-forecast')->name('forecast');
 
     Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
     Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');

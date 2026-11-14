@@ -97,18 +97,18 @@ Keeping salary in a history table from the start means a raise never rewrites th
 
 ## 2.7 Forecast
 
-- [ ] Start from the **current balance of the selected accounts** (all accounts, or one office), not from a typed number (FR-DSH-04).
-- [ ] **Office view:** cash in one office cannot pay the other office's salaries until it is transferred. The forecast therefore uses an office's accounts against that office's employees' salaries and that office's contracts. Show the company total and each office side by side. A company total can look healthy while one office is short (scenario 24).
-- [ ] Warn when an included account has not been reconciled for more than 30 days, because its balance may be wrong.
-- [ ] 30 / 60 / 90-day view, bucketed by week. Per bucket: money in, money out, running balance.
-- [ ] Rules:
+- [x] Start from the **current balance of the selected accounts** (all accounts, or one office), not from a typed number (FR-DSH-04).
+- [x] **Office view:** cash in one office cannot pay the other office's salaries until it is transferred. The forecast therefore uses an office's accounts against that office's employees' salaries and that office's contracts. Show the company total and each office side by side. A company total can look healthy while one office is short (scenario 24).
+- [x] Warn when an included account has not been reconciled for more than 30 days, because its balance may be wrong.
+- [x] 30 / 60 / 90-day view, bucketed by week. Per bucket: money in, money out, running balance.
+- [x] Rules:
   - In-dues in the window count at their remaining amount on their due date.
   - **Overdue out-dues** (for example unpaid salaries) count at day 0.
   - **Overdue in-dues** are listed separately and **not** counted by default, with a toggle to include them. This is the conservative choice. Confirm it (open question).
   - Dues with a null `due_on` are not counted.
-- [ ] Highlight the weeks where the running balance falls below the next salary total.
-- [ ] Click a bucket to list the dues it contains (FR-DSH-05).
-- [ ] Chart readability was checked in phase 0. Confirm it with real data.
+- [x] Highlight the weeks where the running balance falls below the next salary total.
+- [x] Click a bucket to list the dues it contains (FR-DSH-05).
+- [x] Chart readability was checked in phase 0. Confirm it with real data.
 
 ## 2.8 Role-aware views and hardening
 
