@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Enums\EmployeeStatus;
+use App\Enums\EmploymentType;
 use App\Models\Employee;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -14,6 +15,9 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 class EmployeeData extends Data
 {
+    /**
+     * @param  list<int>  $workDays
+     */
     public function __construct(
         public int $id,
         public string $name,
@@ -24,6 +28,15 @@ class EmployeeData extends Data
         public string $statusLabel,
         public int $officeId,
         public string $officeName,
+        public ?string $discordUserId,
+        public EmploymentType $contractType,
+        public string $contractTypeLabel,
+        public int $expectedMinutesPerDay,
+        public array $workDays,
+        public ?string $scheduleStart,
+        public ?string $scheduleEnd,
+        public int $lateGraceMinutes,
+        public bool $remindersEnabled,
     ) {}
 
     public static function fromEmployee(Employee $employee): self
@@ -38,6 +51,15 @@ class EmployeeData extends Data
             statusLabel: $employee->status->label(),
             officeId: $employee->office_id,
             officeName: $employee->office->name ?? '',
+            discordUserId: $employee->discord_user_id,
+            contractType: $employee->contract_type,
+            contractTypeLabel: $employee->contract_type->label(),
+            expectedMinutesPerDay: $employee->expected_minutes_per_day,
+            workDays: $employee->workDays(),
+            scheduleStart: $employee->schedule_start,
+            scheduleEnd: $employee->schedule_end,
+            lateGraceMinutes: $employee->late_grace_minutes,
+            remindersEnabled: $employee->reminders_enabled,
         );
     }
 }

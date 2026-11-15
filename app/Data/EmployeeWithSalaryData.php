@@ -22,6 +22,8 @@ class EmployeeWithSalaryData extends Data
         public EmployeeData $employee,
         public ?int $currentSalaryCents,
         public ?string $currentSalaryFormatted,
+        public ?int $hourlyRateCents,
+        public ?string $hourlyRateFormatted,
         public array $salaryHistory,
     ) {}
 
@@ -36,6 +38,8 @@ class EmployeeWithSalaryData extends Data
             employee: EmployeeData::fromEmployee($employee),
             currentSalaryCents: $current,
             currentSalaryFormatted: $current === null ? null : Money::fromCents($current)->format(),
+            hourlyRateCents: $employee->hourly_rate,
+            hourlyRateFormatted: $employee->hourly_rate === null ? null : Money::fromCents($employee->hourly_rate)->format(),
             salaryHistory: $withHistory
                 ? $employee->salaries()
                     ->orderByDesc('effective_from')

@@ -270,11 +270,22 @@ declare namespace App {
             statusLabel: string;
             officeId: number;
             officeName: string;
+            discordUserId: string | null;
+            contractType: App.Enums.EmploymentType;
+            contractTypeLabel: string;
+            expectedMinutesPerDay: number;
+            workDays: number[];
+            scheduleStart: string | null;
+            scheduleEnd: string | null;
+            lateGraceMinutes: number;
+            remindersEnabled: boolean;
         };
         export type EmployeeWithSalaryData = {
             employee: App.Data.EmployeeData;
             currentSalaryCents: number | null;
             currentSalaryFormatted: string | null;
+            hourlyRateCents: number | null;
+            hourlyRateFormatted: string | null;
             salaryHistory: App.Data.SalaryHistoryData[];
         };
         export type FlashData = {
@@ -421,31 +432,23 @@ declare namespace App {
         };
     }
     namespace Enums {
-        export type AccountType = 'cash' | 'ccp' | 'bank' | 'other';
-        export type AdjustmentType = 'advance' | 'bonus' | 'deduction';
-        export type CategoryKind = 'cost' | 'income';
-        export type ContractStatus = 'active' | 'paused' | 'canceled';
+        export type AccountType = "cash" | "ccp" | "bank" | "other";
+        export type AdjustmentType = "advance" | "bonus" | "deduction";
+        export type CategoryKind = "cost" | "income";
+        export type ContractStatus = "active" | "paused" | "canceled";
         export type ContractType =
-            | 'saas_renewal'
-            | 'custom_project'
-            | 'recurring_cost';
-        export type Cycle = 'monthly' | 'quarterly' | 'yearly' | 'once';
-        export type Direction = 'in' | 'out';
+            "saas_renewal" | "custom_project" | "recurring_cost";
+        export type Cycle = "monthly" | "quarterly" | "yearly" | "once";
+        export type Direction = "in" | "out";
         export type DueKind =
-            | 'saas'
-            | 'project'
-            | 'salary'
-            | 'expense'
-            | 'other';
-        export type DueStatus = 'pending' | 'partial' | 'paid' | 'canceled';
-        export type EmployeeStatus = 'active' | 'inactive';
-        export type MilestoneTrigger = 'date' | 'delivery';
+            "saas" | "project" | "salary" | "expense" | "other";
+        export type DueStatus = "pending" | "partial" | "paid" | "canceled";
+        export type EmployeeStatus = "active" | "inactive";
+        export type EmploymentType =
+            "fixed_monthly" | "hourly" | "part_time" | "freelancer";
+        export type MilestoneTrigger = "date" | "delivery";
         export type PaymentMethod =
-            | 'cash'
-            | 'ccp'
-            | 'baridimob'
-            | 'bank_transfer'
-            | 'other';
-        export type Role = 'owner' | 'finance' | 'account_manager';
+            "cash" | "ccp" | "baridimob" | "bank_transfer" | "other";
+        export type Role = "owner" | "finance" | "account_manager";
     }
 }

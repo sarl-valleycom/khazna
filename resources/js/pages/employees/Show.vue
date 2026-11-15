@@ -36,6 +36,7 @@ const editOpen = ref(false);
 const salaryOpen = ref(false);
 const advanceOpen = ref(false);
 const thisMonth = toCalendarDate(new Date()).slice(0, 7);
+const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const person = computed(() => props.employee.employee);
 const withSalary = computed(() =>
@@ -112,6 +113,58 @@ function saveSalary() {
             </CardContent>
         </Card>
 
+        <Card>
+            <CardHeader>
+                <CardTitle>Attendance</CardTitle>
+            </CardHeader>
+            <CardContent class="grid gap-4 pt-0 sm:grid-cols-3">
+                <div>
+                    <p class="text-xs text-muted-foreground">Discord</p>
+                    <p class="font-medium">
+                        {{ person.discordUserId ?? 'Not linked' }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Contract</p>
+                    <p class="font-medium">{{ person.contractTypeLabel }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Schedule</p>
+                    <p class="font-medium">
+                        {{
+                            person.scheduleStart && person.scheduleEnd
+                                ? `${person.scheduleStart.slice(0, 5)}–${person.scheduleEnd.slice(0, 5)}`
+                                : 'Not set'
+                        }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">
+                        Expected per day
+                    </p>
+                    <p class="font-medium tabular-nums">
+                        {{ person.expectedMinutesPerDay }} min
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Reminders</p>
+                    <p class="font-medium">
+                        {{ person.remindersEnabled ? 'On' : 'Off' }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Work days</p>
+                    <p class="font-medium">
+                        {{
+                            person.workDays
+                                .map((day) => weekDays[day] ?? day)
+                                .join(', ')
+                        }}
+                    </p>
+                </div>
+            </CardContent>
+        </Card>
+
         <Card v-if="withSalary">
             <CardHeader class="flex flex-row items-center justify-between">
                 <CardTitle>
@@ -169,6 +222,7 @@ function saveSalary() {
         :statuses="props.statuses"
         :can-see-salaries="props.canSeeSalaries"
         :employee="person"
+        :hourly-rate-cents="withSalary?.hourlyRateCents ?? null"
     />
 
     <FormDialog

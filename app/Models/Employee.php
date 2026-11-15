@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Enums\EmployeeStatus;
+use App\Enums\EmploymentType;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasVisibility;
+use App\Support\AlgerianDate;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Database\Factories\EmployeeFactory;
@@ -29,8 +31,21 @@ use LogicException;
  * @property CarbonImmutable|null $hire_date
  * @property EmployeeStatus $status
  * @property CarbonImmutable|null $left_on
+ * @property string|null $discord_user_id
+ * @property EmploymentType $contract_type
+ * @property int|null $hourly_rate
+ * @property int $expected_minutes_per_day
+ * @property array<int, int>|null $work_days
+ * @property string|null $schedule_start
+ * @property string|null $schedule_end
+ * @property int $late_grace_minutes
+ * @property bool $reminders_enabled
  */
-#[Fillable(['office_id', 'name', 'phone', 'title', 'hire_date', 'status', 'left_on'])]
+#[Fillable([
+    'office_id', 'name', 'phone', 'title', 'hire_date', 'status', 'left_on',
+    'discord_user_id', 'contract_type', 'hourly_rate', 'expected_minutes_per_day',
+    'work_days', 'schedule_start', 'schedule_end', 'late_grace_minutes', 'reminders_enabled',
+])]
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
@@ -43,6 +58,12 @@ class Employee extends Model
             'hire_date' => 'immutable_date',
             'left_on' => 'immutable_date',
             'status' => EmployeeStatus::class,
+            'contract_type' => EmploymentType::class,
+            'hourly_rate' => 'integer',
+            'expected_minutes_per_day' => 'integer',
+            'work_days' => 'array',
+            'late_grace_minutes' => 'integer',
+            'reminders_enabled' => 'boolean',
         ];
     }
 
@@ -84,6 +105,33 @@ class Employee extends Model
     public function isActive(): bool
     {
         return $this->status === EmployeeStatus::Active;
+    }
+
+    public function isLinked(): bool
+    {
+        return $this->discord_user_id !== null && $this->discord_user_id !== '';
+    }
+
+    /**
+     * Work days as Carbon day-of-week numbers (Sunday 0 … Saturday 6). The
+     * default is the Algerian work week, Sunday to Thursday (BR-09).
+     *
+     * @return list<int>
+     */
+    public function workDays(): array
+    {
+        $days = $this->work_days;
+
+        if (! is_array($days) || $days === []) {
+            return [0, 1, 2, 3, 4];
+        }
+
+        return array_values(array_map('intval', $days));
+    }
+
+    public function worksOn(CarbonInterface|string $date): bool
+    {
+        return in_array(AlgerianDate::toAlgiers($date)->dayOfWeek, $this->workDays(), true);
     }
 
     public function forceDelete(): ?bool
