@@ -102,7 +102,7 @@ function goTo(month: string) {
                             </p>
                             <p
                                 v-if="row.notChecked > 0"
-                                class="text-xs text-amber-600"
+                                class="text-xs text-warning"
                             >
                                 {{ row.notChecked }}
                                 {{
@@ -121,7 +121,7 @@ function goTo(month: string) {
                         </td>
                         <td
                             class="p-3 text-right font-medium tabular-nums"
-                            :class="row.toMakeUpMinutes > 0 && 'text-amber-600'"
+                            :class="row.toMakeUpMinutes > 0 && 'text-warning'"
                         >
                             {{ row.toMakeUpFormatted }}
                         </td>

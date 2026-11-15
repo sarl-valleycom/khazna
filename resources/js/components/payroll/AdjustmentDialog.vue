@@ -210,7 +210,7 @@ function submit() {
 
         <div
             v-if="needsCorrection"
-            class="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950"
+            class="space-y-2 rounded-md border border-warning-border bg-warning-soft p-3 text-sm"
         >
             <Label for="correction-reason">
                 This month's salary is already paid. Why is it being changed?

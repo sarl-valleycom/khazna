@@ -135,20 +135,20 @@ const statusLabels: Record<string, string> = {
                     </CardHeader>
                     <CardContent class="space-y-3 text-sm">
                         <p class="flex gap-2">
-                            <Check class="mt-0.5 size-4 text-emerald-600" />
+                            <Check class="mt-0.5 size-4 text-success" />
                             UTF-8 encoding, up to 5 MB.
                         </p>
                         <p class="flex gap-2">
-                            <Check class="mt-0.5 size-4 text-emerald-600" />
+                            <Check class="mt-0.5 size-4 text-success" />
                             Required columns: name, phone,
                             account_manager_email.
                         </p>
                         <p class="flex gap-2">
-                            <Check class="mt-0.5 size-4 text-emerald-600" />
+                            <Check class="mt-0.5 size-4 text-success" />
                             Account managers are matched by email.
                         </p>
                         <p class="flex gap-2">
-                            <Check class="mt-0.5 size-4 text-emerald-600" />
+                            <Check class="mt-0.5 size-4 text-success" />
                             Existing phone numbers are flagged and skipped.
                         </p>
                         <p class="text-xs text-muted-foreground">

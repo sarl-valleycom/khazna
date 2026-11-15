@@ -169,7 +169,7 @@ const check = computed(() => {
             </Button>
             <p
                 class="text-xs"
-                :class="check.ok ? 'text-emerald-700' : 'text-destructive'"
+                :class="check.ok ? 'text-success' : 'text-destructive'"
                 role="status"
             >
                 {{ check.text }}

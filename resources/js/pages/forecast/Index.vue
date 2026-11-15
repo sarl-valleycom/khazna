@@ -185,7 +185,7 @@ const scopes = computed(() =>
 
                     <p
                         v-if="scope.firstNegativeBucket"
-                        class="flex items-center gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+                        class="flex items-center gap-2 rounded-md border border-danger-border bg-danger-soft p-3 text-sm text-danger"
                         role="alert"
                     >
                         <AlertTriangle class="size-4" />
@@ -195,7 +195,7 @@ const scopes = computed(() =>
 
                     <p
                         v-if="scope.staleAccounts.length > 0"
-                        class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950"
+                        class="rounded-md border border-warning-border bg-warning-soft p-3 text-sm"
                         role="status"
                     >
                         These balances may be wrong, because the account has not
@@ -268,9 +268,9 @@ const scopes = computed(() =>
                                         class="cursor-pointer border-b hover:bg-muted/50"
                                         :class="
                                             bucket.negative
-                                                ? 'bg-red-50/60 dark:bg-red-950/30'
+                                                ? 'bg-danger-soft/60'
                                                 : bucket.belowPayroll
-                                                  ? 'bg-amber-50/60 dark:bg-amber-950/30'
+                                                  ? 'bg-warning-soft/60'
                                                   : ''
                                         "
                                         :aria-expanded="isOpen(scope, bucket)"
@@ -293,7 +293,7 @@ const scopes = computed(() =>
                                                     bucket.belowPayroll &&
                                                     !bucket.negative
                                                 "
-                                                class="ml-2 text-xs text-amber-700 dark:text-amber-400"
+                                                class="ml-2 text-xs text-warning"
                                                 >below next payroll</span
                                             >
                                         </td>
@@ -351,7 +351,7 @@ const scopes = computed(() =>
                                                         }}
                                                         <span
                                                             v-if="due.overdue"
-                                                            class="text-red-700 dark:text-red-400"
+                                                            class="text-danger"
                                                             >(overdue)</span
                                                         >
                                                     </span>
@@ -360,8 +360,8 @@ const scopes = computed(() =>
                                                         :class="
                                                             due.direction ===
                                                             'in'
-                                                                ? 'text-emerald-700 dark:text-emerald-400'
-                                                                : 'text-red-700 dark:text-red-400'
+                                                                ? 'text-success'
+                                                                : 'text-danger'
                                                         "
                                                     >
                                                         {{

@@ -114,7 +114,7 @@ const label = computed(() =>
                 </p>
                 <p
                     v-if="props.due.creditCents > 0"
-                    class="text-xs text-emerald-700 dark:text-emerald-400"
+                    class="text-xs text-success"
                 >
                     {{ formatMoney(props.due.creditCents, props.symbol) }}
                     credit

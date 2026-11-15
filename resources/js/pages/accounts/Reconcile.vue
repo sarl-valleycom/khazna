@@ -134,7 +134,7 @@ function ask(row: Row) {
 
         <p
             v-if="dueCount > 0"
-            class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950"
+            class="rounded-md border border-warning-border bg-warning-soft p-3 text-sm"
             role="status"
         >
             {{ dueCount }}
@@ -175,7 +175,7 @@ function ask(row: Row) {
                             </span>
                             <span
                                 v-if="account.due"
-                                class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                class="rounded-full bg-warning-soft px-2 py-0.5 text-xs text-warning"
                             >
                                 due
                             </span>
@@ -235,8 +235,8 @@ function ask(row: Row) {
                             class="rounded-md border p-3 text-sm"
                             :class="
                                 difference === 0
-                                    ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950'
-                                    : 'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950'
+                                    ? 'border-success-border bg-success-soft'
+                                    : 'border-warning-border bg-warning-soft'
                             "
                             role="status"
                         >
