@@ -160,6 +160,32 @@ class Employee extends Model
         return in_array(AlgerianDate::toAlgiers($date)->dayOfWeek, $this->workDays(), true);
     }
 
+    /**
+     * How many of this person's work days fall between two dates, counted by
+     * whole weeks plus at most six leftover days, so a range of any length costs
+     * the same.
+     */
+    public function countWorkDays(CarbonInterface|string $from, CarbonInterface|string $to): int
+    {
+        $start = AlgerianDate::toAlgiers($from)->startOfDay();
+        $end = AlgerianDate::toAlgiers($to)->startOfDay();
+
+        if ($end->lt($start)) {
+            return 0;
+        }
+
+        $days = (int) $start->diffInDays($end) + 1;
+        $count = intdiv($days, 7) * count($this->workDays());
+
+        for ($offset = 0; $offset < $days % 7; $offset++) {
+            if ($this->worksOn($start->addDays(intdiv($days, 7) * 7 + $offset))) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     public function forceDelete(): ?bool
     {
         throw new LogicException(__('Employees are soft-deleted and cannot be permanently deleted.'));

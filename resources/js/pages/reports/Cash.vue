@@ -10,6 +10,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import DateInput from '@/components/kit/DateInput.vue';
+import ExportButton from '@/components/kit/ExportButton.vue';
+import MonthPdfDialog from '@/components/kit/MonthPdfDialog.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import StatCard from '@/components/kit/StatCard.vue';
 import { formatMoney } from '@/lib/format';
@@ -98,7 +100,18 @@ function monthLabel(month: string): string {
         <PageHeader
             title="Cash report"
             description="Money that actually moved, by month and by category. Transfers between your own accounts are not counted."
-        />
+        >
+            <template #actions>
+                <ExportButton href="/reports/cash/export" />
+                <MonthPdfDialog
+                    href="/reports/monthly-summary"
+                    title="Monthly summary"
+                    description="Money in and out, what clients owe, and salaries (owner only) for one month."
+                    button-label="Monthly summary PDF"
+                    :extra="{ office: props.filters.office }"
+                />
+            </template>
+        </PageHeader>
 
         <div class="flex flex-wrap items-end gap-3">
             <div class="w-40">

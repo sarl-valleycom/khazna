@@ -373,6 +373,24 @@ declare namespace App {
             outflow: number;
             balance: number;
         };
+        export type HolidayData = {
+            id: number;
+            date: string;
+            weekday: string;
+            label: string;
+        };
+        export type LeaveEntryData = {
+            id: number;
+            employeeId: number;
+            employeeName: string;
+            officeName: string;
+            type: string;
+            typeLabel: string;
+            from: string;
+            to: string;
+            workDays: number;
+            reason: string | null;
+        };
         export type MilestoneData = {
             id: number;
             position: number;
@@ -388,6 +406,23 @@ declare namespace App {
             locked: boolean;
             canDeliver: boolean;
             canRequest: boolean;
+        };
+        export type MonthlySummaryRowData = {
+            employeeId: number;
+            name: string;
+            officeName: string;
+            expectedMinutes: number;
+            workedMinutes: number;
+            toMakeUpMinutes: number;
+            extraMinutes: number;
+            expectedFormatted: string;
+            workedFormatted: string;
+            toMakeUpFormatted: string;
+            extraFormatted: string;
+            daysWorked: number;
+            daysOff: number;
+            notChecked: number;
+            sessionsUrl: string;
         };
         export type OfficeOptionData = {
             id: number;

@@ -76,9 +76,23 @@ class DueTriageQuery
     }
 
     /**
+     * The screen's page of dues for the chosen tab.
+     *
      * @return LengthAwarePaginator<int, Due>
      */
     public function rows(User $user, TriageFiltersData $filters, CarbonImmutable $today, int $perPage = 25): LengthAwarePaginator
+    {
+        return $this->rowsQuery($user, $filters, $today)->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Every due of the chosen tab, in the screen's order. The Excel export walks
+     * this same builder, so the file holds exactly the rows the tab shows. The
+     * visibility scope (office, account manager, salary dues) is part of it.
+     *
+     * @return Builder<Due>
+     */
+    public function rowsQuery(User $user, TriageFiltersData $filters, CarbonImmutable $today): Builder
     {
         [$weekEnd, $monthEnd] = $this->bounds($today);
         $query = $this->base($user, $filters);
@@ -95,9 +109,7 @@ class DueTriageQuery
             ->withParties()
             ->with('postponements.user:id,name')
             ->orderBy('due_on')
-            ->orderBy('id')
-            ->paginate($perPage)
-            ->withQueryString();
+            ->orderBy('id');
     }
 
     /**

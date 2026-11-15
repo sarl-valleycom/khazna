@@ -9,6 +9,9 @@ use App\Http\Controllers\Attendance\AttendanceCorrectionController;
 use App\Http\Controllers\Attendance\AttendancePresenceController;
 use App\Http\Controllers\Attendance\AttendanceSessionController;
 use App\Http\Controllers\Attendance\AttendanceSettingsController;
+use App\Http\Controllers\Attendance\AttendanceSummaryController;
+use App\Http\Controllers\Attendance\HolidayController;
+use App\Http\Controllers\Attendance\LeaveController;
 use App\Http\Controllers\Categories\CategoryController;
 use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Clients\ClientImportController;
@@ -21,6 +24,16 @@ use App\Http\Controllers\Dues\DueReminderController;
 use App\Http\Controllers\Employees\AttendanceCodeController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
+use App\Http\Controllers\Exports\AccountStatementController;
+use App\Http\Controllers\Exports\AttendanceReportController;
+use App\Http\Controllers\Exports\CashReportExportController;
+use App\Http\Controllers\Exports\ClientsExportController;
+use App\Http\Controllers\Exports\ClientStatementController;
+use App\Http\Controllers\Exports\ContractsExportController;
+use App\Http\Controllers\Exports\DuesExportController;
+use App\Http\Controllers\Exports\MonthlySummaryPdfController;
+use App\Http\Controllers\Exports\PayslipController;
+use App\Http\Controllers\Exports\SessionsExportController;
 use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Ledger\ManualEntryController;
 use App\Http\Controllers\Ledger\TransferController;
@@ -50,9 +63,11 @@ Route::prefix('work')->name('work.')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', TriageController::class)->name('home');
+    Route::get('dues/export', DuesExportController::class)->name('dues.export');
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
+    Route::get('clients/export', ClientsExportController::class)->name('clients.export');
     Route::get('clients/import', [ClientImportController::class, 'create'])->name('clients.import');
     Route::post('clients/import/preview', [ClientImportController::class, 'preview'])->name('clients.import.preview');
     Route::get('clients/import/template', [ClientImportController::class, 'template'])->name('clients.import.template');
@@ -62,11 +77,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('clients/import/confirm', [ClientImportController::class, 'confirm'])->name('clients.import.confirm');
     Route::post('clients', [ClientController::class, 'store'])->name('clients.store');
     Route::post('clients/{client}/dues', [DueController::class, 'store'])->whereNumber('client')->name('dues.store');
+    Route::get('clients/{client}/statement', ClientStatementController::class)->whereNumber('client')->name('clients.statement');
     Route::get('clients/{client}', [ClientController::class, 'show'])->whereNumber('client')->name('clients.show');
     Route::patch('clients/{client}', [ClientController::class, 'update'])->whereNumber('client')->name('clients.update');
     Route::delete('clients/{client}', [ClientController::class, 'destroy'])->whereNumber('client')->name('clients.destroy');
 
     Route::get('contracts', [ContractController::class, 'index'])->name('contracts.index');
+    Route::get('contracts/export', ContractsExportController::class)->name('contracts.export');
     Route::post('contracts', [ContractController::class, 'store'])->name('contracts.store');
     Route::get('contracts/{contract}/attachment', [ContractController::class, 'attachment'])->whereNumber('contract')->name('contracts.attachment');
     Route::patch('contracts/{contract}/status', [ContractController::class, 'status'])->whereNumber('contract')->name('contracts.status');
@@ -100,6 +117,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
     Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+    Route::get('accounts/{account}/statement', [AccountStatementController::class, 'pdf'])->whereNumber('account')->name('accounts.statement.pdf');
+    Route::get('accounts/{account}/statement/export', [AccountStatementController::class, 'excel'])->whereNumber('account')->name('accounts.statement.export');
     Route::get('accounts/{account}', [AccountController::class, 'show'])->whereNumber('account')->name('accounts.show');
     Route::patch('accounts/{account}', [AccountController::class, 'update'])->whereNumber('account')->name('accounts.update');
 
@@ -107,17 +126,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
     Route::get('employees/{employee}', [EmployeeController::class, 'show'])->whereNumber('employee')->name('employees.show');
     Route::patch('employees/{employee}', [EmployeeController::class, 'update'])->whereNumber('employee')->name('employees.update');
+    Route::get('employees/{employee}/payslip', PayslipController::class)->whereNumber('employee')->name('employees.payslip');
     Route::post('employees/{employee}/attendance-code', [AttendanceCodeController::class, 'store'])->whereNumber('employee')->name('employees.attendance-code.store');
     Route::delete('employees/{employee}/attendance-code', [AttendanceCodeController::class, 'destroy'])->whereNumber('employee')->name('employees.attendance-code.destroy');
 
     Route::prefix('attendance')->name('attendance.')->group(function () {
         Route::get('sessions', [AttendanceSessionController::class, 'index'])->name('sessions.index');
+        Route::get('sessions/export', SessionsExportController::class)->name('sessions.export');
         Route::post('sessions', [AttendanceSessionController::class, 'store'])->name('sessions.store');
         Route::patch('sessions/{attendanceSession}', [AttendanceSessionController::class, 'update'])->whereNumber('attendanceSession')->name('sessions.update');
         Route::delete('sessions/{attendanceSession}', [AttendanceSessionController::class, 'destroy'])->whereNumber('attendanceSession')->name('sessions.destroy');
         Route::post('sessions/{attendanceSession}/approve', [AttendanceSessionController::class, 'approve'])->whereNumber('attendanceSession')->name('sessions.approve');
 
         Route::get('presence', AttendancePresenceController::class)->name('presence.index');
+
+        Route::get('summary', AttendanceSummaryController::class)->name('summary.index');
+        Route::get('summary/export', [AttendanceReportController::class, 'team'])->name('summary.export');
+        Route::get('summary/{employee}/export', [AttendanceReportController::class, 'employeeExcel'])->whereNumber('employee')->name('summary.employee.export');
+        Route::get('summary/{employee}/pdf', [AttendanceReportController::class, 'employeePdf'])->whereNumber('employee')->name('summary.employee.pdf');
+
+        Route::get('holidays', [HolidayController::class, 'index'])->name('holidays.index');
+        Route::post('holidays', [HolidayController::class, 'store'])->name('holidays.store');
+        Route::delete('holidays/{holiday}', [HolidayController::class, 'destroy'])->whereNumber('holiday')->name('holidays.destroy');
+
+        Route::get('leave', [LeaveController::class, 'index'])->name('leave.index');
+        Route::post('leave', [LeaveController::class, 'store'])->name('leave.store');
+        Route::delete('leave/{leave}', [LeaveController::class, 'destroy'])->whereNumber('leave')->name('leave.destroy');
 
         Route::get('corrections', [AttendanceCorrectionController::class, 'index'])->name('corrections.index');
         Route::patch('corrections/{correctionRequest}/approve', [AttendanceCorrectionController::class, 'approve'])->whereNumber('correctionRequest')->name('corrections.approve');
@@ -139,6 +173,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('forecast', ForecastController::class)->middleware('can:view-forecast')->name('forecast');
     Route::get('reports/cash', CashReportController::class)->middleware('can:view-reports')->name('reports.cash');
+    Route::get('reports/cash/export', CashReportExportController::class)->middleware('can:view-reports')->name('reports.cash.export');
+    Route::get('reports/monthly-summary', MonthlySummaryPdfController::class)->middleware('can:view-reports')->name('reports.monthly-summary');
 
     Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
     Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');

@@ -34,6 +34,21 @@ class EmployeePolicy
     /** Changing what someone earns needs the salary permission as well as access to the employee. */
     public function setSalary(User $user, Employee $employee): bool
     {
+        return $this->salaryAccess($user, $employee);
+    }
+
+    /**
+     * Reading what someone earns (their payslip). Today it needs the same two
+     * things as changing it. It is its own ability so that either rule can be
+     * tightened later without silently changing the other.
+     */
+    public function viewSalary(User $user, Employee $employee): bool
+    {
+        return $this->salaryAccess($user, $employee);
+    }
+
+    private function salaryAccess(User $user, Employee $employee): bool
+    {
         return $user->can('view-salaries') && $this->canSee($user, $employee);
     }
 

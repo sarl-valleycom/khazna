@@ -8,9 +8,7 @@ use App\Models\Account;
 use App\Models\Office;
 use App\Models\User;
 use App\Queries\CashReportQuery;
-use App\Support\AlgerianDate;
-use App\Support\Dates;
-use Carbon\CarbonImmutable;
+use App\Support\CashReportFilters;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,17 +23,11 @@ class CashReportController extends Controller
             abort(403);
         }
 
-        $today = AlgerianDate::today();
-        $to = $this->date($this->queryString($request, 'to'), $today);
-        $from = $this->date($this->queryString($request, 'from'), $today->startOfYear());
-
-        if ($from->gt($to)) {
-            [$from, $to] = [$to, $from];
-        }
-
-        // A restricted user is held to their own office whatever the URL says.
-        $officeId = $actor->office_id ?? ($request->integer('office') ?: null);
-        $accountId = $request->integer('account') ?: null;
+        $filters = CashReportFilters::fromRequest($request, $actor);
+        $from = $filters->from;
+        $to = $filters->to;
+        $officeId = $filters->officeId;
+        $accountId = $filters->accountId;
 
         return Inertia::render('reports/Cash', [
             ...$report->handle($actor, $from, $to, $officeId, $accountId),
@@ -46,10 +38,5 @@ class CashReportController extends Controller
                 ? Office::query()->orderBy('name')->get(['id', 'name'])->map(fn (Office $office): array => ['id' => $office->id, 'name' => $office->name])->values()->all()
                 : [],
         ]);
-    }
-
-    private function date(string $value, CarbonImmutable $fallback): CarbonImmutable
-    {
-        return Dates::day($value) ?? $fallback;
     }
 }

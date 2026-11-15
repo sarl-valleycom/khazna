@@ -9,6 +9,7 @@ import EmployeeFormDialog from '@/components/employees/EmployeeFormDialog.vue';
 import AdjustmentDialog from '@/components/payroll/AdjustmentDialog.vue';
 import DateInput from '@/components/kit/DateInput.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
+import MonthPdfDialog from '@/components/kit/MonthPdfDialog.vue';
 import FormDialog from '@/components/kit/FormDialog.vue';
 import MoneyInput from '@/components/kit/MoneyInput.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
@@ -92,6 +93,13 @@ function saveSalary() {
                         <ArrowLeft class="mr-1 size-4" /> All employees
                     </Link>
                 </Button>
+                <MonthPdfDialog
+                    v-if="props.canSeeSalaries"
+                    :href="`/employees/${person.id}/payslip`"
+                    title="Payslip"
+                    description="Pay, adjustments and hours for the month you choose."
+                    button-label="Payslip PDF"
+                />
                 <Button
                     v-if="props.canSeeSalaries"
                     variant="outline"

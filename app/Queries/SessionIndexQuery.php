@@ -16,9 +16,22 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class SessionIndexQuery
 {
     /**
+     * The screen's page of sessions.
+     *
      * @return LengthAwarePaginator<int, AttendanceSession>
      */
     public function rows(AttendanceFiltersData $filters): LengthAwarePaginator
+    {
+        return $this->query($filters)->paginate($filters->perPage)->withQueryString();
+    }
+
+    /**
+     * Every session the filters match, in the screen's order. The Excel export
+     * walks this same builder.
+     *
+     * @return Builder<AttendanceSession>
+     */
+    public function query(AttendanceFiltersData $filters): Builder
     {
         $query = AttendanceSession::query()
             ->with(['employee:id,name,office_id', 'employee.office:id,name', 'breaks'])
@@ -43,7 +56,7 @@ class SessionIndexQuery
 
         $this->sort($query, $filters);
 
-        return $query->paginate($filters->perPage)->withQueryString();
+        return $query;
     }
 
     /**

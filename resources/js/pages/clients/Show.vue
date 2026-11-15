@@ -8,6 +8,7 @@ import DueRow from '@/components/dues/DueRow.vue';
 import ManualDueDialog from '@/components/dues/ManualDueDialog.vue';
 import PaymentHistoryItem from '@/components/dues/PaymentHistoryItem.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
+import PeriodPdfDialog from '@/components/kit/PeriodPdfDialog.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import { formatDate } from '@/lib/format';
@@ -43,6 +44,12 @@ const manualDueOpen = ref(false);
             :description="`Account manager: ${props.client.accountManagerName}`"
         >
             <template #actions>
+                <PeriodPdfDialog
+                    :href="`/clients/${props.client.id}/statement`"
+                    title="Client statement"
+                    description="Dues falling due and payments received in the period you choose."
+                    button-label="Statement PDF"
+                />
                 <Button variant="outline" as-child>
                     <Link href="/clients">
                         <ArrowLeft class="mr-1 size-4" /> All clients

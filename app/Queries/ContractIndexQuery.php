@@ -11,9 +11,22 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class ContractIndexQuery
 {
     /**
+     * The screen's page of contracts.
+     *
      * @return LengthAwarePaginator<int, Contract>
      */
     public function handle(User $user, ContractFiltersData $filters): LengthAwarePaginator
+    {
+        return $this->query($user, $filters)->paginate($filters->perPage)->withQueryString();
+    }
+
+    /**
+     * Every contract the filters match, in the screen's order. The Excel export
+     * walks this same builder.
+     *
+     * @return Builder<Contract>
+     */
+    public function query(User $user, ContractFiltersData $filters): Builder
     {
         $query = Contract::query()
             ->visibleTo($user)
@@ -40,8 +53,8 @@ class ContractIndexQuery
         }
 
         $direction = $filters->direction === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($filters->sort, $direction);
 
-        return $query->paginate($filters->perPage)->withQueryString();
+        // The id makes the order unique, so paging and chunked exports never skip or repeat a row.
+        return $query->orderBy($filters->sort, $direction)->orderBy('id');
     }
 }
