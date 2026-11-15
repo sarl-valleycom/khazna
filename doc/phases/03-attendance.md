@@ -31,7 +31,7 @@ Do this per environment (local, staging, production each get their own applicati
   - Reject with 401 when invalid. Never parse the body before verifying.
 - [ ] Answer the ping interaction (type 1) with type 1.
 - [ ] `InteractionRouter`: maps interaction type and command name (or button `custom_id` prefix) to a handler class. Handlers return an `InteractionResponse` object with helpers for a normal message, an ephemeral message, a deferred response, and a modal.
-- [ ] Reject interactions from any guild other than the configured one (FR-ID-04).
+- [ ] Reject interactions from any guild other than the configured one (FR-ID-04). Slash commands must carry the configured `guild_id`. Buttons and modals sent from a DM (the correction reminder) have no `guild_id` and are let through, because the handlers only act for a linked employee on their own sessions.
 - [ ] **Time budget:** each handler must answer within 3 seconds. Handlers only touch the database. Posting to channels and sending DMs happens in queued jobs. For anything slower, send a deferred response and finish by editing the original message.
 - [ ] Handlers call the **same Actions** as the web app (`StartSession`, `EndSession`…). They contain no business rules.
 - [ ] All replies come from `lang/en/discord.php`. Replies that carry personal data or errors are ephemeral.
@@ -56,21 +56,22 @@ Tables: `attendance_sessions`, `attendance_breaks`, `attendance_settings` (annex
 - [ ] `/check-in` while away ends the break. The confirmation message carries an "I'm back" button that does the same (FR-SES-04).
 - [ ] `/tmp-check-out` requires a reason option.
 - [ ] Replies include the time in Algiers and today's running total (FR-SES-07). Events are posted to the attendance channel through a queued job (FR-SES-09).
-- [ ] Worked-time calculation (`WorkedTime`): session duration minus breaks, using real timestamps, assigned to the day the session started. Unit tests for sessions crossing midnight, several breaks, and an open break at close.
+- [ ] Worked-time calculation (`WorkedTime`): session duration minus breaks, using real timestamps, assigned to the day the session started. The paid break allowance is a per-day rule: it is subtracted from each Algiers day's break time once, never once for a whole week or month. Unit tests for sessions crossing midnight, several breaks, an open break at close, and the allowance over several days.
 
 ## 3.5 Auto-close and review
 
 - [ ] `attendance:auto-close`, scheduled at the configured time (default 23:59 Algiers).
 - [ ] Closing time: the employee's scheduled end if it exists, otherwise start plus expected daily minutes. If the session started **after** that time, close at the current time. Always mark `needs_review` and `status = auto_closed` (FR-AUTO-01, 02).
-- [ ] The next morning, DM the employee with a button to give the real end time. A short modal collects it. The change is saved as a **correction request** for the owner to approve, unless the owner allows self-correction within 24 hours (open question).
+- [ ] The next morning, DM the employee with a button to give the real end time. A short modal collects it. The change is saved as a **correction request** for the owner to approve, unless the owner allows self-correction. A correction is applied without the owner only when all of these hold: self-correction is enabled, the session is auto-closed and still waiting for review, the request is inside the self-correction window, and the proposed session is at most 12 hours long. A self-approval marks the session reviewed, so it cannot be repeated to push the end time forward. Anything else stays pending for the owner.
+- [ ] The correction DM goes to every auto-closed session that has not had one yet (`correction_dm_sent_at` is empty), including sessions closed after midnight, not only those that ended the day before.
 - [ ] "Over 10 hours" reminder to the employee (FR-AUTO-05).
 
 ## 3.6 Admin pages (Vue)
 
 - [ ] **Sessions** list with filters (employee, office, date range, status), using `DataTable` and a `SessionIndexQuery` (FR-ADM-01).
-- [ ] **Needs review** view: auto-closed sessions, sessions over 12 hours, overlapping sessions. Approve, edit or delete (FR-ADM-04).
-- [ ] **Edit session** dialog: every change needs a reason and writes an audit row (FR-ADM-02, 03).
-- [ ] **Who is working now** page (working, away, offline), refreshed every 30 seconds with Inertia's polling helper and a partial reload of one prop (FR-ADM-06).
+- [ ] **Needs review** view: auto-closed sessions, sessions over 12 hours, overlapping sessions. Approve, edit or delete (FR-ADM-04). One paginated SQL query; the reasons are worked out only for the rows on the page.
+- [ ] **Edit session** dialog: every change needs a reason and writes an audit row (FR-ADM-02, 03). Deleting a session, or changing its start or end, rejects its pending correction requests so a stale proposal cannot overwrite the owner's edit.
+- [ ] **Who is working now** page (working, away, offline), refreshed every 30 seconds with Inertia's polling helper and a partial reload of one prop (FR-ADM-06). Today's hours for all employees load in two queries.
 - [ ] Correction requests inbox with approve and reject (FR-ADM-05).
 
 ## 3.7 End-of-day report
@@ -85,11 +86,11 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 
 ## 3.8 Reminders, digests and presence
 
-- [ ] `DiscordClient` service: sends channel messages and DMs through the REST API. Handles rate limits (honors the retry-after delay), retries with backoff, and logs failures.
+- [ ] `DiscordClient` service: sends channel messages and DMs through the REST API. Handles rate limits (honors the retry-after delay), retries 5xx errors and network failures (timeouts, dropped connections) with backoff, and logs failures. After the last attempt it reports a failed send and never throws into a job, so the DM fallback always runs.
 - [ ] **DMs can fail** when the employee has DMs from server members turned off. Fall back to a mention in the attendance channel and log it.
 - [ ] `attendance:remind`, every 5 minutes: not checked in 30 minutes after the scheduled start (not on weekends, holidays or leave), away longer than the limit. Respect `reminders_enabled` globally and per employee (FR-REM-01..03).
-- [ ] `attendance:digest-daily` at the configured time. Content, **grouped by office**: who is in, late, absent, away, forgotten, plus the end-of-day reports (FR-RPT-01). An employee's check-in events go to the feed of their own office.
-- [ ] `attendance:digest-weekly`, every Sunday morning, summarizing the previous work week (Sunday to Thursday): hours against expected, late count, overtime (FR-RPT-02).
+- [ ] `attendance:digest-daily` at the configured time. Content, **grouped by office**: who is in, late, absent, away, forgotten, plus the end-of-day reports (FR-RPT-01). An employee's check-in events go to the feed of their own office. A long digest is split by line into several messages (`EmbedSplitter`) so each one stays inside Discord's limits: 1024 characters per field, 25 fields, and 6000 characters in total per message.
+- [ ] `attendance:digest-weekly`, every Sunday morning, summarizing the previous week, Sunday to Saturday so weekend work is counted: hours against expected (expected follows each employee's own work days), late count, overtime (FR-RPT-02). The paid break allowance is applied per day, and the digest is split the same way as the daily one.
 - [ ] Optional live "who is online" message, edited in place on every state change (FR-RPT-04).
 - [ ] Use embeds with English text and real mentions (`<@id>`).
 
@@ -115,7 +116,12 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 
 - A `SignedInteraction` test helper: generates an Ed25519 keypair, signs the payload, and posts it. Used by every handler test.
 - Annex scenarios 1 to 5 and 7 to 10, with `Carbon::setTestNow` for time.
-- Wrong or missing signature returns 401. Wrong guild is rejected.
+- Wrong or missing signature returns 401. A command from the wrong guild or from a DM is rejected; a button or modal from a DM is routed.
+- A network failure to Discord is retried and then reported as a failed send, and the DM falls back to the attendance channel.
+- Self-correction: a manually closed session, a second correction, and a session over 12 hours all wait for the owner.
+- Deleting or editing a session rejects its pending corrections.
+- The paid break allowance is applied per day over a week. A Saturday worker is counted in the weekly digest.
+- A digest too large for one message is split, every part within Discord's limits.
 - Double `/check-in`: the second one fails cleanly. A test that inserts two open rows must hit the unique index.
 - Session crossing midnight (22:00 to 02:00) counts four hours on the start day.
 - Auto-close for a session started after the scheduled end.
