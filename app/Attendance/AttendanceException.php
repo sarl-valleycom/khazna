@@ -70,6 +70,16 @@ final class AttendanceException extends RuntimeException
         return new self('discord.errors.not_closed');
     }
 
+    public static function notCheckedOut(): self
+    {
+        return new self('discord.errors.not_checked_out');
+    }
+
+    public static function reportRequired(): self
+    {
+        return new self('discord.errors.report_required');
+    }
+
     public static function invalidEndTime(): self
     {
         return new self('discord.errors.invalid_end_time');

@@ -39,6 +39,14 @@ class CheckOutHandler implements InteractionHandler
                 'total' => $this->todayTotal($employee, $now),
             ]),
             ephemeral: true,
+            components: [
+                InteractionResponse::actionRow([
+                    InteractionResponse::button(
+                        (string) __('discord.labels.write_report'),
+                        OpenReportModalHandler::PREFIX.$session->id,
+                    ),
+                ]),
+            ],
         );
     }
 }

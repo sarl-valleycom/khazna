@@ -16,6 +16,8 @@ return [
         'not_closed' => 'You can only correct a closed session.',
         'invalid_end_time' => 'The end time must be after the start time and not in the future.',
         'invalid_time_format' => 'Use HH:MM in Algiers time.',
+        'not_checked_out' => 'Check out before writing your report.',
+        'report_required' => 'Write what you did today.',
     ],
 
     'replies' => [
@@ -25,6 +27,7 @@ return [
         'checked_out' => 'Checked out at :time. Worked :total today.',
         'correction_applied' => 'End time corrected to :time. Thank you.',
         'correction_pending' => 'Thanks. Your correction is waiting for the owner to approve.',
+        'report_saved' => 'Thanks, your report is saved.',
     ],
 
     'events' => [
@@ -39,6 +42,13 @@ return [
         'correct_end_time' => 'Correct end time',
         'real_end_time' => 'Real end time (HH:MM)',
         'note_optional' => 'Note (optional)',
+        'write_report' => 'Write today\'s report',
+    ],
+
+    'report' => [
+        'modal_title' => 'Write today\'s report',
+        'what_did_you_do' => 'What did you do today?',
+        'any_blockers' => 'Any blockers?',
     ],
 
     'corrections' => [
