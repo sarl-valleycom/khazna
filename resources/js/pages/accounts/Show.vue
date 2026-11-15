@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DateInput from '@/components/kit/DateInput.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
+import ExportButton from '@/components/kit/ExportButton.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import StatCard from '@/components/kit/StatCard.vue';
@@ -71,6 +72,14 @@ function clearFilters() {
             :description="`${props.account.officeName} · ${props.account.typeLabel}`"
         >
             <template #actions>
+                <ExportButton
+                    :href="`/accounts/${props.account.id}/statement/export`"
+                />
+                <ExportButton
+                    :href="`/accounts/${props.account.id}/statement`"
+                    pdf
+                    label="Statement PDF"
+                />
                 <Button variant="outline" as-child>
                     <Link href="/accounts">
                         <ArrowLeft class="mr-1 size-4" /> All accounts

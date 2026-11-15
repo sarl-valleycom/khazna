@@ -24,6 +24,8 @@ use App\Http\Controllers\Dues\DueReminderController;
 use App\Http\Controllers\Employees\AttendanceCodeController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
+use App\Http\Controllers\Exports\AccountStatementController;
+use App\Http\Controllers\Exports\CashReportExportController;
 use App\Http\Controllers\Exports\ClientsExportController;
 use App\Http\Controllers\Exports\ClientStatementController;
 use App\Http\Controllers\Exports\ContractsExportController;
@@ -114,6 +116,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
     Route::post('accounts', [AccountController::class, 'store'])->name('accounts.store');
+    Route::get('accounts/{account}/statement', [AccountStatementController::class, 'pdf'])->whereNumber('account')->name('accounts.statement.pdf');
+    Route::get('accounts/{account}/statement/export', [AccountStatementController::class, 'excel'])->whereNumber('account')->name('accounts.statement.export');
     Route::get('accounts/{account}', [AccountController::class, 'show'])->whereNumber('account')->name('accounts.show');
     Route::patch('accounts/{account}', [AccountController::class, 'update'])->whereNumber('account')->name('accounts.update');
 
@@ -165,6 +169,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('forecast', ForecastController::class)->middleware('can:view-forecast')->name('forecast');
     Route::get('reports/cash', CashReportController::class)->middleware('can:view-reports')->name('reports.cash');
+    Route::get('reports/cash/export', CashReportExportController::class)->middleware('can:view-reports')->name('reports.cash.export');
     Route::get('reports/monthly-summary', MonthlySummaryPdfController::class)->middleware('can:view-reports')->name('reports.monthly-summary');
 
     Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
