@@ -41,6 +41,42 @@ final class WorkedTime
     }
 
     /**
+     * Today's worked minutes for many employees with two queries in total
+     * (sessions and their breaks), instead of two per employee.
+     *
+     * @param  array<int, int>  $employeeIds
+     * @return array<int, int> employee id => minutes, with 0 for employees who have no session today
+     */
+    public static function todayMinutesForEmployees(
+        array $employeeIds,
+        ?CarbonImmutable $at = null,
+        ?int $paidBreakAllowanceMinutes = null,
+    ): array {
+        $now = ($at ?? AlgerianDate::now())->utc();
+        $date = $now->setTimezone(AlgerianDate::TZ)->toDateString();
+        [$from, $to] = AlgerianDate::dayRangeUtc($date);
+
+        $byEmployee = AttendanceSession::query()
+            ->whereIn('employee_id', $employeeIds)
+            ->whereBetween('started_at', [$from->utc(), $to->utc()])
+            ->with('breaks')
+            ->get()
+            ->groupBy('employee_id');
+
+        $minutes = [];
+
+        foreach ($employeeIds as $employeeId) {
+            $minutes[$employeeId] = self::minutesForSessions(
+                $byEmployee->get($employeeId, []),
+                $now,
+                $paidBreakAllowanceMinutes,
+            );
+        }
+
+        return $minutes;
+    }
+
+    /**
      * Worked minutes for sessions that started inside the UTC range. A session
      * belongs to the Algiers day it started on, even when it crosses midnight.
      */

@@ -15,6 +15,7 @@ use App\Models\Employee;
 use App\Models\Office;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
@@ -587,4 +588,33 @@ test('editing only the report leaves a pending correction alone', function () {
     ]))->assertSessionHasNoErrors();
 
     expect($request->refresh()->status)->toBe(CorrectionStatus::Pending);
+});
+
+test('the presence page runs the same number of queries however many employees there are', function () {
+    CarbonImmutable::setTestNow(adminAt('2026-11-16 12:00:00'));
+    $this->actingAsRole(Role::Owner);
+
+    $queriesFor = function (): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->get(route('attendance.presence.index'))->assertOk();
+        DB::disableQueryLog();
+
+        return count(DB::getQueryLog());
+    };
+
+    foreach (range(1, 2) as $number) {
+        $employee = adminEmployee('First '.$number);
+        adminSessionFor($employee, '2026-11-16 09:00:00', '2026-11-16 11:00:00');
+    }
+
+    $queriesFor(); // warm caches such as the settings row
+    $few = $queriesFor();
+
+    foreach (range(1, 8) as $number) {
+        $employee = adminEmployee('More '.$number);
+        adminSessionFor($employee, '2026-11-16 09:00:00', '2026-11-16 11:00:00');
+    }
+
+    expect($queriesFor())->toBe($few);
 });

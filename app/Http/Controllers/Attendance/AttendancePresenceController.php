@@ -27,12 +27,20 @@ class AttendancePresenceController extends Controller
             ->get()
             ->keyBy('employee_id');
 
-        $rows = Employee::query()
+        $employees = Employee::query()
             ->where('status', EmployeeStatus::Active)
             ->with('office:id,name')
             ->orderBy('name')
-            ->get()
-            ->map(function (Employee $employee) use ($openSessions, $settings): AttendancePresenceData {
+            ->get();
+
+        $todayMinutes = WorkedTime::todayMinutesForEmployees(
+            $employees->pluck('id')->map(fn ($id): int => (int) $id)->all(),
+            null,
+            $settings->paid_break_minutes,
+        );
+
+        $rows = $employees
+            ->map(function (Employee $employee) use ($openSessions, $todayMinutes): AttendancePresenceData {
                 $session = $openSessions->get($employee->id);
                 $break = $session?->breaks->first(fn ($break): bool => $break->ended_at === null);
 
@@ -56,7 +64,7 @@ class AttendancePresenceController extends Controller
                         ? 'since '.$sinceLocal->format('H:i')
                         : 'since '.$sinceLocal->format('d M, H:i'));
 
-                $todayMinutes = WorkedTime::todayMinutes($employee, null, $settings->paid_break_minutes);
+                $minutes = $todayMinutes[$employee->id] ?? 0;
 
                 return new AttendancePresenceData(
                     employeeId: $employee->id,
@@ -70,8 +78,8 @@ class AttendancePresenceController extends Controller
                     },
                     since: $since?->toIso8601String(),
                     sinceLabel: $sinceLabel,
-                    todayMinutes: $todayMinutes,
-                    todayFormatted: WorkedTime::format($todayMinutes),
+                    todayMinutes: $minutes,
+                    todayFormatted: WorkedTime::format($minutes),
                 );
             })
             ->sortBy(fn (AttendancePresenceData $row): string => sprintf(

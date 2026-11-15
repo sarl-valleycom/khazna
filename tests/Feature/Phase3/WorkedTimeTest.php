@@ -159,3 +159,28 @@ test('unused paid break allowance on one day does not carry over to another', fu
         paidBreakAllowanceMinutes: 30,
     ))->toBe(480 + 450);
 });
+
+test('the batched today total matches the per-employee total', function () {
+    CarbonImmutable::setTestNow(algiers('2026-11-16 18:00:00'));
+
+    $withSession = Employee::factory()->create();
+    $without = Employee::factory()->create();
+
+    $session = AttendanceSession::factory()->create([
+        'employee_id' => $withSession->id,
+        'started_at' => algiers('2026-11-16 09:00:00'),
+        'ended_at' => algiers('2026-11-16 17:00:00'),
+    ]);
+    AttendanceBreak::factory()->create([
+        'session_id' => $session->id,
+        'started_at' => algiers('2026-11-16 12:00:00'),
+        'ended_at' => algiers('2026-11-16 12:30:00'),
+    ]);
+
+    $batched = WorkedTime::todayMinutesForEmployees([$withSession->id, $without->id], paidBreakAllowanceMinutes: 15);
+
+    expect($batched)->toBe([
+        $withSession->id => WorkedTime::todayMinutes($withSession, paidBreakAllowanceMinutes: 15),
+        $without->id => 0,
+    ])->and($batched[$withSession->id])->toBe(465);
+});
