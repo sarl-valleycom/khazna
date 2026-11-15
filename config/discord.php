@@ -56,7 +56,6 @@ return [
 
     'channels' => [
         'attendance' => env('DISCORD_ATTENDANCE_CHANNEL_ID'),
-        'owner_digest' => env('DISCORD_OWNER_DIGEST_CHANNEL_ID'),
         'reports' => env('DISCORD_REPORTS_CHANNEL_ID'),
         'presence' => env('DISCORD_PRESENCE_CHANNEL_ID'),
     ],

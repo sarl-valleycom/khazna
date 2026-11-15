@@ -10,7 +10,7 @@ use App\Support\AlgerianDate;
 use Carbon\CarbonInterface;
 
 /**
- * Answers the calendar questions shared by reminders and digests: is this a
+ * Answers the calendar questions shared by reminders and auto-close: is this a
  * working day for this employee, and how many minutes were expected in a
  * range? Weekends, public holidays and approved leave are excluded.
  */

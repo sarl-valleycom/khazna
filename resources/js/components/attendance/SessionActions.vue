@@ -50,11 +50,7 @@ function remove(reason: string | null) {
 <template>
     <div class="flex justify-end gap-1">
         <Button
-            v-if="
-                props.session.reviewStatus !== 'approved' &&
-                (props.session.reviewStatus === 'needs_review' ||
-                    props.session.reviewReasons.length > 0)
-            "
+            v-if="props.session.reviewStatus === 'needs_review'"
             variant="outline"
             size="sm"
             @click="approveOpen = true"
@@ -76,7 +72,7 @@ function remove(reason: string | null) {
     <ConfirmDialog
         v-model:open="approveOpen"
         title="Approve this session?"
-        :description="`The session for ${props.session.employeeName} on ${props.session.startedAtLocal.replace('T', ' ')} will leave the review queue.`"
+        :description="`The session for ${props.session.employeeName} on ${props.session.startedAtLocal.replace('T', ' ')} will be marked as checked.`"
         confirm-label="Approve"
         reason-required
         reason-label="What did you check?"

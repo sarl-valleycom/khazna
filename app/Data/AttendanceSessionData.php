@@ -15,9 +15,6 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 class AttendanceSessionData extends Data
 {
-    /**
-     * @param  list<string>  $reviewReasons
-     */
     public function __construct(
         public int $id,
         public int $employeeId,
@@ -39,7 +36,6 @@ class AttendanceSessionData extends Data
         public ?string $report,
         public ?string $blockers,
         public bool $isOpen,
-        public array $reviewReasons = [],
     ) {}
 
     public static function fromSession(AttendanceSession $session, ?CarbonImmutable $now = null): self
@@ -57,9 +53,6 @@ class AttendanceSessionData extends Data
             $officeName = $employee->office->name ?? '';
         }
 
-        $reasons = $session->hasAttribute('review_reasons')
-            ? $session->getAttribute('review_reasons')
-            : [];
         $workedMinutes = WorkedTime::sessionMinutes($session, $now);
 
         return new self(
@@ -83,7 +76,6 @@ class AttendanceSessionData extends Data
             report: $session->report,
             blockers: $session->blockers,
             isOpen: $session->isOpen(),
-            reviewReasons: is_array($reasons) ? array_values(array_map('strval', $reasons)) : [],
         );
     }
 }

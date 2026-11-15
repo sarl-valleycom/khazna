@@ -24,7 +24,6 @@ const props = defineProps<Props>();
 
 const form = useForm({
     auto_close_time: props.settings.autoCloseTime,
-    digest_time: props.settings.digestTime,
     reminders_enabled: props.settings.remindersEnabled,
     reminder_after_minutes: props.settings.reminderAfterMinutes,
     away_limit_minutes: props.settings.awayLimitMinutes,
@@ -32,7 +31,6 @@ const form = useForm({
     self_correction_enabled: props.settings.selfCorrectionEnabled,
     self_correction_hours: props.settings.selfCorrectionHours,
     over_10h_reminder_enabled: props.settings.over10hReminderEnabled,
-    owner_digest_channel_id: props.settings.ownerDigestChannelId ?? '',
     reports_channel_id: props.settings.reportsChannelId ?? '',
     offices: props.settings.offices.map((office) => ({
         id: office.id,
@@ -73,14 +71,6 @@ function submit() {
                         Open sessions are closed at this time and marked for
                         review.
                     </p>
-                </div>
-                <div class="space-y-2">
-                    <Label for="digest-time">Daily digest time</Label>
-                    <Input
-                        id="digest-time"
-                        v-model="form.digest_time"
-                        type="time"
-                    />
                 </div>
             </section>
 
@@ -179,17 +169,6 @@ function submit() {
             <section class="space-y-4">
                 <h2 class="text-sm font-semibold">Discord channels</h2>
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="space-y-2">
-                        <Label for="owner-digest"
-                            >Owner digest channel ID</Label
-                        >
-                        <Input
-                            id="owner-digest"
-                            v-model="form.owner_digest_channel_id"
-                            inputmode="numeric"
-                            placeholder="123456789012345678"
-                        />
-                    </div>
                     <div class="space-y-2">
                         <Label for="reports-channel">Reports channel ID</Label>
                         <Input

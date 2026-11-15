@@ -7,7 +7,6 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Attendance\AttendanceCorrectionController;
 use App\Http\Controllers\Attendance\AttendancePresenceController;
-use App\Http\Controllers\Attendance\AttendanceReviewController;
 use App\Http\Controllers\Attendance\AttendanceSessionController;
 use App\Http\Controllers\Attendance\AttendanceSettingsController;
 use App\Http\Controllers\Categories\CategoryController;
@@ -101,7 +100,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('sessions/{attendanceSession}', [AttendanceSessionController::class, 'destroy'])->whereNumber('attendanceSession')->name('sessions.destroy');
         Route::post('sessions/{attendanceSession}/approve', [AttendanceSessionController::class, 'approve'])->whereNumber('attendanceSession')->name('sessions.approve');
 
-        Route::get('review', AttendanceReviewController::class)->name('review.index');
         Route::get('presence', AttendancePresenceController::class)->name('presence.index');
 
         Route::get('corrections', [AttendanceCorrectionController::class, 'index'])->name('corrections.index');

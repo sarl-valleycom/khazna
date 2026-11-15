@@ -66,7 +66,6 @@ function adminEmployee(string $name): Employee
 
 test('guests are redirected and non-owners cannot open the attendance pages', function () {
     $this->get(route('attendance.sessions.index'))->assertRedirect(route('login'));
-    $this->get(route('attendance.review.index'))->assertRedirect(route('login'));
     $this->get(route('attendance.presence.index'))->assertRedirect(route('login'));
     $this->get(route('attendance.corrections.index'))->assertRedirect(route('login'));
     $this->get(route('attendance.settings.edit'))->assertRedirect(route('login'));
@@ -75,7 +74,6 @@ test('guests are redirected and non-owners cannot open the attendance pages', fu
         $this->actingAsRole($role);
 
         $this->get(route('attendance.sessions.index'))->assertForbidden();
-        $this->get(route('attendance.review.index'))->assertForbidden();
         $this->get(route('attendance.presence.index'))->assertForbidden();
         $this->get(route('attendance.corrections.index'))->assertForbidden();
         $this->get(route('attendance.settings.edit'))->assertForbidden();
@@ -286,44 +284,6 @@ test('deleting a session deletes its breaks and keeps the reason in the audit lo
     expect($activity->getProperty('reason'))->toBe('Duplicate entry.');
 });
 
-test('needs review shows auto-closed, long and overlapping sessions and hides approved ones', function () {
-    CarbonImmutable::setTestNow(adminAt('2026-11-16 23:00:00'));
-
-    $autoEmployee = adminEmployee('Auto');
-    $longEmployee = adminEmployee('Long');
-    $overlapEmployee = adminEmployee('Overlap');
-    $approvedEmployee = adminEmployee('Approved');
-
-    $auto = adminSessionFor($autoEmployee, '2026-11-16 09:00:00', '2026-11-16 17:00:00', [
-        'status' => AttendanceStatus::AutoClosed,
-        'review_status' => AttendanceReviewStatus::NeedsReview,
-    ]);
-    adminSessionFor($longEmployee, '2026-11-16 06:00:00', '2026-11-16 20:00:00');
-    adminSessionFor($overlapEmployee, '2026-11-16 09:00:00', '2026-11-16 11:00:00');
-    adminSessionFor($overlapEmployee, '2026-11-16 10:00:00', '2026-11-16 12:00:00');
-    adminSessionFor($approvedEmployee, '2026-11-16 09:00:00', '2026-11-16 17:00:00', [
-        'status' => AttendanceStatus::AutoClosed,
-        'review_status' => AttendanceReviewStatus::Approved,
-    ]);
-
-    $this->actingAsRole(Role::Owner);
-
-    $page = $this->get(route('attendance.review.index'))->assertOk()->viewData('page');
-    $rows = collect($page['props']['sessions']);
-
-    expect($page['props']['total'])->toBe(4)
-        ->and($rows->firstWhere('employeeName', 'Auto')['reviewReasons'])->toContain('Auto-closed and waiting for review.')
-        ->and($rows->firstWhere('employeeName', 'Long')['reviewReasons'])->toContain('Longer than 12 hours.')
-        ->and($rows->where('employeeName', 'Overlap'))->toHaveCount(2)
-        ->and($rows->firstWhere('employeeName', 'Overlap')['reviewReasons'])->toContain('Overlaps another session.')
-        ->and($rows->firstWhere('employeeName', 'Approved'))->toBeNull();
-
-    $this->post(route('attendance.sessions.approve', $auto), ['reason' => 'Checked.'])->assertStatus(303);
-
-    $this->get(route('attendance.review.index'))
-        ->assertInertia(fn (Assert $page) => $page->where('total', 3));
-});
-
 test('presence shows working, away and offline employees', function () {
     CarbonImmutable::setTestNow(adminAt('2026-11-16 12:00:00'));
 
@@ -457,7 +417,6 @@ test('the owner edits attendance settings, channels and the change is audited', 
 
     $this->patch(route('attendance.settings.update'), [
         'auto_close_time' => '22:30',
-        'digest_time' => '17:00',
         'reminders_enabled' => false,
         'reminder_after_minutes' => 45,
         'away_limit_minutes' => 60,
@@ -465,7 +424,6 @@ test('the owner edits attendance settings, channels and the change is audited', 
         'self_correction_enabled' => true,
         'self_correction_hours' => 12,
         'over_10h_reminder_enabled' => false,
-        'owner_digest_channel_id' => '123456789012345678',
         'reports_channel_id' => '223456789012345678',
         'offices' => [[
             'id' => $office->id,
@@ -476,7 +434,6 @@ test('the owner edits attendance settings, channels and the change is audited', 
     $settings = AttendanceSetting::current();
 
     expect($settings->auto_close_time)->toBe('22:30:00')
-        ->and($settings->digest_time)->toBe('17:00:00')
         ->and($settings->reminders_enabled)->toBeFalse()
         ->and($settings->reminder_after_minutes)->toBe(45)
         ->and($settings->away_limit_minutes)->toBe(60)
@@ -484,7 +441,6 @@ test('the owner edits attendance settings, channels and the change is audited', 
         ->and($settings->self_correction_enabled)->toBeTrue()
         ->and($settings->self_correction_hours)->toBe(12)
         ->and($settings->over_10h_reminder_enabled)->toBeFalse()
-        ->and($settings->owner_digest_channel_id)->toBe('123456789012345678')
         ->and($settings->reports_channel_id)->toBe('223456789012345678')
         ->and($office->refresh()->attendance_channel_id)->toBe('323456789012345678');
 
@@ -504,7 +460,6 @@ test('attendance settings reject malformed Discord channel IDs', function () {
 
     $this->patch(route('attendance.settings.update'), [
         'auto_close_time' => '23:59',
-        'digest_time' => '18:00',
         'reminders_enabled' => true,
         'reminder_after_minutes' => 30,
         'away_limit_minutes' => 90,
@@ -512,9 +467,8 @@ test('attendance settings reject malformed Discord channel IDs', function () {
         'self_correction_enabled' => false,
         'self_correction_hours' => 24,
         'over_10h_reminder_enabled' => true,
-        'owner_digest_channel_id' => 'not-a-channel',
         'reports_channel_id' => '123',
-    ])->assertSessionHasErrors(['owner_digest_channel_id', 'reports_channel_id']);
+    ])->assertSessionHasErrors(['reports_channel_id']);
 });
 
 test('deleting a session rejects its pending correction requests', function () {
@@ -617,24 +571,4 @@ test('the presence page runs the same number of queries however many employees t
     }
 
     expect($queriesFor())->toBe($few);
-});
-
-test('the review queue paginates in the database and still labels reasons on the page', function () {
-    CarbonImmutable::setTestNow(adminAt('2026-11-16 23:00:00'));
-
-    foreach (range(1, 30) as $number) {
-        adminSessionFor(adminEmployee('Auto '.$number), '2026-11-16 09:00:00', '2026-11-16 17:00:00', [
-            'status' => AttendanceStatus::AutoClosed,
-            'review_status' => AttendanceReviewStatus::NeedsReview,
-        ]);
-    }
-
-    $this->actingAsRole(Role::Owner);
-
-    $page = $this->get(route('attendance.review.index'))->assertOk()->viewData('page');
-    $rows = collect($page['props']['sessions']);
-
-    expect($page['props']['total'])->toBe(30)
-        ->and($rows)->toHaveCount(25)
-        ->and($rows->every(fn (array $row): bool => in_array('Auto-closed and waiting for review.', $row['reviewReasons'], true)))->toBeTrue();
 });

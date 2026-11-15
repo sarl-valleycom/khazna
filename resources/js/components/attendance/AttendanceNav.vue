@@ -5,7 +5,6 @@ const page = usePage();
 
 const items = [
     { label: 'Sessions', href: '/attendance/sessions' },
-    { label: 'Needs review', href: '/attendance/review' },
     { label: 'Who is working', href: '/attendance/presence' },
     { label: 'Corrections', href: '/attendance/corrections' },
     { label: 'Settings', href: '/attendance/settings' },

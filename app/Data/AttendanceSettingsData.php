@@ -15,7 +15,6 @@ class AttendanceSettingsData extends Data
      */
     public function __construct(
         public string $autoCloseTime,
-        public string $digestTime,
         public bool $remindersEnabled,
         public int $reminderAfterMinutes,
         public int $awayLimitMinutes,
@@ -23,7 +22,6 @@ class AttendanceSettingsData extends Data
         public bool $selfCorrectionEnabled,
         public int $selfCorrectionHours,
         public bool $over10hReminderEnabled,
-        public ?string $ownerDigestChannelId,
         public ?string $reportsChannelId,
         public array $offices,
     ) {}
@@ -34,7 +32,6 @@ class AttendanceSettingsData extends Data
 
         return new self(
             autoCloseTime: substr($settings->auto_close_time, 0, 5),
-            digestTime: substr($settings->digest_time, 0, 5),
             remindersEnabled: $settings->reminders_enabled,
             reminderAfterMinutes: $settings->reminder_after_minutes,
             awayLimitMinutes: $settings->away_limit_minutes,
@@ -42,7 +39,6 @@ class AttendanceSettingsData extends Data
             selfCorrectionEnabled: $settings->self_correction_enabled,
             selfCorrectionHours: $settings->self_correction_hours,
             over10hReminderEnabled: $settings->over_10h_reminder_enabled,
-            ownerDigestChannelId: $settings->owner_digest_channel_id,
             reportsChannelId: $settings->reports_channel_id,
             offices: array_values(Office::query()
                 ->orderBy('name')

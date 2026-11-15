@@ -16,7 +16,6 @@ class AttendanceSettingFactory extends Factory
     {
         return [
             'auto_close_time' => '23:59:00',
-            'digest_time' => '18:00:00',
             'reminders_enabled' => true,
             'reminder_after_minutes' => 30,
             'away_limit_minutes' => 90,
