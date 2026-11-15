@@ -4,7 +4,6 @@ namespace App\Http\Requests\Employees;
 
 use App\Enums\EmployeeStatus;
 use App\Enums\EmploymentType;
-use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,7 +22,6 @@ class EmployeeRequest extends FormRequest
         // Someone without the salary permission cannot even send a salary: it is refused, not ignored.
         $mayTouchSalary = $this->user()?->can('view-salaries') ?? false;
         $salary = $mayTouchSalary ? ['nullable'] : ['prohibited'];
-        $employee = $this->route('employee');
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -35,7 +33,7 @@ class EmployeeRequest extends FormRequest
             'contract_type' => ['sometimes', Rule::enum(EmploymentType::class)],
             'hourly_rate' => [...($mayTouchSalary ? ['nullable'] : ['prohibited']), 'integer', 'min:0', 'max:99999999999999'],
             'expected_minutes_per_day' => ['sometimes', 'integer', 'min:0', 'max:1440'],
-            'work_days' => ['sometimes', 'array', 'max:7'],
+            'work_days' => ['sometimes', 'array', 'min:1', 'max:7'],
             'work_days.*' => ['integer', 'between:0,6', 'distinct'],
             'schedule_start' => ['nullable', 'date_format:H:i', 'required_with:schedule_end'],
             'schedule_end' => ['nullable', 'date_format:H:i', 'required_with:schedule_start'],
@@ -53,6 +51,7 @@ class EmployeeRequest extends FormRequest
     {
         return [
             'name.required' => __('Name is required.'),
+            'work_days.min' => __('Tick at least one work day.'),
             'office_id.required' => __('Choose the office this person works in.'),
             'salary_cents.prohibited' => __('You are not allowed to set salaries.'),
             'salary_from.prohibited' => __('You are not allowed to set salaries.'),

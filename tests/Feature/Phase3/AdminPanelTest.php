@@ -550,3 +550,48 @@ test('the presence page runs the same number of queries however many employees t
 
     expect($queriesFor())->toBe($few);
 });
+
+test('saving only a report keeps the session times and the pending correction', function () {
+    CarbonImmutable::setTestNow(adminAt('2026-11-17 09:00:00'));
+
+    $employee = adminEmployee('Seconds');
+    $session = AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => adminAt('2026-11-16 09:03:27')->utc(),
+        'ended_at' => adminAt('2026-11-16 17:10:41')->utc(),
+        'status' => AttendanceStatus::AutoClosed,
+        'review_status' => AttendanceReviewStatus::NeedsReview,
+    ]);
+    $request = CorrectionRequest::factory()->create([
+        'session_id' => $session->id,
+        'employee_id' => $employee->id,
+        'proposed_ended_at' => adminAt('2026-11-16 18:30:00')->utc(),
+    ]);
+    $this->actingAsRole(Role::Owner);
+
+    // The form shows and resubmits times to the minute only.
+    $this->patch(route('attendance.sessions.update', $session), adminSessionPayload($employee, [
+        'started_at' => '2026-11-16T09:03',
+        'ended_at' => '2026-11-16T17:10',
+        'report' => 'Added later by the owner.',
+        'reason' => 'Report added.',
+    ]))->assertSessionHasNoErrors();
+
+    $session->refresh();
+
+    expect($session->started_at->format('H:i:s'))->toBe('08:03:27')
+        ->and($session->ended_at?->format('H:i:s'))->toBe('16:10:41')
+        ->and($session->report)->toBe('Added later by the owner.')
+        ->and($request->refresh()->status)->toBe(CorrectionStatus::Pending);
+});
+
+test('clearing every work day is refused', function () {
+    $employee = Employee::factory()->create();
+    $this->actingAsRole(Role::Owner);
+
+    $this->patch(route('employees.update', $employee), [
+        'name' => $employee->name,
+        'office_id' => $employee->office_id,
+        'work_days' => [],
+    ])->assertSessionHasErrors('work_days');
+});

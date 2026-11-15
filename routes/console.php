@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\AttendanceSetting;
-use App\Support\AlgerianDate;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -23,5 +21,4 @@ Schedule::command('dues:generate')
 Schedule::command('attendance:auto-close')
     ->everyMinute()
     ->timezone('Africa/Algiers')
-    ->withoutOverlapping()
-    ->when(fn (): bool => AlgerianDate::now()->format('H:i') === substr(AttendanceSetting::current()->auto_close_time, 0, 5));
+    ->withoutOverlapping();

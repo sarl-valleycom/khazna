@@ -43,6 +43,12 @@ class UpdateSession
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            // The edit form shows times to the minute. When a time did not move
+            // at that precision, keep the stored seconds: saving a report must
+            // not rewrite the times or count as a time change.
+            $startedAt = self::keepStoredSeconds($locked->started_at, $startedAt);
+            $endedAt = $endedAt === null ? null : self::keepStoredSeconds($locked->ended_at, $endedAt);
+
             if ($endedAt === null && AttendanceSession::query()
                 ->where('employee_id', $locked->employee_id)
                 ->whereKeyNot($locked->id)
@@ -92,6 +98,13 @@ class UpdateSession
 
             return $locked->refresh()->load('breaks');
         });
+    }
+
+    private static function keepStoredSeconds(?CarbonImmutable $stored, CarbonImmutable $submitted): CarbonImmutable
+    {
+        return $stored !== null && $stored->format('Y-m-d H:i') === $submitted->format('Y-m-d H:i')
+            ? $stored
+            : $submitted;
     }
 
     private static function text(?string $value): ?string

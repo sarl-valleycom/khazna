@@ -100,3 +100,51 @@ test('the command closes every session still open', function () {
     expect(AttendanceSession::query()->open()->count())->toBe(0)
         ->and(AttendanceSession::query()->where('status', AttendanceStatus::AutoClosed)->count())->toBe(2);
 });
+
+test('the command does nothing before the auto-close time', function () {
+    CarbonImmutable::setTestNow(autoCloseAt('2026-11-16 09:00:00'));
+    app(StartSession::class)->handle(Employee::factory()->scheduled('09:00', '17:00')->create());
+
+    CarbonImmutable::setTestNow(autoCloseAt('2026-11-16 20:00:00'));
+
+    $this->artisan('attendance:auto-close')->assertSuccessful();
+
+    expect(AttendanceSession::query()->open()->count())->toBe(1);
+});
+
+test('a missed scheduler tick is caught up on the next run', function () {
+    CarbonImmutable::setTestNow(autoCloseAt('2026-11-16 09:00:00'));
+    app(StartSession::class)->handle(Employee::factory()->scheduled('09:00', '17:00')->create());
+
+    // 23:59 passed without a run; the next tick is at 00:20 the next day.
+    CarbonImmutable::setTestNow(autoCloseAt('2026-11-17 00:20:00'));
+
+    $this->artisan('attendance:auto-close')->assertSuccessful();
+
+    expect(AttendanceSession::query()->open()->count())->toBe(0)
+        ->and(AttendanceSession::query()->where('status', AttendanceStatus::AutoClosed)->count())->toBe(1);
+});
+
+test('a session started after the last auto-close time is left open', function () {
+    CarbonImmutable::setTestNow(autoCloseAt('2026-11-17 00:10:00'));
+    app(StartSession::class)->handle(Employee::factory()->create());
+
+    CarbonImmutable::setTestNow(autoCloseAt('2026-11-17 00:20:00'));
+
+    $this->artisan('attendance:auto-close')->assertSuccessful();
+
+    expect(AttendanceSession::query()->open()->count())->toBe(1);
+});
+
+test('the all option closes every open session at once', function () {
+    CarbonImmutable::setTestNow(autoCloseAt('2026-11-16 09:00:00'));
+    app(StartSession::class)->handle(Employee::factory()->scheduled('09:00', '17:00')->create());
+
+    CarbonImmutable::setTestNow(autoCloseAt('2026-11-16 12:00:00'));
+
+    $this->artisan('attendance:auto-close', ['--all' => true])
+        ->expectsOutput('Auto-closed 1 session(s).')
+        ->assertSuccessful();
+
+    expect(AttendanceSession::query()->open()->count())->toBe(0);
+});
