@@ -2,6 +2,7 @@
 
 namespace App\Attendance;
 
+use App\Discord\EmbedSplitter;
 use App\Enums\EmployeeStatus;
 use App\Models\AttendanceSession;
 use App\Models\AttendanceSetting;
@@ -22,9 +23,12 @@ class WeeklyDigest
     public function __construct(private readonly WorkCalendar $calendar) {}
 
     /**
-     * @return array<string, mixed>
+     * The digest as one or more embeds that each fit Discord's limits. Send
+     * every embed as its own message.
+     *
+     * @return list<array<string, mixed>>
      */
-    public function embed(CarbonImmutable $now): array
+    public function embeds(CarbonImmutable $now): array
     {
         $start = AlgerianDate::toAlgiers($now)
             ->startOfWeek(CarbonInterface::SUNDAY)
@@ -66,7 +70,7 @@ class WeeklyDigest
 
             $fields[] = [
                 'name' => $office->name,
-                'value' => $lines === [] ? 'No active employees.' : mb_substr(implode("\n", $lines), 0, 1024),
+                'value' => $lines === [] ? 'No active employees.' : implode("\n", $lines),
                 'inline' => false,
             ];
         }
@@ -79,13 +83,13 @@ class WeeklyDigest
             ];
         }
 
-        return [
+        return EmbedSplitter::split([
             'title' => 'Weekly attendance — '.$start->format('d M').' to '.$end->format('d M Y'),
             'color' => 0x16A34A,
-            'fields' => array_slice($fields, 0, 25),
+            'fields' => $fields,
             'footer' => ['text' => 'Khazna Attendance'],
             'timestamp' => $now->utc()->toIso8601String(),
-        ];
+        ]);
     }
 
     /**

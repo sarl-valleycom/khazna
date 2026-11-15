@@ -240,3 +240,88 @@ test('the weekly digest subtracts the paid break allowance per day', function ()
         return str_contains($value, '<@333333333333333333> — 16h 00m / 40h 00m');
     });
 });
+
+test('a large daily digest is split into messages that fit Discord limits without cutting lines', function () {
+    CarbonImmutable::setTestNow(digestAt('2026-11-16 18:00:00'));
+    digestConfig();
+
+    foreach (['Algiers', 'Oran', 'Constantine', 'Annaba'] as $name) {
+        $office = Office::factory()->create(['name' => $name]);
+
+        foreach (range(1, 12) as $number) {
+            $employee = digestEmployee($office, (string) (100000000000000000 + random_int(1, 99999999999999999)), $name.' '.$number);
+
+            AttendanceSession::factory()->create([
+                'employee_id' => $employee->id,
+                'started_at' => digestAt('2026-11-16 09:00:00')->utc(),
+                'ended_at' => digestAt('2026-11-16 17:00:00')->utc(),
+                'status' => AttendanceStatus::Closed,
+                'review_status' => AttendanceReviewStatus::Ok,
+                'report' => 'Report '.$number.' '.str_repeat('detail ', 40),
+            ]);
+        }
+    }
+
+    Http::fake(['discord.test/*' => Http::response([], 200)]);
+
+    $this->artisan('attendance:digest-daily')
+        ->expectsOutput('Daily attendance digest posted.')
+        ->assertSuccessful();
+
+    $requests = Http::recorded()->map(fn (array $pair) => $pair[0]->data());
+
+    expect($requests->count())->toBeGreaterThan(1);
+
+    $reportLines = 0;
+
+    foreach ($requests as $data) {
+        expect($data['embeds'])->toHaveCount(1);
+
+        $embed = $data['embeds'][0];
+        $total = mb_strlen($embed['title']) + mb_strlen($embed['footer']['text']);
+
+        expect(count($embed['fields']))->toBeLessThanOrEqual(25);
+
+        foreach ($embed['fields'] as $field) {
+            expect(mb_strlen($field['value']))->toBeLessThanOrEqual(1024);
+            $total += mb_strlen($field['name']) + mb_strlen($field['value']);
+
+            foreach (explode("\n", $field['value']) as $line) {
+                if (str_contains($line, 'Report ')) {
+                    $reportLines++;
+                    expect($line)->toContain('detail');
+                }
+            }
+        }
+
+        expect($total)->toBeLessThanOrEqual(6000);
+    }
+
+    // Every employee's report line is still delivered (lines are capped at 300 characters each).
+    expect($reportLines)->toBe(48);
+});
+
+test('a failing part of a split digest makes the command fail but the other parts are still sent', function () {
+    CarbonImmutable::setTestNow(digestAt('2026-11-16 18:00:00'));
+    digestConfig();
+    $office = Office::factory()->create(['name' => 'Algiers']);
+
+    foreach (range(1, 30) as $number) {
+        $employee = digestEmployee($office, (string) (200000000000000000 + $number), 'Employee '.$number);
+
+        AttendanceSession::factory()->create([
+            'employee_id' => $employee->id,
+            'started_at' => digestAt('2026-11-16 09:00:00')->utc(),
+            'ended_at' => digestAt('2026-11-16 17:00:00')->utc(),
+            'status' => AttendanceStatus::Closed,
+            'review_status' => AttendanceReviewStatus::Ok,
+            'report' => str_repeat('word ', 80),
+        ]);
+    }
+
+    Http::fake(['discord.test/*' => Http::sequence()->push([], 400)->push([], 200)->push([], 200)]);
+
+    $this->artisan('attendance:digest-daily')->assertFailed();
+
+    expect(Http::recorded()->count())->toBeGreaterThan(1);
+});

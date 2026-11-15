@@ -26,7 +26,13 @@ class AttendanceDigestWeeklyCommand extends Command
             return self::SUCCESS;
         }
 
-        $sent = $discord->sendChannelMessage($channelId, '', [$digest->embed(AlgerianDate::now())]);
+        // One message per embed: Discord's 6000 character limit counts every
+        // embed in a message together. Keep going if one part fails.
+        $sent = true;
+
+        foreach ($digest->embeds(AlgerianDate::now()) as $embed) {
+            $sent = $discord->sendChannelMessage($channelId, '', [$embed]) && $sent;
+        }
 
         $this->info($sent ? 'Weekly attendance digest posted.' : 'Weekly attendance digest failed.');
 

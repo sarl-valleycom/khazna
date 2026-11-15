@@ -2,6 +2,7 @@
 
 namespace App\Attendance;
 
+use App\Discord\EmbedSplitter;
 use App\Enums\AttendanceReviewStatus;
 use App\Enums\AttendanceStatus;
 use App\Enums\EmployeeStatus;
@@ -22,9 +23,12 @@ class DailyDigest
     public function __construct(private readonly WorkCalendar $calendar) {}
 
     /**
-     * @return array<string, mixed>
+     * The digest as one or more embeds that each fit Discord's limits. Send
+     * every embed as its own message.
+     *
+     * @return list<array<string, mixed>>
      */
-    public function embed(CarbonImmutable $now): array
+    public function embeds(CarbonImmutable $now): array
     {
         $today = $now->toDateString();
         [$from, $to] = AlgerianDate::dayRangeUtc($today);
@@ -108,13 +112,13 @@ class DailyDigest
             ];
         }
 
-        return [
+        return EmbedSplitter::split([
             'title' => 'Attendance — '.$now->format('D, d M Y'),
             'color' => 0x2563EB,
-            'fields' => array_slice($fields, 0, 25),
+            'fields' => $fields,
             'footer' => ['text' => 'Khazna Attendance'],
             'timestamp' => $now->utc()->toIso8601String(),
-        ];
+        ]);
     }
 
     /**
@@ -216,6 +220,6 @@ class DailyDigest
             return 'No attendance recorded yet.';
         }
 
-        return mb_substr(implode("\n", $lines), 0, 1024);
+        return implode("\n", $lines);
     }
 }
