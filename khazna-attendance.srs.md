@@ -4,9 +4,11 @@
 |---|---|
 | Version | 0.1 (draft) |
 | Date | 2026-11-13 |
-| Status | For review. Nothing has been built |
+| Status | Redesigned in Nov 2026. See the note below |
 | Related document | `khazna-resume.md` (Khazna payment-tracking app) |
 | Company | SAASCOM |
+
+> **Scope change (Nov 2026).** Attendance was built as a **web page**, not as a Discord bot. Employees open `/work`, enter a personal code, and check in, take a break and check out; they see a live timer and the hours still to make up. Where this document says Discord, a command, a DM, a modal or a channel, read it as that page. Requirements marked *(dropped)* are not planned, *(changed)* describes what was built instead. Salary does not depend on fixed hours. The current plan is in `doc/phases/03-attendance.md` and `doc/phases/04-exports-and-documents.md`.
 
 ---
 
@@ -112,10 +114,10 @@ Priority: **M** = must, **S** = should, **C** = could. Phase refers to section 9
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-ID-01 | The owner can link an employee to a Discord user ID in the panel | M | 1 |
-| FR-ID-02 | A command from a Discord user who is not linked receives a private message explaining that they are not registered, and nothing is recorded | M | 1 |
+| FR-ID-01 | The owner can link an employee to a Discord user ID in the panel *(changed: a personal attendance code made by the owner, not a Discord ID)* | M | 1 |
+| FR-ID-02 | A command from a Discord user who is not linked receives a private message explaining that they are not registered, and nothing is recorded *(dropped: no Discord; a wrong code is refused)* | M | dropped |
 | FR-ID-03 | A deactivated employee cannot start sessions | M | 1 |
-| FR-ID-04 | Commands only work inside the configured guild | M | 1 |
+| FR-ID-04 | Commands only work inside the configured guild *(dropped: no Discord)* | M | dropped |
 
 ### 3.2 Session commands
 
@@ -129,7 +131,7 @@ Priority: **M** = must, **S** = should, **C** = could. Phase refers to section 9
 | FR-SES-06 | `/check-out` with no open session returns a private error | M | 1 |
 | FR-SES-07 | Each command replies with the recorded time (Algiers) and the running total worked today | S | 1 |
 | FR-SES-08 | An employee cannot have more than one open session, even under double clicks or simultaneous requests | M | 1 |
-| FR-SES-09 | Check-in and check-out events are posted to a configurable attendance channel. Errors are private to the employee | S | 1 |
+| FR-SES-09 | Check-in and check-out events are posted to a configurable attendance channel. Errors are private to the employee *(dropped: no channel posts)* | S | dropped |
 
 State transitions:
 
@@ -150,9 +152,9 @@ State transitions:
 |---|---|---|---|
 | FR-AUTO-01 | A scheduled job closes every session still open at the auto-close time (default 23:59 Algiers) | M | 1 |
 | FR-AUTO-02 | An auto-closed session ends at the employee's scheduled end time, or start plus expected daily hours if no schedule exists, and is marked `needs_review` | M | 1 |
-| FR-AUTO-03 | The employee receives a DM the next morning with a button to correct the end time | M | 1 |
-| FR-AUTO-04 | Auto-closed sessions are excluded from payroll totals until approved by the employee's correction or by the owner | M | 3 |
-| FR-AUTO-05 | An employee who has been working more than 10 hours receives a DM asking if they forgot to check out | S | 2 |
+| FR-AUTO-03 | The employee receives a DM the next morning with a button to correct the end time *(changed: the page shows the correction form instead of a DM)* | M | 1 |
+| FR-AUTO-04 | Auto-closed sessions are excluded from payroll totals until approved by the employee's correction or by the owner *(dropped: salary does not depend on hours)* | M | dropped |
+| FR-AUTO-05 | An employee who has been working more than 10 hours receives a DM asking if they forgot to check out *(dropped: no reminders)* | S | dropped |
 
 ### 3.4 End-of-day report
 
@@ -161,15 +163,15 @@ State transitions:
 | FR-REP-01 | `/check-out` opens a modal with two fields: "What did you do today?" (required) and "Any blockers?" (optional) | S | 2 |
 | FR-REP-02 | If the modal is dismissed, the session is still closed and the report stays empty | M | 2 |
 | FR-REP-03 | Submitted reports are stored with the session and visible to the owner and to the employee | S | 2 |
-| FR-REP-04 | The daily digest includes each employee's report | S | 2 |
+| FR-REP-04 | The daily digest includes each employee's report *(dropped: no digest)* | S | dropped |
 
 ### 3.5 Reminders and notifications
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-REM-01 | An employee with a schedule who has not checked in 30 minutes after their start time receives a DM (not on weekends, holidays or approved leave) | S | 2 |
-| FR-REM-02 | An employee who has been away for longer than a configurable limit (default 90 minutes) receives a DM reminder | C | 2 |
-| FR-REM-03 | All reminders can be switched off globally and per employee | S | 2 |
+| FR-REM-01 | An employee with a schedule who has not checked in 30 minutes after their start time receives a DM (not on weekends, holidays or approved leave) *(dropped: no reminders)* | S | dropped |
+| FR-REM-02 | An employee who has been away for longer than a configurable limit (default 90 minutes) receives a DM reminder *(dropped: no reminders)* | C | dropped |
+| FR-REM-03 | All reminders can be switched off globally and per employee *(dropped: no reminders)* | S | dropped |
 
 ### 3.6 Admin review and correction
 
@@ -178,49 +180,49 @@ State transitions:
 | FR-ADM-01 | The panel lists all sessions with filters by employee, office, date range and status | M | 1 |
 | FR-ADM-02 | The owner can create, edit or delete a session, with a mandatory reason | M | 1 |
 | FR-ADM-03 | Every edit is stored in an audit log (who, when, old values, new values, reason) | M | 1 |
-| FR-ADM-04 | A "Needs review" view shows auto-closed sessions, sessions over 12 hours and sessions with overlapping times | M | 1 |
-| FR-ADM-05 | An employee can request a correction to their own session from Discord. The owner approves or rejects it | S | 2 |
+| FR-ADM-04 | A "Needs review" view shows auto-closed sessions, sessions over 12 hours and sessions with overlapping times *(dropped: the sessions list status filter finds auto-closed sessions)* | M | dropped |
+| FR-ADM-05 | An employee can request a correction to their own session from Discord. The owner approves or rejects it *(changed: the employee asks on the web page)* | S | 2 |
 | FR-ADM-06 | The owner can see who is working now (working, away, offline) in the panel | S | 1 |
 
 ### 3.7 Reports and digests
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-RPT-01 | A daily digest is posted to a private owner channel: who is in, late, absent, away and forgotten, plus the end-of-day reports, grouped by office | S | 2 |
-| FR-RPT-02 | A weekly summary is posted every Sunday: hours per employee against expected hours, lateness count, overtime | S | 2 |
-| FR-RPT-03 | `/my-hours [period]` shows an employee their own totals privately | S | 2 |
-| FR-RPT-04 | A live "who is online" message in a chosen channel is edited in place when the state changes | C | 2 |
-| FR-RPT-05 | Excel/PDF export of monthly hours per employee | C | 3 |
+| FR-RPT-01 | A daily digest is posted to a private owner channel: who is in, late, absent, away and forgotten, plus the end-of-day reports, grouped by office *(dropped: no digest)* | S | dropped |
+| FR-RPT-02 | A weekly summary is posted every Sunday: hours per employee against expected hours, lateness count, overtime *(dropped: no digest)* | S | dropped |
+| FR-RPT-03 | `/my-hours [period]` shows an employee their own totals privately *(changed: shown on the employee page)* | S | 2 |
+| FR-RPT-04 | A live "who is online" message in a chosen channel is edited in place when the state changes *(dropped: no chat message)* | C | dropped |
+| FR-RPT-05 | Excel/PDF export of monthly hours per employee | C | 4 |
 
 ### 3.8 Payroll integration
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
 | FR-PAY-01 | Each employee has a contract type: fixed monthly, hourly, part-time or freelancer | M | 3 |
-| FR-PAY-02 | At month-close, Khazna calculates for each employee the worked time, expected time, shortfall, overtime, late count and absent days from approved sessions | M | 3 |
-| FR-PAY-03 | For fixed and part-time employees, the system proposes a deduction or bonus line in draft state. For hourly and freelancer employees, it proposes the amount as worked hours times the hourly rate | M | 3 |
-| FR-PAY-04 | Proposals only become `salary_adjustments` after the owner approves them one by one | M | 3 |
-| FR-PAY-05 | Month-close is blocked, with a clear message, while the month still has sessions marked `needs_review` | S | 3 |
-| FR-PAY-06 | Public holidays, approved leave and the weekend are excluded from expected time | M | 3 |
+| FR-PAY-02 | At month-close, Khazna calculates for each employee the worked time, expected time, shortfall, overtime, late count and absent days from approved sessions *(dropped: salary does not depend on hours)* | M | dropped |
+| FR-PAY-03 | For fixed and part-time employees, the system proposes a deduction or bonus line in draft state. For hourly and freelancer employees, it proposes the amount as worked hours times the hourly rate *(dropped: salary does not depend on hours)* | M | dropped |
+| FR-PAY-04 | Proposals only become `salary_adjustments` after the owner approves them one by one *(dropped: salary does not depend on hours)* | M | dropped |
+| FR-PAY-05 | Month-close is blocked, with a clear message, while the month still has sessions marked `needs_review` *(dropped: salary does not depend on hours)* | S | dropped |
+| FR-PAY-06 | Public holidays, approved leave and the weekend are excluded from expected time | M | 4 |
 
 ### 3.9 Project tagging and profitability
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-PRJ-01 | `/check-in` has an optional `project` option with autocomplete from active Khazna contracts | S | 4 |
-| FR-PRJ-02 | `/switch project` closes the current segment and opens a new one on another project without ending the session | S | 4 |
-| FR-PRJ-03 | Employee cost per hour is calculated as monthly salary divided by expected monthly hours | S | 4 |
-| FR-PRJ-04 | A profitability report shows, per contract: hours spent, labor cost, amount contracted or collected, margin | S | 4 |
-| FR-PRJ-05 | Time with no project is reported as "unassigned" and not hidden | S | 4 |
+| FR-PRJ-01 | `/check-in` has an optional `project` option with autocomplete from active Khazna contracts *(dropped: not planned now)* | S | dropped |
+| FR-PRJ-02 | `/switch project` closes the current segment and opens a new one on another project without ending the session *(dropped: not planned now)* | S | dropped |
+| FR-PRJ-03 | Employee cost per hour is calculated as monthly salary divided by expected monthly hours *(dropped: not planned now)* | S | dropped |
+| FR-PRJ-04 | A profitability report shows, per contract: hours spent, labor cost, amount contracted or collected, margin *(dropped: not planned now)* | S | dropped |
+| FR-PRJ-05 | Time with no project is reported as "unassigned" and not hidden *(dropped: not planned now)* | S | dropped |
 
 ### 3.10 Leave and absences
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-LEV-01 | `/leave` opens a form: type (paid, unpaid, sick), dates, reason | S | 5 |
-| FR-LEV-02 | The request is sent to the owner with approve and reject buttons. The employee is notified of the decision | S | 5 |
-| FR-LEV-03 | Approved leave removes those days from expected time and suppresses reminders | S | 5 |
-| FR-LEV-04 | A leave balance per employee per year (optional) | C | 5 |
+| FR-LEV-01 | `/leave` opens a form: type (paid, unpaid, sick), dates, reason *(dropped: the owner enters leave in phase 4)* | S | dropped |
+| FR-LEV-02 | The request is sent to the owner with approve and reject buttons. The employee is notified of the decision *(dropped: the owner enters leave in phase 4)* | S | dropped |
+| FR-LEV-03 | Approved leave removes those days from expected time and suppresses reminders | S | 4 |
+| FR-LEV-04 | A leave balance per employee per year (optional) *(dropped: not planned now)* | C | dropped |
 
 ---
 
@@ -228,7 +230,7 @@ State transitions:
 
 | Command | Options | Who | Phase |
 |---|---|---|---|
-| `/check-in` | `project` (optional, phase 4) | Employee | 1 |
+| `/check-in` | `project` (optional, not planned) | Employee | 1 |
 | `/check-out` | none (opens the report modal from phase 2) | Employee | 1 |
 | `/tmp-check-out` | `reason` (required) | Employee | 1 |
 | `/status` | none. Shows own state and today's total | Employee | 1 |
@@ -249,11 +251,11 @@ New tables are added to the Khazna database. All use soft deletes. Timestamps ar
 | `employees` (existing, extended) | `office_id`, `discord_user_id` (unique, nullable), `contract_type`, `hourly_rate`, `expected_minutes_per_day`, `work_days`, `schedule_start`, `schedule_end`, `late_grace_minutes`, `reminders_enabled` |
 | `attendance_sessions` | `employee_id`, `started_at`, `ended_at`, `status` (open, closed, auto_closed), `review_status` (ok, needs_review, approved), `report`, `blockers`, `source` (discord, admin), `closed_by` |
 | `attendance_breaks` | `session_id`, `started_at`, `ended_at`, `reason`, `paid` (value copied at creation) |
-| `attendance_segments` (phase 4) | `session_id`, `contract_id` (nullable), `started_at`, `ended_at` |
+| `attendance_segments` (not planned) | `session_id`, `contract_id` (nullable), `started_at`, `ended_at` |
 | `attendance_edits` | `session_id`, `edited_by`, `old_values`, `new_values`, `reason`, `created_at` |
 | `correction_requests` | `session_id`, `employee_id`, `proposed_ended_at`, `note`, `status`, `decided_by` |
 | `holidays` | `date`, `label` |
-| `leave_requests` (phase 5) | `employee_id`, `type`, `from`, `to`, `reason`, `status`, `decided_by` |
+| `leave_requests` (phase 4) | `employee_id`, `type`, `from`, `to`, `reason`, `status`, `decided_by` |
 | `attendance_settings` | auto-close time, digest time, channel IDs (per office), reminder limits, paid break allowance |
 
 ---

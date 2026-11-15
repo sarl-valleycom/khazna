@@ -27,7 +27,7 @@
 | `reconciliations` | account_id, as_of, counted_balance, system_balance, difference, note, adjustment_entry_id nullable, created_by |
 | `contracts` (altered) | `category_id` required for recurring costs |
 
-Keeping salary in a history table from the start means a raise never rewrites the past. Phase 5 (cost per hour) and any later report depend on this.
+Keeping salary in a history table from the start means a raise never rewrites the past. The payslips of phase 4 and any later report depend on this.
 
 ## 2.2 Suppliers and recurring costs
 

@@ -12,8 +12,7 @@ This folder says **how** and **in what order** Khazna is built. The requirements
 | `01-mvp-receivables.md` | Clients, contracts, dues, payments, triage |
 | `02-money-out.md` | Employees, costs, milestones, payroll, dashboard, forecast |
 | `03-attendance.md` | Employee web page with a personal code, sessions, hours to make up, corrections |
-| `04-automation-and-payroll-link.md` | Hours → payroll, WhatsApp automation, CRM sync, exports |
-| `05-profitability-and-leave.md` | Project time tagging, margin per contract, leave |
+| `04-exports-and-documents.md` | Holiday and leave screens, monthly summary, Excel exports, PDFs (statements, payslips) |
 
 ---
 
@@ -72,14 +71,15 @@ Effort is a rough guess for one developer. Revise it after phase 1.
 | 0 | Foundation | none | none | 4 to 6 days | Log in, see the app shell, deploy to staging |
 | 1 | MVP receivables, offices and accounts | 1 | 0 | 4 to 5 weeks | Run all receivables without a spreadsheet and see each office's account balances |
 | 2 | Money out | 2 | 1 | 4 weeks | See the cash picture of each office and close a month's salaries |
-| 3 | Attendance | 3 | 2 | 2 to 3 weeks | Team uses `/check-in` daily |
-| 4 | Automation and payroll link | 4 | 2, 3 | 3 weeks | Prepare salaries from approved hours, automate reminders |
-| 5 | Profitability and leave | 5 | 3, 4 | 2 weeks | See which contracts make money |
+| 3 | Attendance | 3 | 2 | 2 to 3 weeks | Team checks in on `/work` daily |
+| 4 | Exports and documents | 4 | 2, 3 | About 1 week | Hand clients, employees and the accountant clean Excel and PDF files |
 
 ```
-0 ─> 1 ─> 2 ─┬─> 3 ─┬─> 4 ─> 5
+0 ─> 1 ─> 2 ─┬─> 3 ─┬─> 4
              └──────┘
 ```
+
+The plan ends at phase 4. What was planned beyond it is kept under "Later" at the bottom of this file.
 
 Phases 1 and 2 can overlap slightly (the employees table can start during phase 1), but never start phase 3 before month-close from phase 2 exists.
 
@@ -106,8 +106,8 @@ Phases 1 and 2 can overlap slightly (the employees table can start during phase 
 - **Office scope:** a user restricted to an office sees only that office's data. It uses the same `visibleTo($user)` scope as the account-manager rule, and a test checks every list and direct link.
 
 ### Code
-- Controllers are thin. Business logic lives in single-purpose **Action** classes (`RecordPayment`, `GenerateDues`, `CloseMonth`) that can be called from a controller, a command or a Discord handler.
-- Anything that can run twice must be safe to run twice (dues generation, month-close, webhooks, Discord retries).
+- Controllers are thin. Business logic lives in single-purpose **Action** classes (`RecordPayment`, `GenerateDues`, `CloseMonth`) that can be called from a controller or a command.
+- Anything that can run twice must be safe to run twice (dues generation, month-close).
 - Reversals, cancellations and postponements need a reason and are logged.
 
 ### Tests
@@ -137,3 +137,25 @@ A **phase** is done when all its features are done, the phase's exit checklist i
 - When a decision changes, update the SRS first, then the phase file.
 - Tick tasks (`- [ ]` → `- [x]`) as they are finished. Add a "Notes" line under a task when you deviate.
 - Open questions are collected at the bottom of each phase file. Close them before the phase starts.
+
+---
+
+## 6. Later
+
+Not planned now, not deleted. Each item was cut on purpose; the reason is next to it, so it can be reopened with the same context.
+
+| Idea | Why it is not planned |
+|---|---|
+| Prepare salaries from worked hours (shortfall deductions, overtime, proposals approved by the owner, month-close blocked by unreviewed sessions) | Salary does not depend on fixed hours. The owner enters bonuses, deductions and advances by hand |
+| Automatic WhatsApp reminders through n8n (J−7, J−1, J+3) | Manual reminders with a `wa.me` link already work. Unofficial gateways can get the company number banned. The official Business API needs approved templates |
+| Owner notification for overdue dues and approaching renewals | Needs a delivery channel. There is no chat bot any more |
+| CRM sync (a lead marked won creates a client) | A change in two repositories. Not needed yet |
+| Mandatory two-factor for `owner` and `finance` | Optional two-factor already exists in the starter kit. Enforcing it is about half a day when wanted |
+| Project time tagging, cost per hour and margin per contract | Needs employees to tag time. It was designed as a Discord command, so it would be redesigned as a dropdown on `/work` |
+| Leave requested by employees and approved by the owner, with balances | The owner enters leave in phase 4. A request flow can be added to `/work` |
+| Daily and weekly digests and reminders for forgotten check-ins | They were Discord messages. Dropped with the bot. The employee page shows what needs attention |
+| A read-only client page with a payment status link (no login) | Idea only |
+| Employees file expenses with a photo of the receipt | Could be a form on `/work` |
+| Bank statement import to match payments automatically | Idea only |
+| Legal invoices (TVA, timbre, NIF/NIS/RC) | Only if the company needs them |
+| An Arabic or French interface | Only if the team needs one |
