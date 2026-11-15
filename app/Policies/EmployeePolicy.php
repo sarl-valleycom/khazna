@@ -37,6 +37,12 @@ class EmployeePolicy
         return $user->can('view-salaries') && $this->canSee($user, $employee);
     }
 
+    /** Reading what someone earns (their payslip) needs the same two things as changing it. */
+    public function viewSalary(User $user, Employee $employee): bool
+    {
+        return $user->can('view-salaries') && $this->canSee($user, $employee);
+    }
+
     private function canSee(User $user, Employee $employee): bool
     {
         return $this->viewAny($user)

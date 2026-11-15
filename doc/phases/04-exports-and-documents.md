@@ -76,9 +76,12 @@ The saved sample is `doc/phases/samples/arabic-client-statement.mpdf.pdf`, made 
 
 ## 4.5 PDF documents
 
-- [ ] **Client statement:** dues and payments for a period (FR-EXP-02).
-- [ ] **Monthly summary:** money in, money out, outstanding, and the salary total. The salary line is owner only (FR-EXP-03).
-- [ ] **Payslip** per employee per month: salary, bonuses, deductions, advances, net (from `PayrollCalculator`, so it can never disagree with the close), plus the 4.2 attendance summary as information, with no deduction taken from it (FR-SAL-08). Generated on demand from stored data, with the same permissions as the salary pages.
+Built with mPDF (4.3). `PdfRenderer` turns a Blade view into a PDF; each document has a small class that works out its numbers in integer centimes and a view that prints them. Every template wraps numbers, dates and IDs in `<bdi dir="ltr">` and user text in `<bdi>`, so Arabic and Latin text never flip each other. The PDF opens in the browser tab (inline) and its file name is plain ASCII, even for an Arabic client.
+
+- [x] **Client statement** (FR-EXP-02): `/clients/{id}/statement?from=&to=`, default this month, at most five years. It lists the client's dues falling due in the period (canceled ones left out) and the payments received in it (reversed ones left out), with totals, "still to pay on the dues listed" and "total outstanding for this client, all periods". Same permission as viewing the client, so an account manager prints only their own clients. Button "Statement PDF" on the client page, with a period picker.
+- [x] **Monthly summary** (FR-EXP-03): `/reports/monthly-summary?month=&office=`. Money in, money out and the cash result come from the cash report query, and what clients owe comes from the dashboard metrics, so the PDF can never disagree with the screens. Outstanding is the position on the day the PDF is made, and the page says so. The **salary block is built only for someone who may see salaries**; for finance it does not exist, and the payroll entries are out of the totals too, with a note. Button on the cash report.
+- [x] **Payslip** (FR-SAL-08): `/employees/{id}/payslip?month=`, owner only (the salary permission and access to that employee, new policy ability `viewSalary`). Salary, bonuses, deductions, advances and net come from `PayrollCalculator`, the same code as the month-close, so a payslip can never disagree with the salary due. The adjustments are listed with their reasons. The attendance block (worked, expected, to make up, days worked, days off) is information only and says so. A month with no salary in force is a 404, and a future or bad month falls back to the current one. Button "Payslip PDF" on the employee page.
+- [ ] Deployment: `storage/framework/mpdf` must be writable by the web user (mPDF keeps its temporary files and font cache there).
 
 ## 4.6 Attendance and ledger exports
 
@@ -92,7 +95,8 @@ The saved sample is `doc/phases/samples/arabic-client-statement.mpdf.pdf`, made 
 - Every hand-computed example above.
 - Leave and holiday screens: only the owner can open them. A day marked as a holiday or leave changes the expected minutes on the employee page.
 - An export contains exactly the rows of the filtered screen (all pages), never skips or repeats a row, and keeps phone numbers and formula-like text intact. A finance user cannot export salary dues or see the payroll line.
-- The payslip net equals the month-close net for the same employee and month.
+- The payslip net equals the month-close net for the same employee and month (52 272,73 DA from 60 000 + 5 000 − 2 727,27 − 10 000).
+- Finance gets no salary block in the monthly summary and cannot print a payslip.
 - The PDF renders an Arabic client name correctly (visual check kept as a saved sample).
 
 ## Exit checklist

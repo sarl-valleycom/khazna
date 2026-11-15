@@ -24,7 +24,7 @@ class CashReportQuery
 {
     /**
      * @return array{
-     *     from: string, to: string, months: array<int, string>,
+     *     includesPayroll: bool, from: string, to: string, months: array<int, string>,
      *     rows: array<int, array{direction: string, category: string, months: array<string, int>, totalCents: int}>,
      *     totals: array{in: array<string, int>, out: array<string, int>, result: array<string, int>, inCents: int, outCents: int, resultCents: int},
      *     offices: array<int, array{officeId: int, officeName: string, inCents: int, outCents: int, resultCents: int, balanceCents: int, sentCents: int, receivedCents: int}>

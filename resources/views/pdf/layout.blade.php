@@ -12,7 +12,7 @@
         table.grid { width: 100%; border-collapse: collapse; margin-top: 4px; }
         table.grid th { background: #f2f2f2; text-align: left; padding: 5px 4px; border-bottom: 1px solid #bbb; }
         table.grid td { padding: 5px 4px; border-bottom: 1px solid #ddd; vertical-align: top; }
-        .right { text-align: right; }
+        table.grid th.right, table.grid td.right { text-align: right; }
         table.grid td.sum, table.grid td.sumlabel { font-weight: bold; border-top: 1px solid #888; border-bottom: 1px solid #888; background: #fafafa; }
         .box { border: 1px solid #ccc; padding: 6px 8px; margin-top: 6px; }
         .note { font-size: 8px; color: #666; margin-top: 10px; }

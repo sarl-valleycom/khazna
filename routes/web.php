@@ -28,6 +28,8 @@ use App\Http\Controllers\Exports\ClientsExportController;
 use App\Http\Controllers\Exports\ClientStatementController;
 use App\Http\Controllers\Exports\ContractsExportController;
 use App\Http\Controllers\Exports\DuesExportController;
+use App\Http\Controllers\Exports\MonthlySummaryPdfController;
+use App\Http\Controllers\Exports\PayslipController;
 use App\Http\Controllers\Exports\SessionsExportController;
 use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Ledger\ManualEntryController;
@@ -119,6 +121,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
     Route::get('employees/{employee}', [EmployeeController::class, 'show'])->whereNumber('employee')->name('employees.show');
     Route::patch('employees/{employee}', [EmployeeController::class, 'update'])->whereNumber('employee')->name('employees.update');
+    Route::get('employees/{employee}/payslip', PayslipController::class)->whereNumber('employee')->name('employees.payslip');
     Route::post('employees/{employee}/attendance-code', [AttendanceCodeController::class, 'store'])->whereNumber('employee')->name('employees.attendance-code.store');
     Route::delete('employees/{employee}/attendance-code', [AttendanceCodeController::class, 'destroy'])->whereNumber('employee')->name('employees.attendance-code.destroy');
 
@@ -162,6 +165,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('forecast', ForecastController::class)->middleware('can:view-forecast')->name('forecast');
     Route::get('reports/cash', CashReportController::class)->middleware('can:view-reports')->name('reports.cash');
+    Route::get('reports/monthly-summary', MonthlySummaryPdfController::class)->middleware('can:view-reports')->name('reports.monthly-summary');
 
     Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
     Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');

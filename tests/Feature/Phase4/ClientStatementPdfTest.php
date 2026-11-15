@@ -27,7 +27,8 @@ function pdfText(TestResponse $response): string
     expect($response->headers->get('content-type'))->toBe('application/pdf')
         ->and(substr((string) $response->getContent(), 0, 4))->toBe('%PDF');
 
-    return (new Parser)->parseContent((string) $response->getContent())->getText();
+    // Fonts join letter pairs (ffi, fi) into one glyph; fold them back so the text reads as typed.
+    return Normalizer::normalize((new Parser)->parseContent((string) $response->getContent())->getText(), Normalizer::FORM_KC);
 }
 
 function statementClient(array $attributes = []): Client
@@ -122,7 +123,7 @@ test('a statement for an Arabic client name is produced and readable', function 
 
     // The PDF stores Arabic as shaped glyphs in visual order; folded back to plain letters the
     // name is there (read right to left, so its first word comes out reversed).
-    $folded = Normalizer::normalize($text, Normalizer::FORM_KC);
+    $folded = $text;
 
     expect($folded)->toContain('ةكرش')
         // The phone number keeps its digit groups in order thanks to the bdi wrapper.
