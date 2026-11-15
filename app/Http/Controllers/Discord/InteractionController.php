@@ -28,7 +28,18 @@ class InteractionController extends Controller
         $configuredGuild = (string) config('discord.guild_id');
         $guildId = $interaction->guildId();
 
-        if ($configuredGuild === '' || $guildId === null || ! hash_equals($configuredGuild, $guildId)) {
+        // Buttons and modals sent from a DM (the correction reminder) never
+        // carry a guild_id. The handlers only act for a linked employee on
+        // their own sessions, so a guild-less component is allowed through;
+        // slash commands and anything with a guild_id must match the server.
+        $isDirectMessageComponent = $guildId === null && in_array(
+            $interaction->type(),
+            [Interaction::TYPE_COMPONENT, Interaction::TYPE_MODAL_SUBMIT],
+            true,
+        );
+
+        if (! $isDirectMessageComponent
+            && ($configuredGuild === '' || $guildId === null || ! hash_equals($configuredGuild, $guildId))) {
             return response()->json(['error' => 'This bot only works in the configured server.'], 403);
         }
 

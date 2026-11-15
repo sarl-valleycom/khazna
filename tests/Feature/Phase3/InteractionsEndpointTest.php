@@ -78,7 +78,7 @@ test('a signature made for a different body is rejected', function () {
     ], json_encode(['type' => 2], JSON_THROW_ON_ERROR))->assertStatus(401);
 });
 
-test('interactions from another guild or from a DM are rejected', function () {
+test('commands from another guild or from a DM are rejected', function () {
     $signer = SignedInteraction::make()->configure();
 
     $signer->post($this, commandInteraction('check-in', ['guild_id' => '111111111111111111']))
@@ -88,6 +88,34 @@ test('interactions from another guild or from a DM are rejected', function () {
     unset($payload['guild_id']);
 
     $signer->post($this, $payload)->assertStatus(403);
+});
+
+test('a component or modal sent from a DM is routed without a guild id', function () {
+    $signer = SignedInteraction::make()->configure();
+
+    foreach ([3, 5] as $type) {
+        $signer->post($this, [
+            'id' => '111111111111111111',
+            'application_id' => '123456789012345678',
+            'type' => $type,
+            'user' => ['id' => '444444444444444444', 'username' => 'karim'],
+            'data' => ['custom_id' => 'nothing:registered:1'],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.content', __('discord.errors.unknown_interaction'));
+    }
+});
+
+test('a component from another guild is still rejected', function () {
+    $signer = SignedInteraction::make()->configure();
+
+    $signer->post($this, [
+        'id' => '111111111111111111',
+        'type' => 3,
+        'guild_id' => '111111111111111111',
+        'member' => ['user' => ['id' => '444444444444444444']],
+        'data' => ['custom_id' => 'nothing:registered:1'],
+    ])->assertStatus(403);
 });
 
 test('a Discord ID above 2^53 is compared as an exact string', function () {
