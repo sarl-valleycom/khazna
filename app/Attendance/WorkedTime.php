@@ -37,8 +37,24 @@ final class WorkedTime
         $date = $now->setTimezone(AlgerianDate::TZ)->toDateString();
         [$from, $to] = AlgerianDate::dayRangeUtc($date);
 
+        return self::rangeMinutes($employee, $from, $to, $now, $paidBreakAllowanceMinutes);
+    }
+
+    /**
+     * Worked minutes for sessions that started inside the UTC range. A session
+     * belongs to the Algiers day it started on, even when it crosses midnight.
+     */
+    public static function rangeMinutes(
+        Employee $employee,
+        CarbonImmutable $from,
+        CarbonImmutable $to,
+        ?CarbonImmutable $at = null,
+        ?int $paidBreakAllowanceMinutes = null,
+    ): int {
+        $now = ($at ?? AlgerianDate::now())->utc();
+
         $sessions = $employee->attendanceSessions()
-            ->whereBetween('started_at', [$from, $to])
+            ->whereBetween('started_at', [$from->utc(), $to->utc()])
             ->with('breaks')
             ->get();
 

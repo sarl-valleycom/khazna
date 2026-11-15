@@ -45,6 +45,18 @@ return [
         'write_report' => 'Write today\'s report',
     ],
 
+    'status' => [
+        'working' => 'You are working since :time. Today: :total.',
+        'away' => 'You are away since :time. Today: :total.',
+        'offline' => 'You are offline. Today: :total.',
+    ],
+
+    'my_hours' => [
+        'today' => 'Today: :total.',
+        'week' => 'This week: :total.',
+        'month' => 'This month: :total.',
+    ],
+
     'reminders' => [
         'not_checked_in' => 'You were expected to check in at :time. Are you working today?',
         'away_too_long' => 'You have been away since :time, over :minutes minutes. Are you back?',

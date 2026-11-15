@@ -8,9 +8,11 @@ use App\Discord\Handlers\Attendance\BreakHandler;
 use App\Discord\Handlers\Attendance\CheckInHandler;
 use App\Discord\Handlers\Attendance\CheckOutHandler;
 use App\Discord\Handlers\Attendance\CorrectionModalHandler;
+use App\Discord\Handlers\Attendance\MyHoursHandler;
 use App\Discord\Handlers\Attendance\OpenCorrectionModalHandler;
 use App\Discord\Handlers\Attendance\OpenReportModalHandler;
 use App\Discord\Handlers\Attendance\ReportModalHandler;
+use App\Discord\Handlers\Attendance\StatusHandler;
 use App\Discord\InteractionRouter;
 use App\Models\User;
 use App\Support\AuditContext;
@@ -38,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
                 CommandRegistry::CHECK_IN => CheckInHandler::class,
                 CommandRegistry::CHECK_OUT => CheckOutHandler::class,
                 CommandRegistry::TMP_CHECK_OUT => BreakHandler::class,
+                CommandRegistry::STATUS => StatusHandler::class,
+                CommandRegistry::MY_HOURS => MyHoursHandler::class,
             ],
             componentPrefixes: [
                 'attendance:back' => BackHandler::class,
