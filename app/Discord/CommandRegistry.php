@@ -9,6 +9,12 @@ namespace App\Discord;
  */
 final class CommandRegistry
 {
+    /** Where a command can be used: in a server, and in a DM with the bot. */
+    private const CONTEXTS = [0, 1];
+
+    /** Installed to a server (the bot), not to a user account. */
+    private const INTEGRATION_TYPES = [0];
+
     public const CHECK_IN = 'check-in';
 
     public const CHECK_OUT = 'check-out';
@@ -20,9 +26,25 @@ final class CommandRegistry
     public const MY_HOURS = 'my-hours';
 
     /**
+     * Every command works in a server and in a DM with the bot, so an employee
+     * can send /check-in straight to the bot. Discord only shows a command in a
+     * DM when it is registered globally.
+     *
      * @return list<array<string, mixed>>
      */
     public function commands(): array
+    {
+        return array_map(fn (array $command): array => [
+            ...$command,
+            'contexts' => self::CONTEXTS,
+            'integration_types' => self::INTEGRATION_TYPES,
+        ], $this->definitions());
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function definitions(): array
     {
         return [
             [

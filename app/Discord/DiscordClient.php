@@ -18,31 +18,51 @@ use Illuminate\Support\Sleep;
 class DiscordClient
 {
     /**
-     * Create or replace the guild's commands. Guild commands update instantly;
-     * global commands can take up to an hour, which is why this only uses the
-     * configured guild (FR-ID-04).
+     * Create or replace the application's global commands. Global commands are
+     * the only ones Discord shows in a DM with the bot, which is how employees
+     * send /check-in. A change can take up to an hour to appear everywhere.
      *
      * @param  list<array<string, mixed>>  $commands
      */
-    public function registerGuildCommands(array $commands): bool
+    public function registerGlobalCommands(array $commands): bool
+    {
+        $applicationId = (string) config('discord.application_id');
+
+        if ($applicationId === '') {
+            Log::error('Discord command registration skipped: application ID is missing.');
+
+            return false;
+        }
+
+        return $this->putCommands("/applications/{$applicationId}/commands", $commands);
+    }
+
+    /**
+     * Remove the configured guild's own commands. Without this a command that
+     * is both global and guild-specific shows up twice in the server.
+     */
+    public function clearGuildCommands(): bool
     {
         $applicationId = (string) config('discord.application_id');
         $guildId = (string) config('discord.guild_id');
 
         if ($applicationId === '' || $guildId === '') {
-            Log::error('Discord command registration skipped: application ID or guild ID is missing.');
-
             return false;
         }
 
-        $response = $this->sendWithRetry(
-            'PUT',
-            "/applications/{$applicationId}/guilds/{$guildId}/commands",
-            $commands,
-        );
+        return $this->putCommands("/applications/{$applicationId}/guilds/{$guildId}/commands", []);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $commands
+     */
+    private function putCommands(string $path, array $commands): bool
+    {
+        $response = $this->sendWithRetry('PUT', $path, $commands);
 
         if (! $response->successful()) {
             Log::error('Discord command registration failed.', [
+                'path' => $path,
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);

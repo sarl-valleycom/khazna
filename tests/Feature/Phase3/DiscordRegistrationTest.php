@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
 
-test('discord:register-commands pushes the guild command registry with the bot token', function () {
+test('discord:register-commands pushes global commands that work in a DM and clears the guild copies', function () {
     config()->set([
         'discord.application_id' => '123456789012345678',
         'discord.guild_id' => '987654321098765432',
@@ -22,19 +22,24 @@ test('discord:register-commands pushes the guild command registry with the bot t
     $this->artisan('discord:register-commands')->assertSuccessful();
 
     Http::assertSent(function (Request $request): bool {
-        $names = collect($request->data())->pluck('name')->all();
+        $commands = collect($request->data());
 
         return $request->method() === 'PUT'
-            && $request->url() === 'https://discord.test/api/v10/applications/123456789012345678/guilds/987654321098765432/commands'
+            && $request->url() === 'https://discord.test/api/v10/applications/123456789012345678/commands'
             && $request->hasHeader('Authorization', 'Bot test-bot-token')
-            && $names === [
+            && $commands->pluck('name')->all() === [
                 CommandRegistry::CHECK_IN,
                 CommandRegistry::CHECK_OUT,
                 CommandRegistry::TMP_CHECK_OUT,
                 CommandRegistry::STATUS,
                 CommandRegistry::MY_HOURS,
-            ];
+            ]
+            && $commands->every(fn (array $command): bool => $command['contexts'] === [0, 1]);
     });
+
+    Http::assertSent(fn (Request $request): bool => $request->method() === 'PUT'
+        && $request->url() === 'https://discord.test/api/v10/applications/123456789012345678/guilds/987654321098765432/commands'
+        && $request->data() === []);
 });
 
 test('discord:register-commands fails cleanly when Discord rejects the registry', function () {

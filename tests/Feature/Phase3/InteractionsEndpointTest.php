@@ -2,8 +2,14 @@
 
 use App\Discord\InteractionResponse;
 use App\Http\Middleware\VerifyDiscordSignature;
+use App\Models\AttendanceSession;
+use App\Models\Employee;
+use App\Models\Office;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\Support\SignedInteraction;
+
+uses(RefreshDatabase::class);
 
 /**
  * @param  array<string, mixed>  $overrides
@@ -78,16 +84,23 @@ test('a signature made for a different body is rejected', function () {
     ], json_encode(['type' => 2], JSON_THROW_ON_ERROR))->assertStatus(401);
 });
 
-test('commands from another guild or from a DM are rejected', function () {
+test('commands from another server are rejected', function () {
     $signer = SignedInteraction::make()->configure();
 
     $signer->post($this, commandInteraction('check-in', ['guild_id' => '111111111111111111']))
         ->assertStatus(403);
+});
+
+test('a command sent in a DM with the bot is routed and an unlinked user is told so', function () {
+    $signer = SignedInteraction::make()->configure();
 
     $payload = commandInteraction('check-in');
-    unset($payload['guild_id']);
+    unset($payload['guild_id'], $payload['member']);
+    $payload['user'] = ['id' => '444444444444444444', 'username' => 'karim'];
 
-    $signer->post($this, $payload)->assertStatus(403);
+    $signer->post($this, $payload)
+        ->assertOk()
+        ->assertJsonPath('data.flags', InteractionResponse::EPHEMERAL);
 });
 
 test('a component or modal sent from a DM is routed without a guild id', function () {
@@ -139,4 +152,18 @@ test('an unknown command gets a private explanation, not an exception', function
         ->assertJsonPath('type', InteractionResponse::TYPE_MESSAGE)
         ->assertJsonPath('data.flags', InteractionResponse::EPHEMERAL)
         ->assertJsonPath('data.content', __('discord.errors.unknown_interaction'));
+});
+
+test('a linked employee who sends /check-in in a DM gets a saved session', function () {
+    $signer = SignedInteraction::make()->configure();
+    $office = Office::factory()->create();
+    $employee = Employee::factory()->forOffice($office)->linkedTo('444444444444444444')->create();
+
+    $payload = commandInteraction('check-in');
+    unset($payload['guild_id'], $payload['member']);
+    $payload['user'] = ['id' => '444444444444444444', 'username' => 'karim'];
+
+    $signer->post($this, $payload)->assertOk();
+
+    expect(AttendanceSession::query()->where('employee_id', $employee->id)->open()->count())->toBe(1);
 });
