@@ -59,7 +59,7 @@ const deltaIcon = computed(() => {
 </script>
 
 <template>
-    <Card class="@container relative gap-0 overflow-hidden py-0">
+    <Card class="@container relative h-full gap-0 overflow-hidden py-0">
         <span
             class="absolute inset-y-0 left-0 w-[3px]"
             :class="accent[tone]"

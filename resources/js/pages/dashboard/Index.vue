@@ -5,6 +5,7 @@ import {
     CalendarClock,
     HandCoins,
     Repeat,
+    Users,
     Wallet,
 } from '@lucide/vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -126,7 +127,10 @@ function money(cents: number): string {
                     :icon="HandCoins"
                     tone="warning"
                 />
-                <Link href="/?tab=overdue" class="block">
+                <Link
+                    href="/?tab=overdue"
+                    class="block h-full rounded-xl transition-transform hover:-translate-y-0.5 focus-visible:ring-[3px] focus-visible:ring-ring/35 focus-visible:outline-none"
+                >
                     <StatCard
                         label="Overdue"
                         :value="money(props.kpis.overdueCents)"
@@ -163,6 +167,9 @@ function money(cents: number): string {
                 <StatCard
                     label="Salary bill (per month)"
                     :value="money(props.salary.billCents)"
+                    hint="All active salaries"
+                    :icon="Users"
+                    tone="neutral"
                 />
             </div>
         </Deferred>
