@@ -37,6 +37,9 @@ use Illuminate\Support\Collection;
 ])]
 class AttendanceSession extends Model
 {
+    /** A session longer than this goes to the review queue and cannot be self-corrected. */
+    public const LONG_SESSION_SECONDS = 12 * 3600;
+
     /** @use HasFactory<AttendanceSessionFactory> */
     use Auditable, HasFactory, SoftDeletes;
 

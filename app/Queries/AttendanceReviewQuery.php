@@ -71,7 +71,7 @@ class AttendanceReviewQuery
             ->where('review_status', '!=', AttendanceReviewStatus::Approved)
             ->whereRaw(
                 'TIMESTAMPDIFF(SECOND, started_at, COALESCE(ended_at, ?)) > ?',
-                [$now->toDateTimeString(), 12 * 3600],
+                [$now->toDateTimeString(), AttendanceSession::LONG_SESSION_SECONDS],
             )
             ->pluck('id')
             ->map(fn (int $id): int => $id)

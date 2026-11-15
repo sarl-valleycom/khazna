@@ -2,6 +2,7 @@
 
 use App\Discord\InteractionResponse;
 use App\Enums\AttendanceReviewStatus;
+use App\Enums\AttendanceStatus;
 use App\Enums\CorrectionStatus;
 use App\Models\AttendanceSession;
 use App\Models\AttendanceSetting;
@@ -175,4 +176,55 @@ test('an employee cannot correct another employee session', function () {
         ->assertJsonPath('data.content', 'That session was not found.');
 
     expect($owner->id)->not->toBe($other->id);
+});
+
+test('a manually closed session cannot be self-corrected', function () {
+    CarbonImmutable::setTestNow(correctionAt('2026-11-17 08:00:00'));
+    $signer = SignedInteraction::make()->configure();
+    $employee = correctionEmployee('444444444444444444');
+    $session = autoClosedSession($employee);
+    $session->update(['status' => AttendanceStatus::Closed]);
+
+    AttendanceSetting::current()->update(['self_correction_enabled' => true, 'self_correction_hours' => 24]);
+
+    $signer->post($this, correctionModal('444444444444444444', $session->id, '18:30'))->assertOk();
+
+    expect(CorrectionRequest::query()->sole()->status)->toBe(CorrectionStatus::Pending)
+        ->and($session->refresh()->ended_at?->toDateTimeString())->toBe('2026-11-16 16:00:00');
+});
+
+test('a self-approved correction cannot be repeated to extend the session again', function () {
+    CarbonImmutable::setTestNow(correctionAt('2026-11-17 08:00:00'));
+    $signer = SignedInteraction::make()->configure();
+    $employee = correctionEmployee('444444444444444444');
+    $session = autoClosedSession($employee);
+
+    AttendanceSetting::current()->update(['self_correction_enabled' => true, 'self_correction_hours' => 24]);
+
+    $signer->post($this, correctionModal('444444444444444444', $session->id, '18:30'))->assertOk();
+
+    expect($session->refresh()->ended_at?->toDateTimeString())->toBe('2026-11-16 17:30:00');
+
+    CarbonImmutable::setTestNow(correctionAt('2026-11-17 17:00:00'));
+
+    $signer->post($this, correctionModal('444444444444444444', $session->id, '19:30'))->assertOk();
+
+    expect($session->refresh()->ended_at?->toDateTimeString())->toBe('2026-11-16 17:30:00')
+        ->and(CorrectionRequest::query()->where('status', CorrectionStatus::Pending)->count())->toBe(1);
+});
+
+test('a self-correction that would make the session longer than 12 hours waits for the owner', function () {
+    CarbonImmutable::setTestNow(correctionAt('2026-11-17 08:00:00'));
+    $signer = SignedInteraction::make()->configure();
+    $employee = correctionEmployee('444444444444444444');
+    $session = autoClosedSession($employee);
+
+    AttendanceSetting::current()->update(['self_correction_enabled' => true, 'self_correction_hours' => 24]);
+
+    // Session started 09:00; 22:30 is 13h30 later.
+    $signer->post($this, correctionModal('444444444444444444', $session->id, '22:30'))->assertOk();
+
+    expect(CorrectionRequest::query()->sole()->status)->toBe(CorrectionStatus::Pending)
+        ->and($session->refresh()->ended_at?->toDateTimeString())->toBe('2026-11-16 16:00:00')
+        ->and($session->review_status)->toBe(AttendanceReviewStatus::NeedsReview);
 });

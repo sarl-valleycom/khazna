@@ -6,6 +6,7 @@ use App\Actions\Attendance\Concerns\LocksEmployee;
 use App\Attendance\AttendanceException;
 use App\Attendance\CorrectionResult;
 use App\Enums\AttendanceReviewStatus;
+use App\Enums\AttendanceStatus;
 use App\Enums\CorrectionStatus;
 use App\Models\AttendanceSession;
 use App\Models\AttendanceSetting;
@@ -53,7 +54,15 @@ class SubmitCorrection
             $settings = AttendanceSetting::current();
             $deadline = $locked->ended_at->addHours($settings->self_correction_hours);
 
-            $selfApproved = $settings->self_correction_enabled && $now->lte($deadline);
+            // Only a forgotten check-out (auto-closed, not yet reviewed) can be
+            // fixed without the owner, once, within the window, and not into a
+            // session long enough to need review anyway. A self-approval flips
+            // review_status, so it cannot be repeated to push the end forward.
+            $selfApproved = $settings->self_correction_enabled
+                && $locked->status === AttendanceStatus::AutoClosed
+                && $locked->review_status === AttendanceReviewStatus::NeedsReview
+                && $now->lte($deadline)
+                && $proposedEnd->getTimestamp() - $locked->started_at->getTimestamp() <= AttendanceSession::LONG_SESSION_SECONDS;
 
             $request = CorrectionRequest::query()->firstOrNew([
                 'session_id' => $locked->id,
