@@ -17,3 +17,8 @@ Schedule::command('dues:generate')
     ->dailyAt('01:00')
     ->timezone('Africa/Algiers')
     ->withoutOverlapping();
+
+Schedule::command('attendance:auto-close')
+    ->everyMinute()
+    ->timezone('Africa/Algiers')
+    ->withoutOverlapping();

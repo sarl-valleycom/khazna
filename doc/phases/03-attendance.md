@@ -2,147 +2,95 @@
 
 | | |
 |---|---|
-| SRS phase | 3 (annex phases 1 and 2) |
-| Effort | 2 to 3 weeks |
-| Depends on | Phase 2 (employees, month-close) and a public HTTPS URL |
-| Outcome | The team uses `/check-in` daily and you trust the numbers |
-| Requirements | FR-ATT-01..04. From the annex: FR-ID-01..04, FR-SES-01..09, FR-AUTO-01..03 and 05, FR-REP-01..04, FR-REM-01..03, FR-ADM-01..06, FR-RPT-01..04 |
+| SRS phase | 3 (annex phases 1 and 2), changed: a web page replaces the Discord bot |
+| Depends on | Phase 2 (employees, month-close) |
+| Outcome | The team checks in and out on one page, and you trust the numbers |
+| Requirements | FR-ATT-01..04. From the annex: FR-SES-01..09, FR-AUTO-01..03, FR-REP-01..03, FR-ADM-01..03 and 05..06 (the annex wording says Discord; read it as the web page) |
 
-Payroll use of the hours (FR-AUTO-04, FR-ATT-05) comes in phase 4. Until then, hours are visible but do not touch salaries.
+**How it works.** An employee opens `/work` on a phone or computer and types a personal 6 digit code. There is no account and no password. The page shows one big button to check in and out, a live timer since check-in, the hours still to make up, and the recent sessions. Each day the app counts how much time the employee worked.
 
----
+**Salary does not depend on fixed hours.** The target hours are information for the employee and the owner. Payroll use of the hours (FR-AUTO-04, FR-ATT-05) comes in phase 4. Until then, hours are visible but do not touch salaries.
 
-## 3.1 Discord application setup
-
-Do this per environment (local, staging, production each get their own application).
-
-- [ ] Create the application in the Discord developer portal. Note the **Application ID**, **Public Key** and **Bot Token**.
-- [ ] Invite the bot to the company server with the `applications.commands` and `bot` scopes. Permissions: view channels, send messages. No privileged intents are needed because the app uses HTTP interactions and no gateway connection.
-- [ ] Note the **Guild ID** and create the channels: one attendance feed **per office**, a private owner digest, and reports. Both offices share one Discord server (open question 4).
-- [ ] Store the values in `.env` and `config/discord.php`. Nothing about Discord is hardcoded.
-- [ ] Set the **Interactions Endpoint URL** to `https://<domain>/discord/interactions`. Discord verifies it by sending a signed ping and an invalid-signature probe, so the endpoint must already work.
-- [ ] For local work, expose the dev server with a tunnel such as `cloudflared`.
-
-## 3.2 Interactions endpoint
-
-- [ ] `POST /discord/interactions`, outside the session and CSRF middleware, behind a **signature middleware**:
-  - Read headers `X-Signature-Ed25519` and `X-Signature-Timestamp`.
-  - Verify the signature of `timestamp + raw body` against the public key with PHP's built-in libsodium (`sodium_crypto_sign_verify_detached`).
-  - Reject with 401 when invalid. Never parse the body before verifying.
-- [ ] Answer the ping interaction (type 1) with type 1.
-- [ ] `InteractionRouter`: maps interaction type and command name (or button `custom_id` prefix) to a handler class. Handlers return an `InteractionResponse` object with helpers for a normal message, an ephemeral message, a deferred response, and a modal.
-- [ ] Reject interactions from any guild other than the configured one (FR-ID-04).
-- [ ] **Time budget:** each handler must answer within 3 seconds. Handlers only touch the database. Posting to channels and sending DMs happens in queued jobs. For anything slower, send a deferred response and finish by editing the original message.
-- [ ] Handlers call the **same Actions** as the web app (`StartSession`, `EndSession`…). They contain no business rules.
-- [ ] All replies come from `lang/en/discord.php`. Replies that carry personal data or errors are ephemeral.
-- [ ] `CommandRegistry` is the single definition of the commands. The artisan command `discord:register-commands` pushes it to the guild (guild commands update instantly, global ones can take up to an hour).
-
-## 3.3 Linking employees
-
-- [ ] Migration: `employees` gains `discord_user_id` (**string**, nullable, unique), `contract_type`, `hourly_rate`, `expected_minutes_per_day`, `work_days`, `schedule_start`, `schedule_end`, `late_grace_minutes`, `reminders_enabled`.
-- [ ] Discord IDs are 64-bit integers. Always handle them as strings, in PHP, in the database and in TypeScript. A JavaScript number would silently change the value.
-- [ ] Employee form: a field to paste the Discord user ID, with a note on how to copy it. Optionally verify it by sending the employee a test DM from a button.
-- [ ] An unlinked or deactivated user gets a private explanation and nothing is recorded (FR-ID-02, 03).
-
-## 3.4 Session engine
-
-Tables: `attendance_sessions`, `attendance_breaks`, `attendance_settings` (annex section 5).
-
-- [ ] **Database-level guarantee** of one open session per employee. MySQL has no partial unique index, so use a generated column with a unique index:
-  - `open_employee_id` = `IF(ended_at IS NULL AND deleted_at IS NULL, employee_id, NULL)` stored, unique. Unique indexes allow many NULLs, so closed sessions never collide.
-  - Do the same for breaks (`open_session_id`).
-  - Code catches the unique violation and answers "already checked in since HH:MM" (FR-SES-02, 08).
-- [ ] Actions: `StartSession`, `StartBreak`, `EndBreak`, `EndSession`. Each runs in a transaction and locks the employee row first. The state table in the annex section 3.2 is the contract.
-- [ ] `/check-in` while away ends the break. The confirmation message carries an "I'm back" button that does the same (FR-SES-04).
-- [ ] `/tmp-check-out` requires a reason option.
-- [ ] Replies include the time in Algiers and today's running total (FR-SES-07). Events are posted to the attendance channel through a queued job (FR-SES-09).
-- [ ] Worked-time calculation (`WorkedTime`): session duration minus breaks, using real timestamps, assigned to the day the session started. Unit tests for sessions crossing midnight, several breaks, and an open break at close.
-
-## 3.5 Auto-close and review
-
-- [ ] `attendance:auto-close`, scheduled at the configured time (default 23:59 Algiers).
-- [ ] Closing time: the employee's scheduled end if it exists, otherwise start plus expected daily minutes. If the session started **after** that time, close at the current time. Always mark `needs_review` and `status = auto_closed` (FR-AUTO-01, 02).
-- [ ] The next morning, DM the employee with a button to give the real end time. A short modal collects it. The change is saved as a **correction request** for the owner to approve, unless the owner allows self-correction within 24 hours (open question).
-- [ ] "Over 10 hours" reminder to the employee (FR-AUTO-05).
-
-## 3.6 Admin pages (Vue)
-
-- [ ] **Sessions** list with filters (employee, office, date range, status), using `DataTable` and a `SessionIndexQuery` (FR-ADM-01).
-- [ ] **Needs review** view: auto-closed sessions, sessions over 12 hours, overlapping sessions. Approve, edit or delete (FR-ADM-04).
-- [ ] **Edit session** dialog: every change needs a reason and writes an audit row (FR-ADM-02, 03).
-- [ ] **Who is working now** page (working, away, offline), refreshed every 30 seconds with Inertia's polling helper and a partial reload of one prop (FR-ADM-06).
-- [ ] Correction requests inbox with approve and reject (FR-ADM-05).
-
-## 3.7 End-of-day report
-
-Discord only allows a modal as the **immediate** answer to an interaction, and a dismissed modal must not leave the session open. So:
-
-1. `/check-out` closes the session at once and replies with a short summary and a **"Write today's report"** button.
-2. The button opens a modal with two fields: what you did (required), blockers (optional).
-3. Submitting saves both on the closed session (FR-REP-01..03).
-
-This is a small change from the annex wording ("`/check-out` opens a modal"). The result for the employee is the same, and the session is always closed (FR-REP-02).
-
-## 3.8 Reminders, digests and presence
-
-- [ ] `DiscordClient` service: sends channel messages and DMs through the REST API. Handles rate limits (honors the retry-after delay), retries with backoff, and logs failures.
-- [ ] **DMs can fail** when the employee has DMs from server members turned off. Fall back to a mention in the attendance channel and log it.
-- [ ] `attendance:remind`, every 5 minutes: not checked in 30 minutes after the scheduled start (not on weekends, holidays or leave), away longer than the limit. Respect `reminders_enabled` globally and per employee (FR-REM-01..03).
-- [ ] `attendance:digest-daily` at the configured time. Content, **grouped by office**: who is in, late, absent, away, forgotten, plus the end-of-day reports (FR-RPT-01). An employee's check-in events go to the feed of their own office.
-- [ ] `attendance:digest-weekly`, every Sunday morning, summarizing the previous work week (Sunday to Thursday): hours against expected, late count, overtime (FR-RPT-02).
-- [ ] Optional live "who is online" message, edited in place on every state change (FR-RPT-04).
-- [ ] Use embeds with English text and real mentions (`<@id>`).
-
-## 3.9 Employee self-service commands
-
-- [ ] `/status`: own state and today's total (ephemeral).
-- [ ] `/my-hours period:<today|week|month>`: own totals (ephemeral) (FR-RPT-03).
+**There is no Discord.** The bot, its commands, DMs, reminders and digests were dropped. Nothing is pushed to the employee: the page shows what needs attention (a forgotten check-out, a missing report) when they open it.
 
 ---
+
+## 3.1 The employee code
+
+- [x] The owner makes a code on the employee page (`Make a code`). It is 6 digits, shown **once**, and cannot be read back. `Make a new code` replaces it and the old one stops working. `Remove` deletes it.
+- [x] Only a keyed hash (HMAC with the app key) is stored, never the code. The hash is unique, so a code identifies one employee. Changing a code leaves an audit row (who and when) without logging the hash.
+- [x] Only an active employee can use a code. Deactivating an employee closes the door.
+- [x] Guessing is slowed down: 5 tries a minute and 30 an hour per address. A six digit code is weaker than a password, so the page also never says which employee a code belongs to.
+- [x] After a valid code the page keeps the employee in the session for 14 hours (a working day). `Leave` ends it at once, for a shared computer.
+- [ ] Tell staff the address (`https://<domain>/work`) and give each person their code in private.
+
+## 3.2 Check-in and check-out
+
+- [x] One page, `/work`, outside the owner login. It reuses the same Actions as the owner pages: `StartSession`, `StartBreak`, `EndBreak`, `EndSession`.
+- [x] **Database guarantee** of one open session per employee: a stored generated column with a unique index (`open_employee_id`), and the same for breaks (`open_session_id`). A double tap answers "already checked in since HH:MM".
+- [x] Check in, take a break (a reason is required), come back, check out. Each action answers with a message and the time in Algiers.
+- [x] Worked time is computed from real timestamps, never stored as a total. A session belongs to the Algiers day it started on, even when it crosses midnight. The paid break allowance is a per-day rule: it is subtracted from each day's break time once.
+- [x] A deactivated employee cannot start a session.
+
+## 3.3 What the employee sees
+
+- [x] **Live timer** since check-in. It counts from the server clock, so a phone with a wrong clock is still right. Worked today and the time still to do today count live while working, and stop on a break.
+- [x] **Hours to make up.** The target comes from the employee's own expected minutes per day and work days, minus holidays and approved leave. The page shows worked against target for today, this week (from Sunday) and this month. "To make up" is what is missing from the **days before today**, so a morning in progress is never counted as a debt. Extra time shows as "ahead", never as a negative.
+- [x] **Recent sessions**: the last ten, with start, end, worked time, the report and a note when a session was closed automatically.
+- [x] **End-of-day report**: after check-out, a finished session without a report asks for one (what you did, blockers). Saved on the session.
+- [x] **Forgotten check-out**: an auto-closed session shows a form for the real end time (see 3.4).
+
+## 3.4 Auto-close and corrections
+
+- [x] `attendance:auto-close`, scheduled at the configured time (default 23:59 Algiers). It closes every session still open, at the employee's scheduled end if there is one, otherwise at the current time. The session is marked `auto_closed` and needs review (FR-AUTO-01, 02).
+- [x] The employee corrects it on `/work` with the real end time (`HH:MM`, Algiers) and an optional note. The change is applied at once only when **all** of these hold: self-correction is on (it is by default), the session is auto-closed and still waiting for review, it is inside the self-correction window (24 hours by default), and the session would be at most 12 hours long. A self-approval marks the session reviewed, so it cannot be repeated to push the end forward. Anything else becomes a request for the owner.
+- [x] Deleting a session, or changing its start or end, rejects its pending correction requests, so a stale proposal cannot overwrite the owner's edit.
+
+## 3.5 Owner pages
+
+- [x] **Sessions** list with filters (employee, office, date range, status). The status filter finds auto-closed sessions. The owner can add, edit (a reason is required and every change writes an audit row), delete and approve (mark as checked) a session (FR-ADM-01..03).
+- [x] **Who is working now**: working, away or offline, refreshed every 30 seconds. Today's hours for everyone load in two queries (FR-ADM-06).
+- [x] **Corrections** inbox with approve and reject (FR-ADM-05).
+- [x] **Settings**: auto-close time, paid break allowance, self-correction on or off and its window. Every save is audited.
+- [x] **Employee page**: the attendance code, contract type, schedule, expected minutes per day and work days.
 
 ## Routes and pages
 
-| Route | Page | Roles |
-|---|---|---|
-| `POST /discord/interactions` | none | Discord only (signature) |
-| `/attendance/sessions` | `attendance/sessions` | owner |
-| `/attendance/review` | `attendance/review` | owner |
-| `/attendance/presence` | `attendance/presence` | owner |
-| `/attendance/corrections` | `attendance/corrections` | owner |
-| `/attendance/settings` | `attendance/settings` | owner |
+| Route | Who |
+|---|---|
+| `/work` (code, check-in and out, hours, report, correction) | Employees, by personal code |
+| `/attendance/sessions`, `/presence`, `/corrections`, `/settings` | Owner |
+| `POST /employees/{id}/attendance-code` and `DELETE` | Owner |
 
 ## Test plan
 
-- A `SignedInteraction` test helper: generates an Ed25519 keypair, signs the payload, and posts it. Used by every handler test.
-- Annex scenarios 1 to 5 and 7 to 10, with `Carbon::setTestNow` for time.
-- Wrong or missing signature returns 401. Wrong guild is rejected.
-- Double `/check-in`: the second one fails cleanly. A test that inserts two open rows must hit the unique index.
-- Session crossing midnight (22:00 to 02:00) counts four hours on the start day.
-- Auto-close for a session started after the scheduled end.
-- A deactivated employee cannot start a session.
-- Discord ID kept as a string end to end (a value above 2^53 round-trips unchanged).
+- [x] Code: a valid code opens the page, a wrong or deactivated one does not, spaces and dashes are ignored, only a hash is stored, guessing is rate limited, the sign-in ends after a working day, and `Leave` forgets it.
+- [x] Check in, break, back and check out through the page. A second check-in is refused. A break needs a reason. Actions without a sign-in go back to the code page.
+- [x] Hours: today, week and month against the target, the carry-over from earlier days, extra time never negative, the paid break allowance applied per day.
+- [x] Reports and corrections: an employee cannot touch someone else's session, a malformed time is refused, and the self-correction limits (manual session, repeat, over 12 hours, outside the window).
+- [x] Owner pages: sessions, presence (a fixed number of queries), corrections, settings, and the audit rows.
 
 ## Exit checklist
 
-- [ ] Real Discord server on staging, with the whole team's accounts linked.
-- [ ] One week of pilot with 2 or 3 employees. Every forgotten check-out was caught and reviewed.
-- [ ] Digest and reminders arrive at the right Algiers times.
-- [ ] Owner pages reviewed on a phone.
+- [ ] Run `php artisan migrate`. It drops the old Discord columns and the reminders table.
+- [ ] A week of pilot with 2 or 3 employees. Every forgotten check-out was caught and corrected.
+- [ ] `php artisan schedule:work` (or cron) runs, so auto-close happens at night.
+- [ ] Owner and employee pages reviewed on a phone.
 - [ ] Staff were told what is recorded and who sees it (NFR-13).
 
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
-| Employees forget to check in or out | Reminders, auto-close with review, and a simple correction path |
-| The 3-second limit is missed | Handlers touch only the database. Everything else is queued or deferred |
-| A Discord outage blocks work records | The web app lets the owner enter or fix sessions manually |
-| Staff see the system as surveillance | Record only the commands they send, explain it first, no extra monitoring |
-| DMs are closed | Channel fallback and a log of undelivered messages |
+| Someone checks in for a colleague with their code | Codes are private and the owner sees every session. A code can be replaced at once |
+| A six digit code is guessed | Rate limit per address, no hint about who owns a code, and the owner can replace a code |
+| Employees forget to check in or out | Auto-close, a clear banner on the page, and a simple correction path |
+| A shared computer stays signed in | The sign-in lasts 14 hours, and `Leave` ends it |
+| The owner needs to fix a day nobody recorded | The sessions page adds or edits a session with a reason |
 
-## Open questions
+## Decisions
 
-1. May an employee fix their own forgotten check-out within 24 hours, or must the owner approve every correction?
-2. Which channels are visible to all employees, and which are owner-only?
-3. Daily digest time, auto-close time and late grace period (defaults: 18:00, 23:59, 15 minutes).
-4. Do both offices share one Discord server (assumed), with a separate attendance feed per office? Do the offices have different working hours or work days? The employee schedule already supports this per person.
+1. **Employees fix their own forgotten check-out.** Self-correction is on by default with a 24 hour window. The owner can turn it off in settings. An existing database keeps its saved setting.
+2. **No chat channels.** Nothing is posted anywhere. The owner reads sessions, reports and presence on the owner pages.
+3. **Defaults:** auto-close at 23:59. The command runs every minute and closes whatever was open at the most recent auto-close time, so a late scheduler catches up.
+4. **One place.** Both offices use the same page and the same owner pages. Working hours and work days are set per employee.

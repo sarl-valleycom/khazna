@@ -37,6 +37,19 @@ class EmployeeFactory extends Factory
         return $this->state(fn (): array => ['status' => EmployeeStatus::Inactive, 'left_on' => '2025-12-31']);
     }
 
+    /**
+     * @param  list<int>|null  $workDays  Carbon day-of-week numbers; null means Sunday to Thursday.
+     */
+    public function scheduled(string $start, string $end, int $expectedMinutes = 480, ?array $workDays = null): static
+    {
+        return $this->state(fn (): array => [
+            'schedule_start' => $start,
+            'schedule_end' => $end,
+            'expected_minutes_per_day' => $expectedMinutes,
+            'work_days' => $workDays,
+        ]);
+    }
+
     /** Give the employee a starting salary (in centimes) from a date. */
     public function earning(int $cents, string $from = '2024-01-01'): static
     {

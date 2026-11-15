@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,8 @@ defineOptions({
 });
 
 type Props = {
+    newAttendanceCode?: string | null;
+    canManageAttendanceCode?: boolean;
     employee:
         | App.Data.EmployeeWithSalaryData
         | { employee: App.Data.EmployeeData };
@@ -36,6 +38,21 @@ const editOpen = ref(false);
 const salaryOpen = ref(false);
 const advanceOpen = ref(false);
 const thisMonth = toCalendarDate(new Date()).slice(0, 7);
+const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function makeCode() {
+    router.post(
+        `/employees/${person.value.id}/attendance-code`,
+        {},
+        { preserveScroll: true },
+    );
+}
+
+function removeCode() {
+    router.delete(`/employees/${person.value.id}/attendance-code`, {
+        preserveScroll: true,
+    });
+}
 
 const person = computed(() => props.employee.employee);
 const withSalary = computed(() =>
@@ -112,6 +129,98 @@ function saveSalary() {
             </CardContent>
         </Card>
 
+        <Card v-if="props.newAttendanceCode" class="border-primary">
+            <CardHeader>
+                <CardTitle>New attendance code for {{ person.name }}</CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-2">
+                <p
+                    class="text-4xl font-semibold tracking-[0.4em] tabular-nums"
+                    data-testid="attendance-code"
+                >
+                    {{ props.newAttendanceCode }}
+                </p>
+                <p class="text-sm text-muted-foreground">
+                    Give it to {{ person.name }} now. It is not shown again, and
+                    an older code stops working. They enter it at
+                    <span class="font-medium">/work</span>.
+                </p>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Attendance</CardTitle>
+            </CardHeader>
+            <CardContent class="grid gap-4 pt-0 sm:grid-cols-3">
+                <div>
+                    <p class="text-xs text-muted-foreground">Attendance code</p>
+                    <p class="font-medium">
+                        {{
+                            person.hasAttendanceCode
+                                ? `Set on ${formatDate(person.attendanceCodeSetAt ?? '')}`
+                                : 'No code yet'
+                        }}
+                    </p>
+                    <div
+                        v-if="
+                            props.canManageAttendanceCode &&
+                            person.status === 'active'
+                        "
+                        class="mt-2 flex gap-2"
+                    >
+                        <Button size="sm" variant="outline" @click="makeCode">
+                            {{
+                                person.hasAttendanceCode
+                                    ? 'Make a new code'
+                                    : 'Make a code'
+                            }}
+                        </Button>
+                        <Button
+                            v-if="person.hasAttendanceCode"
+                            size="sm"
+                            variant="ghost"
+                            @click="removeCode"
+                        >
+                            Remove
+                        </Button>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Contract</p>
+                    <p class="font-medium">{{ person.contractTypeLabel }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Schedule</p>
+                    <p class="font-medium">
+                        {{
+                            person.scheduleStart && person.scheduleEnd
+                                ? `${person.scheduleStart.slice(0, 5)}–${person.scheduleEnd.slice(0, 5)}`
+                                : 'Not set'
+                        }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">
+                        Expected per day
+                    </p>
+                    <p class="font-medium tabular-nums">
+                        {{ person.expectedMinutesPerDay }} min
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground">Work days</p>
+                    <p class="font-medium">
+                        {{
+                            person.workDays
+                                .map((day) => weekDays[day] ?? day)
+                                .join(', ')
+                        }}
+                    </p>
+                </div>
+            </CardContent>
+        </Card>
+
         <Card v-if="withSalary">
             <CardHeader class="flex flex-row items-center justify-between">
                 <CardTitle>
@@ -169,6 +278,7 @@ function saveSalary() {
         :statuses="props.statuses"
         :can-see-salaries="props.canSeeSalaries"
         :employee="person"
+        :hourly-rate-cents="withSalary?.hourlyRateCents ?? null"
     />
 
     <FormDialog

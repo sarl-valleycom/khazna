@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -21,6 +22,7 @@ type Props = {
     statuses: Array<{ value: string; label: string }>;
     canSeeSalaries: boolean;
     employee?: App.Data.EmployeeData | null;
+    hourlyRateCents?: number | null;
 };
 
 const props = withDefaults(defineProps<Props>(), { employee: null });
@@ -34,11 +36,40 @@ const form = useForm({
     hire_date: null as string | null,
     office_id: null as number | null,
     status: 'active',
+    contract_type: 'fixed_monthly',
+    hourly_rate: null as number | null,
+    expected_minutes_per_day: 480,
+    work_days: [0, 1, 2, 3, 4] as number[],
+    schedule_start: '',
+    schedule_end: '',
     salary_cents: null as number | null,
     salary_from: null as string | null,
 });
 
 const editing = computed(() => props.employee !== null);
+
+const contractTypes = [
+    { value: 'fixed_monthly', label: 'Fixed monthly' },
+    { value: 'hourly', label: 'Hourly' },
+    { value: 'part_time', label: 'Part-time' },
+    { value: 'freelancer', label: 'Freelancer' },
+];
+
+const weekDays = [
+    { value: 0, label: 'Sunday' },
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, label: 'Thursday' },
+    { value: 5, label: 'Friday' },
+    { value: 6, label: 'Saturday' },
+];
+
+function toggleWorkDay(day: number, checked: boolean) {
+    form.work_days = checked
+        ? [...form.work_days, day].sort((a, b) => a - b)
+        : form.work_days.filter((value) => value !== day);
+}
 
 watch(open, (value) => {
     if (!value) {
@@ -55,6 +86,14 @@ watch(open, (value) => {
         form.hire_date = props.employee.hireDate;
         form.office_id = props.employee.officeId;
         form.status = props.employee.status;
+        form.contract_type = props.employee.contractType;
+        form.expected_minutes_per_day = props.employee.expectedMinutesPerDay;
+        form.work_days = [...props.employee.workDays];
+        form.schedule_start = props.employee.scheduleStart?.slice(0, 5) ?? '';
+        form.schedule_end = props.employee.scheduleEnd?.slice(0, 5) ?? '';
+
+        form.hourly_rate = props.hourlyRateCents ?? null;
+
         return;
     }
 
@@ -72,15 +111,16 @@ function submit() {
     if (props.employee) {
         // A raise is its own action on the employee page, never part of editing the person.
         form.transform(
-            ({ salary_cents: _c, salary_from: _f, ...rest }) => rest,
+            ({ salary_cents: _c, salary_from: _f, hourly_rate, ...rest }) =>
+                props.canSeeSalaries ? { ...rest, hourly_rate } : rest,
         ).patch(`/employees/${props.employee.id}`, options);
         return;
     }
 
-    form.transform((data) =>
+    form.transform(({ salary_cents, salary_from, hourly_rate, ...rest }) =>
         props.canSeeSalaries
-            ? data
-            : { ...data, salary_cents: null, salary_from: null },
+            ? { ...rest, salary_cents, salary_from, hourly_rate }
+            : rest,
     ).post('/employees', options);
 }
 </script>
@@ -158,6 +198,96 @@ function submit() {
                     </SelectContent>
                 </Select>
             </div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+                <Label>Contract type</Label>
+                <Select v-model="form.contract_type">
+                    <SelectTrigger aria-label="Contract type">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem
+                            v-for="type in contractTypes"
+                            :key="type.value"
+                            :value="type.value"
+                        >
+                            {{ type.label }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div v-if="props.canSeeSalaries" class="space-y-2">
+                <Label for="employee-hourly-rate">Hourly rate</Label>
+                <MoneyInput
+                    id="employee-hourly-rate"
+                    v-model="form.hourly_rate"
+                    :symbol="page.props.settings.currencySymbol"
+                />
+                <p class="text-xs text-muted-foreground">
+                    Only used for hourly and freelancer contracts in payroll.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+                <Label for="employee-start">Schedule start</Label>
+                <Input
+                    id="employee-start"
+                    v-model="form.schedule_start"
+                    type="time"
+                />
+            </div>
+            <div class="space-y-2">
+                <Label for="employee-end">Schedule end</Label>
+                <Input
+                    id="employee-end"
+                    v-model="form.schedule_end"
+                    type="time"
+                />
+            </div>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+                <Label for="employee-expected">Expected minutes per day</Label>
+                <Input
+                    id="employee-expected"
+                    v-model.number="form.expected_minutes_per_day"
+                    type="number"
+                    min="0"
+                    max="1440"
+                />
+                <p class="text-xs text-muted-foreground">
+                    Used for auto-close and the hours to make up. 480 means 8
+                    hours.
+                </p>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <Label>Work days</Label>
+            <div class="flex flex-wrap gap-4">
+                <label
+                    v-for="day in weekDays"
+                    :key="day.value"
+                    class="flex items-center gap-2 text-sm"
+                >
+                    <Checkbox
+                        :model-value="form.work_days.includes(day.value)"
+                        @update:model-value="
+                            (value) => toggleWorkDay(day.value, value === true)
+                        "
+                    />
+                    {{ day.label }}
+                </label>
+            </div>
+            <p class="text-xs text-muted-foreground">
+                Expected time excludes days that are not ticked, holidays and
+                approved leave.
+            </p>
         </div>
 
         <div

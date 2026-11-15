@@ -3,6 +3,7 @@
 namespace App\Data;
 
 use App\Enums\EmployeeStatus;
+use App\Enums\EmploymentType;
 use App\Models\Employee;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -14,6 +15,9 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 #[TypeScript]
 class EmployeeData extends Data
 {
+    /**
+     * @param  list<int>  $workDays
+     */
     public function __construct(
         public int $id,
         public string $name,
@@ -24,6 +28,14 @@ class EmployeeData extends Data
         public string $statusLabel,
         public int $officeId,
         public string $officeName,
+        public EmploymentType $contractType,
+        public string $contractTypeLabel,
+        public int $expectedMinutesPerDay,
+        public array $workDays,
+        public ?string $scheduleStart,
+        public ?string $scheduleEnd,
+        public bool $hasAttendanceCode = false,
+        public ?string $attendanceCodeSetAt = null,
     ) {}
 
     public static function fromEmployee(Employee $employee): self
@@ -38,6 +50,14 @@ class EmployeeData extends Data
             statusLabel: $employee->status->label(),
             officeId: $employee->office_id,
             officeName: $employee->office->name ?? '',
+            contractType: $employee->contract_type,
+            contractTypeLabel: $employee->contract_type->label(),
+            expectedMinutesPerDay: $employee->expected_minutes_per_day,
+            workDays: $employee->workDays(),
+            scheduleStart: $employee->schedule_start,
+            scheduleEnd: $employee->schedule_end,
+            hasAttendanceCode: $employee->hasAttendanceCode(),
+            attendanceCodeSetAt: $employee->attendance_code_set_at?->toIso8601String(),
         );
     }
 }

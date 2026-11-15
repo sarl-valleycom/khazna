@@ -46,6 +46,62 @@ declare namespace App {
             runningCents: number;
             runningFormatted: string;
         };
+        export type AttendanceEmployeeOptionData = {
+            id: number;
+            name: string;
+            officeId: number;
+            officeName: string;
+        };
+        export type AttendanceFiltersData = {
+            q: string;
+            employee: number | null;
+            office: number | null;
+            status: string;
+            from: string | null;
+            to: string | null;
+            sort: string;
+            direction: string;
+            perPage: number;
+        };
+        export type AttendancePresenceData = {
+            employeeId: number;
+            name: string;
+            officeName: string;
+            state: string;
+            stateLabel: string;
+            since: string | null;
+            sinceLabel: string;
+            todayMinutes: number;
+            todayFormatted: string;
+        };
+        export type AttendanceSessionData = {
+            id: number;
+            employeeId: number;
+            employeeName: string;
+            officeId: number;
+            officeName: string;
+            startedAt: string;
+            endedAt: string | null;
+            startedAtLocal: string;
+            endedAtLocal: string | null;
+            status: App.Enums.AttendanceStatus;
+            statusLabel: string;
+            reviewStatus: App.Enums.AttendanceReviewStatus;
+            reviewLabel: string;
+            source: App.Enums.AttendanceSource;
+            sourceLabel: string;
+            workedMinutes: number;
+            workedFormatted: string;
+            report: string | null;
+            blockers: string | null;
+            isOpen: boolean;
+        };
+        export type AttendanceSettingsData = {
+            autoCloseTime: string;
+            paidBreakMinutes: number;
+            selfCorrectionEnabled: boolean;
+            selfCorrectionHours: number;
+        };
         export type AttentionContractData = {
             id: number;
             clientId: number | null;
@@ -185,6 +241,20 @@ declare namespace App {
             direction: string;
             perPage: number;
         };
+        export type CorrectionRequestData = {
+            id: number;
+            sessionId: number;
+            employeeId: number;
+            employeeName: string;
+            officeName: string;
+            startedAt: string;
+            endedAt: string | null;
+            proposedEndedAt: string;
+            note: string | null;
+            createdAt: string;
+            status: App.Enums.CorrectionStatus;
+            statusLabel: string;
+        };
         export type DemoDueRowData = {
             id: number;
             client: string;
@@ -270,11 +340,21 @@ declare namespace App {
             statusLabel: string;
             officeId: number;
             officeName: string;
+            contractType: App.Enums.EmploymentType;
+            contractTypeLabel: string;
+            expectedMinutesPerDay: number;
+            workDays: number[];
+            scheduleStart: string | null;
+            scheduleEnd: string | null;
+            hasAttendanceCode: boolean;
+            attendanceCodeSetAt: string | null;
         };
         export type EmployeeWithSalaryData = {
             employee: App.Data.EmployeeData;
             currentSalaryCents: number | null;
             currentSalaryFormatted: string | null;
+            hourlyRateCents: number | null;
+            hourlyRateFormatted: string | null;
             salaryHistory: App.Data.SalaryHistoryData[];
         };
         export type FlashData = {
@@ -419,33 +499,75 @@ declare namespace App {
             active: boolean;
             isSelf: boolean;
         };
+        export type WorkDashboardData = {
+            name: string;
+            state: string;
+            serverNow: string;
+            sessionStartedAt: string | null;
+            breakStartedAt: string | null;
+            todayWorkedMinutes: number;
+            today: App.Data.WorkHoursPeriodData;
+            week: App.Data.WorkHoursPeriodData;
+            month: App.Data.WorkHoursPeriodData;
+            recent: App.Data.WorkSessionData[];
+            correction: {
+                id: number;
+                label: string;
+                endTime: string;
+            } | null;
+            reportPrompt: {
+                id: number;
+                label: string;
+            } | null;
+        };
+        export type WorkHoursPeriodData = {
+            expectedMinutes: number;
+            workedMinutes: number;
+            remainingMinutes: number;
+            extraMinutes: number;
+            behindBeforeTodayMinutes: number;
+            expectedFormatted: string;
+            workedFormatted: string;
+            remainingFormatted: string;
+            extraFormatted: string;
+            behindBeforeTodayFormatted: string;
+        };
+        export type WorkSessionData = {
+            id: number;
+            dateLabel: string;
+            startLabel: string;
+            endLabel: string | null;
+            workedMinutes: number;
+            workedFormatted: string;
+            autoClosed: boolean;
+            report: string | null;
+            blockers: string | null;
+        };
     }
     namespace Enums {
-        export type AccountType = 'cash' | 'ccp' | 'bank' | 'other';
-        export type AdjustmentType = 'advance' | 'bonus' | 'deduction';
-        export type CategoryKind = 'cost' | 'income';
-        export type ContractStatus = 'active' | 'paused' | 'canceled';
+        export type AccountType = "cash" | "ccp" | "bank" | "other";
+        export type AdjustmentType = "advance" | "bonus" | "deduction";
+        export type AttendanceReviewStatus = "ok" | "needs_review" | "approved";
+        export type AttendanceSource = "discord" | "web" | "admin";
+        export type AttendanceStatus = "open" | "closed" | "auto_closed";
+        export type CategoryKind = "cost" | "income";
+        export type ContractStatus = "active" | "paused" | "canceled";
         export type ContractType =
-            | 'saas_renewal'
-            | 'custom_project'
-            | 'recurring_cost';
-        export type Cycle = 'monthly' | 'quarterly' | 'yearly' | 'once';
-        export type Direction = 'in' | 'out';
+            "saas_renewal" | "custom_project" | "recurring_cost";
+        export type CorrectionStatus = "pending" | "approved" | "rejected";
+        export type Cycle = "monthly" | "quarterly" | "yearly" | "once";
+        export type Direction = "in" | "out";
         export type DueKind =
-            | 'saas'
-            | 'project'
-            | 'salary'
-            | 'expense'
-            | 'other';
-        export type DueStatus = 'pending' | 'partial' | 'paid' | 'canceled';
-        export type EmployeeStatus = 'active' | 'inactive';
-        export type MilestoneTrigger = 'date' | 'delivery';
+            "saas" | "project" | "salary" | "expense" | "other";
+        export type DueStatus = "pending" | "partial" | "paid" | "canceled";
+        export type EmployeeStatus = "active" | "inactive";
+        export type EmploymentType =
+            "fixed_monthly" | "hourly" | "part_time" | "freelancer";
+        export type LeaveStatus = "pending" | "approved" | "rejected";
+        export type LeaveType = "paid" | "unpaid" | "sick";
+        export type MilestoneTrigger = "date" | "delivery";
         export type PaymentMethod =
-            | 'cash'
-            | 'ccp'
-            | 'baridimob'
-            | 'bank_transfer'
-            | 'other';
-        export type Role = 'owner' | 'finance' | 'account_manager';
+            "cash" | "ccp" | "baridimob" | "bank_transfer" | "other";
+        export type Role = "owner" | "finance" | "account_manager";
     }
 }
