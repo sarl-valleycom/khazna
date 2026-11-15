@@ -14,19 +14,18 @@ class AttendanceCorrectionRemindersCommand extends Command
 {
     protected $signature = 'attendance:correction-reminders';
 
-    protected $description = 'DM employees whose sessions were auto-closed yesterday';
+    protected $description = 'DM employees whose sessions were auto-closed and still need a correction';
 
     public function handle(): int
     {
-        $yesterday = AlgerianDate::today()->subDay();
-        [$from, $to] = AlgerianDate::dayRangeUtc($yesterday);
+        $now = AlgerianDate::now()->utc();
         $sent = 0;
 
         AttendanceSession::query()
             ->where('status', AttendanceStatus::AutoClosed)
             ->where('review_status', AttendanceReviewStatus::NeedsReview)
             ->whereNull('correction_dm_sent_at')
-            ->whereBetween('ended_at', [$from, $to])
+            ->where('ended_at', '<=', $now)
             ->whereDoesntHave('correctionRequests', fn ($query) => $query->pending())
             ->whereHas('employee', fn ($query) => $query
                 ->where('status', EmployeeStatus::Active)

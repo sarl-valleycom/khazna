@@ -58,6 +58,40 @@ test('the morning command DMs the employee once with a correction button', funct
     Queue::assertPushed(SendDiscordDm::class, 1);
 });
 
+test('a session auto-closed after midnight is reminded the same morning', function () {
+    Queue::fake();
+    CarbonImmutable::setTestNow(reminderAt('2026-11-17 08:00:00'));
+    $employee = linkedEmployeeWithChannel('444444444444444444');
+
+    $session = AttendanceSession::factory()->autoClosed()->create([
+        'employee_id' => $employee->id,
+        'started_at' => reminderAt('2026-11-16 09:00:00')->utc(),
+        'ended_at' => reminderAt('2026-11-17 00:30:00')->utc(),
+    ]);
+
+    $this->artisan('attendance:correction-reminders')
+        ->expectsOutput('Sent 1 correction request(s).')
+        ->assertSuccessful();
+
+    Queue::assertPushed(SendDiscordDm::class, fn (SendDiscordDm $job): bool => $job->components[0]['components'][0]['custom_id'] === 'attendance:correct:'.$session->id);
+});
+
+test('a session that is not closed yet is not reminded', function () {
+    Queue::fake();
+    CarbonImmutable::setTestNow(reminderAt('2026-11-17 08:00:00'));
+    $employee = linkedEmployeeWithChannel('444444444444444444');
+
+    AttendanceSession::factory()->autoClosed()->create([
+        'employee_id' => $employee->id,
+        'started_at' => reminderAt('2026-11-16 09:00:00')->utc(),
+        'ended_at' => reminderAt('2026-11-17 09:00:00')->utc(),
+    ]);
+
+    $this->artisan('attendance:correction-reminders')->assertSuccessful();
+
+    Queue::assertNotPushed(SendDiscordDm::class);
+});
+
 test('the morning command skips sessions that already have a pending correction', function () {
     Queue::fake();
     CarbonImmutable::setTestNow(reminderAt('2026-11-17 08:00:00'));
