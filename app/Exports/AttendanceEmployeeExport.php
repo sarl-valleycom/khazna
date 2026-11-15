@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Attendance\MonthlySummary;
+use App\Attendance\WorkedTime;
 use App\Data\AttendanceFiltersData;
 use App\Models\Employee;
 use App\Queries\SessionIndexQuery;
@@ -35,10 +36,14 @@ class AttendanceEmployeeExport implements Export, WithMultipleSheets
             direction: 'asc',
         );
 
+        // The month's sessions worked out together, so the paid break allowance is spent once per day
+        // and the Sessions sheet adds up to the Summary and Days sheets.
+        $minutes = WorkedTime::minutesPerSession($this->sessions->query($filters)->get());
+
         return [
             new AttendanceEmployeeSummarySheet($this->employee, $this->month, $this->summary->for($this->employee, $this->month)),
             new AttendanceDaysSheet($this->summary->daily($this->employee, $this->month)),
-            new SessionsExport($filters, $this->sessions),
+            new SessionsExport($filters, $this->sessions, $minutes),
         ];
     }
 }

@@ -216,3 +216,60 @@ test('a holiday and a leave day change the expected hours exactly as counted by 
     expect($balance->for($employee)['week']['expected'])->toBe(4 * 480)
         ->and($owner->isOwner())->toBeTrue();
 });
+
+test('one leave lasts at most a year', function () {
+    $this->actingAsRole(Role::Owner);
+    $employee = calendarEmployee();
+
+    // A typo in the year: 36 years of leave.
+    $this->post(route('attendance.leave.store'), [
+        'employee_id' => $employee->id, 'type' => 'paid', 'from' => '2026-01-01', 'to' => '2062-12-31',
+    ])->assertSessionHasErrors('to');
+
+    $this->post(route('attendance.leave.store'), [
+        'employee_id' => $employee->id, 'type' => 'paid', 'from' => '9999-12-01', 'to' => '9999-12-31',
+    ])->assertSessionHasNoErrors();
+
+    // 366 days is the longest allowed (a leap year); 367 is refused.
+    $this->post(route('attendance.leave.store'), [
+        'employee_id' => $employee->id, 'type' => 'unpaid', 'from' => '2028-01-01', 'to' => '2028-12-31',
+    ])->assertSessionHasNoErrors();
+    $this->post(route('attendance.leave.store'), [
+        'employee_id' => $employee->id, 'type' => 'unpaid', 'from' => '2030-01-01', 'to' => '2031-01-02',
+    ])->assertSessionHasErrors('to');
+
+    expect(LeaveRequest::query()->count())->toBe(2);
+});
+
+test('the leave page stays fast even for a leave that is already enormous', function () {
+    $this->actingAsRole(Role::Owner);
+    $employee = calendarEmployee();
+    // Made before the limit existed, or straight in the database.
+    LeaveRequest::factory()->approved()->create(['employee_id' => $employee->id, 'from' => '2026-01-01', 'to' => '2999-12-31']);
+
+    $started = microtime(true);
+
+    $this->get(route('attendance.leave.index', ['year' => 2026]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('leaves', 1)->where('leaves.0.workDays', fn ($days) => $days > 100000));
+
+    expect(microtime(true) - $started)->toBeLessThan(5.0);
+});
+
+test('counting work days by weeks gives the same answer as counting day by day', function () {
+    foreach ([null, [0, 1, 2, 3, 4], [1, 2, 3], [0, 6], [0, 1, 2, 3, 4, 5, 6], [3]] as $workDays) {
+        $employee = Employee::factory()->forOffice(Office::factory()->create())->create(['work_days' => $workDays]);
+
+        foreach ([['2026-11-01', '2026-11-01'], ['2026-11-01', '2026-11-07'], ['2026-11-04', '2026-11-18'], ['2026-02-27', '2026-04-03'], ['2026-01-01', '2028-06-30'], ['2026-11-09', '2026-11-08']] as [$from, $to]) {
+            $naive = 0;
+
+            for ($day = CarbonImmutable::parse($from); $day->lte(CarbonImmutable::parse($to)); $day = $day->addDay()) {
+                if ($employee->worksOn($day)) {
+                    $naive++;
+                }
+            }
+
+            expect($employee->countWorkDays($from, $to))->toBe($naive);
+        }
+    }
+});

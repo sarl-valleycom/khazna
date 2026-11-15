@@ -2,9 +2,11 @@
 
 namespace App\Exports;
 
+use App\Attendance\WorkedTime;
 use App\Data\AttendanceFiltersData;
 use App\Data\AttendanceSessionData;
 use App\Models\AttendanceSession;
+use App\Models\AttendanceSetting;
 use App\Queries\SessionIndexQuery;
 use App\Support\AlgerianDate;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,7 +17,17 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 /** The sessions list as shown, with its filters. The worked time is the screen's own number. */
 class SessionsExport extends SpreadsheetExport implements FromQuery, WithColumnFormatting, WithMapping
 {
-    public function __construct(private readonly AttendanceFiltersData $filters, private readonly SessionIndexQuery $sessions) {}
+    private ?int $allowance = null;
+
+    /**
+     * @param  array<int, int>|null  $minutes  Worked minutes by session id, when the caller has worked out a
+     *                                         whole month at once (the paid break allowance then spans the day).
+     */
+    public function __construct(
+        private readonly AttendanceFiltersData $filters,
+        private readonly SessionIndexQuery $sessions,
+        private readonly ?array $minutes = null,
+    ) {}
 
     /** @return Builder<AttendanceSession> */
     public function query(): Builder
@@ -40,7 +52,14 @@ class SessionsExport extends SpreadsheetExport implements FromQuery, WithColumnF
      */
     public function map($row): array
     {
-        $data = AttendanceSessionData::fromSession($row);
+        // The allowance is read once for the whole export, not once per row.
+        $this->allowance ??= AttendanceSetting::current()->paid_break_minutes;
+
+        $data = AttendanceSessionData::fromSession(
+            $row,
+            null,
+            $this->minutes[$row->id] ?? WorkedTime::minutesForSessions([$row], null, $this->allowance),
+        );
 
         return [
             $data->id,

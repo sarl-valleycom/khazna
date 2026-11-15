@@ -12,8 +12,7 @@ use App\Models\AttendanceSession;
 use App\Models\Employee;
 use App\Pdf\PdfRenderer;
 use App\Queries\SessionIndexQuery;
-use App\Support\AlgerianDate;
-use Carbon\CarbonImmutable;
+use App\Support\Dates;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Maatwebsite\Excel\Facades\Excel;
@@ -30,7 +29,7 @@ class AttendanceReportController extends Controller
     {
         $this->authorize('viewAny', AttendanceSession::class);
 
-        $month = $this->month($request->query('month'));
+        $month = Dates::month($request->query('month'));
         $employees = $summary->roster($month);
 
         return Excel::download(
@@ -43,7 +42,7 @@ class AttendanceReportController extends Controller
     {
         $this->authorize('viewAny', AttendanceSession::class);
 
-        $month = $this->month($request->query('month'));
+        $month = Dates::month($request->query('month'));
         $employee->loadMissing('office:id,name');
 
         return Excel::download(
@@ -56,7 +55,7 @@ class AttendanceReportController extends Controller
     {
         $this->authorize('viewAny', AttendanceSession::class);
 
-        $month = $this->month($request->query('month'));
+        $month = Dates::month($request->query('month'));
         $employee->loadMissing('office:id,name');
 
         $list = $sessions->query(new AttendanceFiltersData(
@@ -81,19 +80,5 @@ class AttendanceReportController extends Controller
             'Attendance report',
             'khazna-attendance-'.PdfRenderer::slug($employee->name, 'employee-'.$employee->id).'-'.$month->format('Y-m').'.pdf',
         );
-    }
-
-    /** A month as Y-m, never later than the current one. */
-    private function month(mixed $value): CarbonImmutable
-    {
-        $current = AlgerianDate::today()->startOfMonth();
-
-        if (! is_string($value) || preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $value) !== 1) {
-            return $current;
-        }
-
-        $month = CarbonImmutable::parse($value.'-01', AlgerianDate::TZ)->startOfMonth();
-
-        return $month->gt($current) ? $current : $month;
     }
 }

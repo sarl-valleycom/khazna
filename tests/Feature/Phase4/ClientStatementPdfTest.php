@@ -165,3 +165,10 @@ test('the statement never shows another client dues or payments', function () {
         ->and($text)->not->toContain('OTHER-REF')
         ->and($text)->not->toContain('Second client');
 });
+
+test('dates typed into the address bar as arrays fall back instead of failing', function () {
+    $this->actingAsRole(Role::Owner);
+    $client = statementClient();
+
+    $this->get('/clients/'.$client->id.'/statement?from[]=x&to[a]=y')->assertOk();
+});

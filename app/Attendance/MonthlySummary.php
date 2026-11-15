@@ -98,6 +98,11 @@ class MonthlySummary
                 $query->where('status', EmployeeStatus::Active)
                     ->orWhereDate('left_on', '>=', $first->toDateString());
             })
+            // Nobody is listed for a month before they were hired.
+            ->where(function ($query) use ($first): void {
+                $query->whereNull('hire_date')
+                    ->orWhereDate('hire_date', '<=', $first->endOfMonth()->toDateString());
+            })
             ->with('office:id,name')
             ->orderBy('name')
             ->get();

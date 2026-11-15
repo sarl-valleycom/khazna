@@ -5,6 +5,7 @@ import FormDialog from '@/components/kit/FormDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { openPdf } from '@/lib/files';
 
 type Props = {
     /** The PDF route, without a query string. */
@@ -48,7 +49,7 @@ function submit() {
         }
     });
 
-    window.open(`${props.href}?${query.toString()}`, '_blank');
+    void openPdf(`${props.href}?${query.toString()}`);
     open.value = false;
 }
 </script>

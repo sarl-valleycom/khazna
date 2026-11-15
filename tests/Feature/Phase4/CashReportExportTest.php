@@ -166,3 +166,11 @@ test('reversed dates are swapped and a restricted user stays in their office', f
     expect((float) $money[count($money) - 1])->toBe(1234.0)
         ->and(collect($sheets['office'])->slice(1)->pluck(0)->all())->toBe(['Oran Office']);
 });
+
+test('dates typed into the address bar as arrays fall back instead of failing', function () {
+    cashWorld();
+    $this->actingAsRole(Role::Owner);
+
+    $this->get('/reports/cash/export?from[]=x&to[a]=y&office[]=1&account[]=2')->assertOk();
+    $this->get('/reports/cash?from[]=x&to[a]=y')->assertOk();
+});

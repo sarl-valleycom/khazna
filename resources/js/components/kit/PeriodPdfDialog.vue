@@ -5,6 +5,7 @@ import DateInput from '@/components/kit/DateInput.vue';
 import FormDialog from '@/components/kit/FormDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { openPdf } from '@/lib/files';
 import { toCalendarDate } from '@/lib/format';
 
 type Props = {
@@ -45,7 +46,7 @@ function submit() {
 
     const query = new URLSearchParams({ from: from.value, to: to.value });
 
-    window.open(`${props.href}?${query.toString()}`, '_blank');
+    void openPdf(`${props.href}?${query.toString()}`);
     open.value = false;
 }
 </script>

@@ -29,8 +29,8 @@ class ClientStatementController extends Controller
         }
 
         $today = AlgerianDate::today();
-        $from = Dates::day($request->string('from')->toString()) ?? $today->startOfMonth();
-        $to = Dates::day($request->string('to')->toString()) ?? $today->endOfMonth()->startOfDay();
+        $from = Dates::day($request->query('from')) ?? $today->startOfMonth();
+        $to = Dates::day($request->query('to')) ?? $today->endOfMonth()->startOfDay();
 
         if ($from->gt($to)) {
             [$from, $to] = [$to, $from];

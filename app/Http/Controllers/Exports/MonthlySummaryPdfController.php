@@ -6,8 +6,7 @@ use App\Documents\MonthlyFinanceSummary;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Pdf\PdfRenderer;
-use App\Support\AlgerianDate;
-use Carbon\CarbonImmutable;
+use App\Support\Dates;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -25,8 +24,7 @@ class MonthlySummaryPdfController extends Controller
             abort(403);
         }
 
-        $current = AlgerianDate::today()->startOfMonth();
-        $month = $this->month($request->query('month'), $current);
+        $month = Dates::month($request->query('month'));
 
         // A restricted user is held to their own office whatever the URL says.
         $officeId = $actor->office_id ?? ($request->integer('office') ?: null);
@@ -37,17 +35,5 @@ class MonthlySummaryPdfController extends Controller
             'Monthly summary',
             'khazna-monthly-summary-'.$month->format('Y-m').'.pdf',
         );
-    }
-
-    /** A month as Y-m, never later than the current one. */
-    private function month(mixed $value, CarbonImmutable $current): CarbonImmutable
-    {
-        if (! is_string($value) || preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $value) !== 1) {
-            return $current;
-        }
-
-        $month = CarbonImmutable::parse($value.'-01', AlgerianDate::TZ)->startOfMonth();
-
-        return $month->gt($current) ? $current : $month;
     }
 }

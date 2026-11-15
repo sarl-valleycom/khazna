@@ -3,7 +3,6 @@
 namespace App\Data;
 
 use App\Models\LeaveRequest;
-use Carbon\CarbonImmutable;
 use LogicException;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
@@ -28,13 +27,7 @@ class LeaveEntryData extends Data
     {
         // The foreign key forbids deleting an employee who has leave, so this is never missing.
         $employee = $leave->employee ?? throw new LogicException('Leave without an employee.');
-        $workDays = 0;
-
-        for ($day = CarbonImmutable::parse($leave->from->toDateString()); $day->lte($leave->to); $day = $day->addDay()) {
-            if ($employee->worksOn($day)) {
-                $workDays++;
-            }
-        }
+        $workDays = $employee->countWorkDays($leave->from, $leave->to);
 
         return new self(
             id: $leave->id,

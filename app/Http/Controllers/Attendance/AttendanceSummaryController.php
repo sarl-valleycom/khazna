@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AttendanceSession;
 use App\Models\Employee;
 use App\Support\AlgerianDate;
-use Carbon\CarbonImmutable;
+use App\Support\Dates;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,7 +24,7 @@ class AttendanceSummaryController extends Controller
         $this->authorize('viewAny', AttendanceSession::class);
 
         $current = AlgerianDate::today()->startOfMonth();
-        $month = $this->month($request->query('month'), $current);
+        $month = Dates::month($request->query('month'));
 
         $employees = $summary->roster($month);
 
@@ -45,17 +45,5 @@ class AttendanceSummaryController extends Controller
                 ))
                 ->all()),
         ]);
-    }
-
-    /** A month as Y-m, never later than the current one. */
-    private function month(mixed $value, CarbonImmutable $current): CarbonImmutable
-    {
-        if (! is_string($value) || preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $value) !== 1) {
-            return $current;
-        }
-
-        $month = CarbonImmutable::parse($value.'-01', AlgerianDate::TZ)->startOfMonth();
-
-        return $month->gt($current) ? $current : $month;
     }
 }

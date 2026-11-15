@@ -6,6 +6,7 @@ import EmptyState from '@/components/kit/EmptyState.vue';
 import ExportButton from '@/components/kit/ExportButton.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import { Button } from '@/components/ui/button';
+import { downloadFile, openPdf } from '@/lib/files';
 
 defineOptions({
     layout: {
@@ -140,21 +141,28 @@ function goTo(month: string) {
                             >
                                 View
                             </Link>
-                            <a
-                                :href="`/attendance/summary/${row.employeeId}/export?month=${props.month}`"
+                            <button
+                                type="button"
                                 class="text-primary underline-offset-4 hover:underline"
-                                download
+                                @click="
+                                    downloadFile(
+                                        `/attendance/summary/${row.employeeId}/export?month=${props.month}`,
+                                    )
+                                "
                             >
                                 Excel
-                            </a>
-                            <a
-                                :href="`/attendance/summary/${row.employeeId}/pdf?month=${props.month}`"
+                            </button>
+                            <button
+                                type="button"
                                 class="text-primary underline-offset-4 hover:underline"
-                                target="_blank"
-                                rel="noopener"
+                                @click="
+                                    openPdf(
+                                        `/attendance/summary/${row.employeeId}/pdf?month=${props.month}`,
+                                    )
+                                "
                             >
                                 PDF
-                            </a>
+                            </button>
                         </td>
                     </tr>
                 </tbody>

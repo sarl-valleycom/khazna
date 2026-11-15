@@ -6,6 +6,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Mpdf\Mpdf;
 use Mpdf\Output\Destination;
+use RuntimeException;
 
 /**
  * Turns a Blade view into a PDF with mPDF, the library chosen after the Arabic
@@ -20,16 +21,23 @@ use Mpdf\Output\Destination;
  */
 class PdfRenderer
 {
+    public function __construct(private readonly ?string $tempDirectory = null) {}
+
     /**
      * @param  view-string  $view
      * @param  array<string, mixed>  $data
      */
     public function render(string $view, array $data, string $title): string
     {
-        $directory = storage_path('framework/mpdf');
+        $directory = $this->tempDirectory ?? storage_path('framework/mpdf');
 
-        if (! is_dir($directory)) {
-            mkdir($directory, 0775, true);
+        // Created on first use. The second is_dir covers two first requests racing to create it.
+        if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
+            throw new RuntimeException("The PDF temporary folder {$directory} cannot be created. Make storage/framework writable by the web server user.");
+        }
+
+        if (! is_writable($directory)) {
+            throw new RuntimeException("The PDF temporary folder {$directory} is not writable. Make it writable by the web server user.");
         }
 
         $mpdf = new Mpdf([

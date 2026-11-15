@@ -21,6 +21,7 @@ The hours-to-make-up numbers on the employee page already subtract holidays and 
 - [x] **Holidays** (owner only): list, add (date and label) and remove. Islamic holidays follow the moon and are announced late, so **do not compute them**; the owner enters them when they are announced. A note on the screen says so.
 - [x] **Leave** (owner only): add leave for an employee with type (paid, unpaid, sick), first and last day, and a reason. The owner enters it, so it is approved at once (status `approved`, decided by the owner). Cancel a leave from the list. Employees do not request leave in this phase.
 - [x] The type is a label only. It does not change pay: the owner decides any deduction in the month's adjustments.
+- [x] One leave lasts at most a year (366 days), so a typo in a year cannot create a leave that lasts for decades. The page counts an employee's work days in a leave by whole weeks, so even an enormous old row cannot slow it down.
 - [x] Every change is audited, with a reason for a cancellation.
 - [x] Hand-computed test: a 5 day week with one holiday and one approved leave day gives the expected minutes on the employee page (for example 3 working days left × 480 = 1 440 minutes).
 
@@ -92,6 +93,7 @@ Built with mPDF (4.3). `PdfRenderer` turns a Blade view into a PDF; each documen
   - **One employee, Excel:** `/attendance/summary/{id}/export?month=` with three sheets: Summary, Days (expected against worked for each day, with the reason a day does not count: holiday, leave, rest, not employed) and Sessions.
   - **One employee, PDF:** `/attendance/summary/{id}/pdf?month=`: the summary, the days and the sessions with their reports.
   - Buttons on the monthly summary page (team in the header, Excel and PDF on each row).
+- [x] **A failed download is a message, not a file.** The Excel and PDF buttons fetch the file themselves. A refusal or a failure (403, 404, 422, 500, an ended session) is shown as a message, and the PDF tab that was opened is closed again, so an error page is never saved as a spreadsheet that will not open.
 - [x] **Zeros stay zeros.** The Excel library writes a number `0` as an empty cell unless an export asks for strict null comparison, so a paid amount of 0.00 or 0 minutes worked would look missing. Every export now sets it (`SpreadsheetExport`), and a test fails without it.
 
 ---

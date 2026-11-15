@@ -6,8 +6,7 @@ use App\Documents\Payslip;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Pdf\PdfRenderer;
-use App\Support\AlgerianDate;
-use Carbon\CarbonImmutable;
+use App\Support\Dates;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -21,15 +20,7 @@ class PayslipController extends Controller
     {
         $this->authorize('viewSalary', $employee);
 
-        $current = AlgerianDate::today()->startOfMonth();
-        $value = $request->query('month');
-        $month = is_string($value) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $value) === 1
-            ? CarbonImmutable::parse($value.'-01', AlgerianDate::TZ)->startOfMonth()
-            : $current;
-
-        if ($month->gt($current)) {
-            $month = $current;
-        }
+        $month = Dates::month($request->query('month'));
 
         $employee->loadMissing('office:id,name');
         $data = $payslip->build($employee, $month);

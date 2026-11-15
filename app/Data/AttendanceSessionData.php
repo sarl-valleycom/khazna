@@ -38,7 +38,11 @@ class AttendanceSessionData extends Data
         public bool $isOpen,
     ) {}
 
-    public static function fromSession(AttendanceSession $session, ?CarbonImmutable $now = null): self
+    /**
+     * @param  int|null  $workedMinutes  Pass the minutes when the caller has already worked them out (for a whole
+     *                                   list, or an export), so the paid break allowance is not looked up per row.
+     */
+    public static function fromSession(AttendanceSession $session, ?CarbonImmutable $now = null, ?int $workedMinutes = null): self
     {
         $session->loadMissing(['employee.office', 'breaks']);
 
@@ -54,7 +58,7 @@ class AttendanceSessionData extends Data
         }
 
         // The paid break allowance counts for this session's day, like the daily totals.
-        $workedMinutes = WorkedTime::minutesForSessions([$session], $now);
+        $workedMinutes ??= WorkedTime::minutesForSessions([$session], $now);
 
         return new self(
             id: $session->id,

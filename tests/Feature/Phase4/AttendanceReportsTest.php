@@ -4,13 +4,16 @@ use App\Attendance\MonthlySummary;
 use App\Enums\AttendanceReviewStatus;
 use App\Enums\AttendanceStatus;
 use App\Enums\Role;
+use App\Models\AttendanceBreak;
 use App\Models\AttendanceSession;
+use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\Office;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -238,4 +241,79 @@ test('the day by day view adds up to the monthly totals', function () {
 
     expect(array_sum(array_column($days, 'expected')))->toBe($total['expected'])
         ->and(array_sum(array_column($days, 'worked')))->toBe($total['worked']);
+});
+
+test('the sessions sheet adds up to the summary when two sessions share one day and one allowance', function () {
+    attDec();
+    $this->actingAsRole(Role::Owner);
+    AttendanceSetting::current()->update(['paid_break_minutes' => 30]);
+    $employee = attEmployee(['name' => 'Karim']);
+
+    foreach ([['08:00:00', '12:00:00', '10:00:00', '10:45:00'], ['13:00:00', '17:00:00', '15:00:00', '15:45:00']] as [$start, $end, $breakStart, $breakEnd]) {
+        $session = AttendanceSession::factory()->create([
+            'employee_id' => $employee->id,
+            'started_at' => CarbonImmutable::parse("2026-11-03 {$start}", 'Africa/Algiers')->utc(),
+            'ended_at' => CarbonImmutable::parse("2026-11-03 {$end}", 'Africa/Algiers')->utc(),
+            'status' => AttendanceStatus::Closed,
+            'review_status' => AttendanceReviewStatus::Ok,
+        ]);
+        AttendanceBreak::factory()->create([
+            'session_id' => $session->id,
+            'started_at' => CarbonImmutable::parse("2026-11-03 {$breakStart}", 'Africa/Algiers')->utc(),
+            'ended_at' => CarbonImmutable::parse("2026-11-03 {$breakEnd}", 'Africa/Algiers')->utc(),
+        ]);
+    }
+
+    $sheets = attBook($this->get(route('attendance.summary.employee.export', ['employee' => $employee, 'month' => '2026-11'])));
+    $summary = collect($sheets['Summary'])->pluck(1, 0);
+    $sessions = collect($sheets['Sessions'])->slice(1)->values();
+
+    // 8h gross, two 45 minute breaks (90), one 30 minute allowance for the whole day: 60 unpaid. 480 - 60 = 420.
+    expect($summary['Worked (min)'])->toBe(420)
+        ->and($sessions->sum(9))->toBe(420);
+});
+
+test('the sessions export asks for the break allowance the same number of times however many rows', function () {
+    attDec();
+    $this->actingAsRole(Role::Owner);
+    $employee = attEmployee();
+
+    $settingsQueries = function () use ($employee): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->get(route('attendance.sessions.export', ['employee' => $employee->id]))->assertOk();
+        DB::disableQueryLog();
+
+        return collect(DB::getQueryLog())->filter(fn (array $query): bool => str_contains($query['query'], 'attendance_settings'))->count();
+    };
+
+    attWork($employee, array_slice(attNovemberDays(), 0, 2));
+    $settingsQueries(); // the very first call creates the settings row
+    $few = $settingsQueries();
+
+    attWork($employee, array_slice(attNovemberDays(), 2, 18));
+    $many = $settingsQueries();
+
+    expect($many)->toBe($few)->and($many)->toBe(1);
+});
+
+test('nobody is listed for a month before they were hired', function () {
+    attDec();
+    $this->actingAsRole(Role::Owner);
+    $early = attEmployee(['name' => 'Already here', 'hire_date' => '2026-01-01']);
+    attEmployee(['name' => 'Starts in December', 'hire_date' => '2026-12-01']);
+
+    $screen = null;
+    $this->get(route('attendance.summary.index', ['month' => '2026-10']))->assertInertia(function (Assert $page) use (&$screen): void {
+        $screen = collect($page->toArray()['props']['rows'])->pluck('name')->all();
+    });
+    $file = collect(attBook($this->get(route('attendance.summary.export', ['month' => '2026-10'])))['October 2026'])->slice(1)->pluck(0)->all();
+
+    expect($screen)->toBe([$early->name])
+        ->and($file)->toBe([$early->name]);
+
+    // In December both are listed.
+    $december = collect(attBook($this->get(route('attendance.summary.export', ['month' => '2026-12'])))['December 2026'])->slice(1)->pluck(0)->all();
+
+    expect($december)->toHaveCount(2);
 });
