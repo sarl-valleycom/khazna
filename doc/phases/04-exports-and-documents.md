@@ -46,12 +46,24 @@ Information only. It never changes a salary.
 - [x] The whole team costs the same few queries however many people there are (holidays and leave are loaded once).
 - [x] Hand-computed tests: November 2026 has 22 Sunday-to-Thursday days, so 22 × 480 = 10 560 expected minutes; 21 days worked (10 080) leaves 480 to make up. Holiday, leave, hire date, leaving date and paid break cases are tested the same way.
 
-## 4.3 PDF spike (half a day)
+## 4.3 PDF spike (done)
 
-The layout is English and left to right, but client names and notes may be in Arabic script, and many PDF libraries do not shape Arabic letters correctly.
+The layout is English and left to right, but client names and notes may be in Arabic script, and many PDF libraries do not shape Arabic letters correctly. The same client statement (an Arabic client name, an Arabic contact and note, a phone number, mixed Arabic and English cells) was rendered with three candidates and checked by eye at high zoom.
 
-- [ ] Test a client statement that contains an Arabic client name with each candidate. A headless-Chrome based renderer is the most reliable. A lighter library is acceptable only if it renders the Arabic name correctly.
-- [ ] Choose from what the spike shows and record the choice and the reason here. Keep the test PDF as a saved sample.
+| Candidate | Arabic letters | Word order | Notes |
+|---|---|---|---|
+| **mPDF** | Joined correctly | Correct | Pure PHP, installs with Composer, no browser on the server. Text stays selectable. Limited CSS (tables and blocks, no flex or grid), which is enough for statements and payslips |
+| Headless Chrome | Joined correctly | Correct | Most faithful HTML and CSS, but Chrome must be installed and kept up to date on the server, with its sandbox and memory cost |
+| dompdf | **Broken**: letters come out separate and the words reversed | Wrong | Not usable for Arabic names |
+
+**Decision: mPDF.** Revisit Chrome only if a later layout needs modern CSS.
+
+Two rules found by the spike, to apply in every template:
+
+- [x] A phone number, an ID or any run of digits next to Arabic text is shown with its groups reversed (`56 34 12 0555`) because of how right-to-left text is ordered. Wrap such values in `<bdi dir="ltr">…</bdi>`. Tested in both mPDF and Chrome: the number then reads `0555 12 34 56`.
+- [x] Use mPDF with `autoScriptToLang` and `autoLangToFont` on, so Arabic text picks a font that has the glyphs.
+
+The saved sample is `doc/phases/samples/arabic-client-statement.mpdf.pdf`, made from `arabic-client-statement.html` in the same folder. Re-render it after any change to the PDF setup and compare by eye.
 
 ## 4.4 Excel exports
 
@@ -85,11 +97,10 @@ The layout is English and left to right, but client names and notes may be in Ar
 ## Exit checklist
 
 - [ ] Holidays and leave entered for the current year, and the employee page matches a manual count.
-- [ ] A client statement, a monthly summary and a payslip reviewed by the owner, including one with an Arabic client name.
+- [ ] A client statement, a monthly summary and a payslip reviewed by the owner, including one with an Arabic client name, compared with the saved sample.
 - [ ] An accountant (or the owner acting as one) used the ledger export.
 
 ## Open questions
 
-1. PDF library: decided by the spike in 4.3.
-2. Should the payslip show the attendance summary at all, or only the money? (Default: show it, as information.)
-3. Should finance be able to export attendance? (Default: yes, hours only, never salary.)
+1. Should the payslip show the attendance summary at all, or only the money? (Default: show it, as information.)
+2. Should finance be able to export attendance? (Default: yes, hours only, never salary.)
