@@ -4,6 +4,7 @@ import {
     BookOpen,
     Building2,
     ChartColumn,
+    Clock,
     TrendingUp,
     Landmark,
     Store,
@@ -101,6 +102,12 @@ const mainNavItems: NavItem[] = [
         href: '/employees',
         icon: UserRoundCog,
         roles: ['owner', 'finance'] as App.Enums.Role[],
+    },
+    {
+        title: 'Attendance',
+        href: '/attendance/sessions',
+        icon: Clock,
+        roles: ['owner'] as App.Enums.Role[],
     },
     {
         title: 'Payroll',

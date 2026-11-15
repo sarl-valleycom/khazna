@@ -46,6 +46,71 @@ declare namespace App {
             runningCents: number;
             runningFormatted: string;
         };
+        export type AttendanceEmployeeOptionData = {
+            id: number;
+            name: string;
+            officeId: number;
+            officeName: string;
+        };
+        export type AttendanceFiltersData = {
+            q: string;
+            employee: number | null;
+            office: number | null;
+            status: string;
+            from: string | null;
+            to: string | null;
+            sort: string;
+            direction: string;
+            perPage: number;
+        };
+        export type AttendancePresenceData = {
+            employeeId: number;
+            name: string;
+            officeName: string;
+            state: string;
+            stateLabel: string;
+            since: string | null;
+            sinceLabel: string;
+            todayMinutes: number;
+            todayFormatted: string;
+        };
+        export type AttendanceSessionData = {
+            id: number;
+            employeeId: number;
+            employeeName: string;
+            officeId: number;
+            officeName: string;
+            startedAt: string;
+            endedAt: string | null;
+            startedAtLocal: string;
+            endedAtLocal: string | null;
+            status: App.Enums.AttendanceStatus;
+            statusLabel: string;
+            reviewStatus: App.Enums.AttendanceReviewStatus;
+            reviewLabel: string;
+            source: App.Enums.AttendanceSource;
+            sourceLabel: string;
+            workedMinutes: number;
+            workedFormatted: string;
+            report: string | null;
+            blockers: string | null;
+            isOpen: boolean;
+            reviewReasons: string[];
+        };
+        export type AttendanceSettingsData = {
+            autoCloseTime: string;
+            digestTime: string;
+            remindersEnabled: boolean;
+            reminderAfterMinutes: number;
+            awayLimitMinutes: number;
+            paidBreakMinutes: number;
+            selfCorrectionEnabled: boolean;
+            selfCorrectionHours: number;
+            over10hReminderEnabled: boolean;
+            ownerDigestChannelId: string | null;
+            reportsChannelId: string | null;
+            offices: App.Data.OfficeAttendanceChannelData[];
+        };
         export type AttentionContractData = {
             id: number;
             clientId: number | null;
@@ -185,6 +250,20 @@ declare namespace App {
             direction: string;
             perPage: number;
         };
+        export type CorrectionRequestData = {
+            id: number;
+            sessionId: number;
+            employeeId: number;
+            employeeName: string;
+            officeName: string;
+            startedAt: string;
+            endedAt: string | null;
+            proposedEndedAt: string;
+            note: string | null;
+            createdAt: string;
+            status: App.Enums.CorrectionStatus;
+            statusLabel: string;
+        };
         export type DemoDueRowData = {
             id: number;
             client: string;
@@ -319,6 +398,11 @@ declare namespace App {
             locked: boolean;
             canDeliver: boolean;
             canRequest: boolean;
+        };
+        export type OfficeAttendanceChannelData = {
+            id: number;
+            name: string;
+            attendanceChannelId: string | null;
         };
         export type OfficeOptionData = {
             id: number;

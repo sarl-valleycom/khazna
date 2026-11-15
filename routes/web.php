@@ -5,6 +5,11 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\OfficeController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Attendance\AttendanceCorrectionController;
+use App\Http\Controllers\Attendance\AttendancePresenceController;
+use App\Http\Controllers\Attendance\AttendanceReviewController;
+use App\Http\Controllers\Attendance\AttendanceSessionController;
+use App\Http\Controllers\Attendance\AttendanceSettingsController;
 use App\Http\Controllers\Categories\CategoryController;
 use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Clients\ClientImportController;
@@ -88,6 +93,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
     Route::get('employees/{employee}', [EmployeeController::class, 'show'])->whereNumber('employee')->name('employees.show');
     Route::patch('employees/{employee}', [EmployeeController::class, 'update'])->whereNumber('employee')->name('employees.update');
+
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('sessions', [AttendanceSessionController::class, 'index'])->name('sessions.index');
+        Route::post('sessions', [AttendanceSessionController::class, 'store'])->name('sessions.store');
+        Route::patch('sessions/{attendanceSession}', [AttendanceSessionController::class, 'update'])->whereNumber('attendanceSession')->name('sessions.update');
+        Route::delete('sessions/{attendanceSession}', [AttendanceSessionController::class, 'destroy'])->whereNumber('attendanceSession')->name('sessions.destroy');
+        Route::post('sessions/{attendanceSession}/approve', [AttendanceSessionController::class, 'approve'])->whereNumber('attendanceSession')->name('sessions.approve');
+
+        Route::get('review', AttendanceReviewController::class)->name('review.index');
+        Route::get('presence', AttendancePresenceController::class)->name('presence.index');
+
+        Route::get('corrections', [AttendanceCorrectionController::class, 'index'])->name('corrections.index');
+        Route::patch('corrections/{correctionRequest}/approve', [AttendanceCorrectionController::class, 'approve'])->whereNumber('correctionRequest')->name('corrections.approve');
+        Route::patch('corrections/{correctionRequest}/reject', [AttendanceCorrectionController::class, 'reject'])->whereNumber('correctionRequest')->name('corrections.reject');
+
+        Route::get('settings', [AttendanceSettingsController::class, 'edit'])->name('settings.edit');
+        Route::patch('settings', [AttendanceSettingsController::class, 'update'])->name('settings.update');
+    });
 
     // Everything about what people earn sits behind one gate.
     Route::middleware('can:view-salaries')->group(function () {

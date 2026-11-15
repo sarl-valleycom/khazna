@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CorrectionStatus;
+use App\Models\Concerns\Auditable;
 use Carbon\CarbonImmutable;
 use Database\Factories\CorrectionRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class CorrectionRequest extends Model
 {
     /** @use HasFactory<CorrectionRequestFactory> */
-    use HasFactory, SoftDeletes;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected function casts(): array
     {
@@ -52,7 +53,7 @@ class CorrectionRequest extends Model
     /** @return BelongsTo<Employee, $this> */
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Employee::class)->withTrashed();
     }
 
     /** @return BelongsTo<User, $this> */

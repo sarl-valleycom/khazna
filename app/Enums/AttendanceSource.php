@@ -10,6 +10,14 @@ enum AttendanceSource: string
     case Discord = 'discord';
     case Admin = 'admin';
 
+    public function label(): string
+    {
+        return match ($this) {
+            self::Discord => 'Discord',
+            self::Admin => 'Admin',
+        };
+    }
+
     /** @return list<string> */
     public static function values(): array
     {

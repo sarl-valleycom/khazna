@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AttendanceReviewStatus;
 use App\Enums\AttendanceSource;
 use App\Enums\AttendanceStatus;
+use App\Models\Concerns\Auditable;
 use Carbon\CarbonImmutable;
 use Database\Factories\AttendanceSessionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -37,7 +38,7 @@ use Illuminate\Support\Collection;
 class AttendanceSession extends Model
 {
     /** @use HasFactory<AttendanceSessionFactory> */
-    use HasFactory, SoftDeletes;
+    use Auditable, HasFactory, SoftDeletes;
 
     protected function casts(): array
     {
@@ -57,7 +58,7 @@ class AttendanceSession extends Model
     /** @return BelongsTo<Employee, $this> */
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(Employee::class);
+        return $this->belongsTo(Employee::class)->withTrashed();
     }
 
     /** @return BelongsTo<User, $this> */

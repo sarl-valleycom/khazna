@@ -73,6 +73,26 @@ export function toCalendarDate(value: Date): string {
     return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
+/**
+ * Format a Date as an Algiers datetime-local value (YYYY-MM-DDTHH:MM).
+ */
+export function toDateTimeInput(value: Date): string {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+        timeZone: DISPLAY_TIMEZONE,
+    }).formatToParts(value);
+
+    const get = (type: string): string =>
+        parts.find((part) => part.type === type)?.value ?? '';
+
+    return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
+}
+
 export { DISPLAY_TIMEZONE };
 
 function isGroupedInteger(value: string, grouping: string): boolean {
