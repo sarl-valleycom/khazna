@@ -48,6 +48,35 @@ class DiscordClient
         return true;
     }
 
+    /**
+     * Post a plain message to a channel. Rate-limit handling is added in the
+     * reminders/digests section; this method only owns the HTTP call.
+     *
+     * @param  list<array<string, mixed>>  $embeds
+     */
+    public function sendChannelMessage(string $channelId, string $content, array $embeds = []): bool
+    {
+        $payload = ['content' => $content];
+
+        if ($embeds !== []) {
+            $payload['embeds'] = $embeds;
+        }
+
+        $response = $this->request()->post("/channels/{$channelId}/messages", $payload);
+
+        if (! $response->successful()) {
+            Log::error('Discord channel message failed.', [
+                'channel_id' => $channelId,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return false;
+        }
+
+        return true;
+    }
+
     private function request(): PendingRequest
     {
         return Http::baseUrl((string) config('discord.api_base'))

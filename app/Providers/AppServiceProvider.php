@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Discord\CommandRegistry;
+use App\Discord\Handlers\Attendance\BackHandler;
+use App\Discord\Handlers\Attendance\BreakHandler;
+use App\Discord\Handlers\Attendance\CheckInHandler;
+use App\Discord\Handlers\Attendance\CheckOutHandler;
+use App\Discord\InteractionRouter;
 use App\Models\User;
 use App\Support\AuditContext;
 use App\Support\SettingsStore;
@@ -22,6 +28,17 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->scoped(AuditContext::class);
         $this->app->scoped(SettingsStore::class);
+
+        $this->app->singleton(InteractionRouter::class, fn (): InteractionRouter => new InteractionRouter(
+            commands: [
+                CommandRegistry::CHECK_IN => CheckInHandler::class,
+                CommandRegistry::CHECK_OUT => CheckOutHandler::class,
+                CommandRegistry::TMP_CHECK_OUT => BreakHandler::class,
+            ],
+            componentPrefixes: [
+                'attendance:back' => BackHandler::class,
+            ],
+        ));
     }
 
     /**

@@ -26,7 +26,7 @@ class VerifyDiscordSignature
         $signatureBytes = $this->decodeHex($signature);
         $publicKeyBytes = $this->decodeHex($publicKey);
 
-        if ($signatureBytes === null || $publicKeyBytes === null) {
+        if ($signatureBytes === null || $publicKeyBytes === null || $signatureBytes === '' || $publicKeyBytes === '') {
             return response()->json(['error' => 'Invalid Discord signature.'], 401);
         }
 

@@ -91,6 +91,12 @@ class Employee extends Model
         return $this->hasMany(Due::class);
     }
 
+    /** @return HasMany<AttendanceSession, $this> */
+    public function attendanceSessions(): HasMany
+    {
+        return $this->hasMany(AttendanceSession::class);
+    }
+
     /** The monthly salary in force on a date: the latest raise on or before it. Null before the first one. */
     public function salaryOn(CarbonInterface|string $date): ?int
     {

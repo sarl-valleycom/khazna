@@ -15,7 +15,7 @@ class InteractionController extends Controller
     {
         $payload = $request->json()->all();
 
-        if (! is_array($payload) || $payload === []) {
+        if ($payload === []) {
             return response()->json(['error' => 'Invalid interaction payload.'], 400);
         }
 

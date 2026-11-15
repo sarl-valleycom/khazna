@@ -2,6 +2,7 @@
 
 namespace App\Discord;
 
+use App\Attendance\AttendanceException;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -49,6 +50,11 @@ class InteractionRouter
 
         try {
             return app($handlerClass)->handle($interaction);
+        } catch (AttendanceException $exception) {
+            return InteractionResponse::message(
+                $exception->messageForEmployee(),
+                ephemeral: true,
+            );
         } catch (Throwable $exception) {
             Log::error('Discord interaction failed.', [
                 'command' => $interaction->commandName(),

@@ -434,6 +434,9 @@ declare namespace App {
     namespace Enums {
         export type AccountType = "cash" | "ccp" | "bank" | "other";
         export type AdjustmentType = "advance" | "bonus" | "deduction";
+        export type AttendanceReviewStatus = "ok" | "needs_review" | "approved";
+        export type AttendanceSource = "discord" | "admin";
+        export type AttendanceStatus = "open" | "closed" | "auto_closed";
         export type CategoryKind = "cost" | "income";
         export type ContractStatus = "active" | "paused" | "canceled";
         export type ContractType =
