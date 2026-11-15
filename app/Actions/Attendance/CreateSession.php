@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * A session entered by the owner, for a day Discord did not record. A reason is
+ * A session entered by the owner, for a day nobody checked in. A reason is
  * required because this is a manual attendance record.
  */
 class CreateSession

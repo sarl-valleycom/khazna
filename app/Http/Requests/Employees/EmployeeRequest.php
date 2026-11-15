@@ -32,13 +32,6 @@ class EmployeeRequest extends FormRequest
             'hire_date' => ['nullable', 'date_format:Y-m-d'],
             'office_id' => ['required', 'integer', Rule::exists('offices', 'id')->whereNull('deleted_at')],
             'status' => ['sometimes', Rule::enum(EmployeeStatus::class)],
-            // Discord IDs are 64-bit integers: keep them as strings everywhere.
-            'discord_user_id' => [
-                'nullable',
-                'string',
-                'regex:/^\d{15,32}$/',
-                Rule::unique('employees', 'discord_user_id')->ignore($employee instanceof Employee ? $employee->id : null),
-            ],
             'contract_type' => ['sometimes', Rule::enum(EmploymentType::class)],
             'hourly_rate' => [...($mayTouchSalary ? ['nullable'] : ['prohibited']), 'integer', 'min:0', 'max:99999999999999'],
             'expected_minutes_per_day' => ['sometimes', 'integer', 'min:0', 'max:1440'],
@@ -47,7 +40,6 @@ class EmployeeRequest extends FormRequest
             'schedule_start' => ['nullable', 'date_format:H:i', 'required_with:schedule_end'],
             'schedule_end' => ['nullable', 'date_format:H:i', 'required_with:schedule_start'],
             'late_grace_minutes' => ['sometimes', 'integer', 'min:0', 'max:240'],
-            'reminders_enabled' => ['sometimes', 'boolean'],
             // "amount from a date" for a new employee; later raises go through the salary route.
             'salary_cents' => [...$salary, 'integer', 'min:1', 'max:99999999999999'],
             'salary_from' => [...$salary, 'date_format:Y-m-d', 'required_with:salary_cents'],
@@ -66,8 +58,6 @@ class EmployeeRequest extends FormRequest
             'salary_from.prohibited' => __('You are not allowed to set salaries.'),
             'hourly_rate.prohibited' => __('You are not allowed to set salaries.'),
             'salary_from.required_with' => __('Choose the date the salary starts.'),
-            'discord_user_id.regex' => __('Paste the numeric Discord user ID (15 to 32 digits).'),
-            'discord_user_id.unique' => __('That Discord account is already linked to another employee.'),
             'schedule_end.required_with' => __('Set both the start and the end of the schedule.'),
             'schedule_start.required_with' => __('Set both the start and the end of the schedule.'),
         ];

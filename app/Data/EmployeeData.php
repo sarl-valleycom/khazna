@@ -28,7 +28,6 @@ class EmployeeData extends Data
         public string $statusLabel,
         public int $officeId,
         public string $officeName,
-        public ?string $discordUserId,
         public EmploymentType $contractType,
         public string $contractTypeLabel,
         public int $expectedMinutesPerDay,
@@ -36,7 +35,6 @@ class EmployeeData extends Data
         public ?string $scheduleStart,
         public ?string $scheduleEnd,
         public int $lateGraceMinutes,
-        public bool $remindersEnabled,
         public bool $hasAttendanceCode = false,
         public ?string $attendanceCodeSetAt = null,
     ) {}
@@ -53,7 +51,6 @@ class EmployeeData extends Data
             statusLabel: $employee->status->label(),
             officeId: $employee->office_id,
             officeName: $employee->office->name ?? '',
-            discordUserId: $employee->discord_user_id,
             contractType: $employee->contract_type,
             contractTypeLabel: $employee->contract_type->label(),
             expectedMinutesPerDay: $employee->expected_minutes_per_day,
@@ -61,7 +58,6 @@ class EmployeeData extends Data
             scheduleStart: $employee->schedule_start,
             scheduleEnd: $employee->schedule_end,
             lateGraceMinutes: $employee->late_grace_minutes,
-            remindersEnabled: $employee->reminders_enabled,
             hasAttendanceCode: $employee->hasAttendanceCode(),
             attendanceCodeSetAt: $employee->attendance_code_set_at?->toIso8601String(),
         );

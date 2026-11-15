@@ -31,7 +31,6 @@ use LogicException;
  * @property CarbonImmutable|null $hire_date
  * @property EmployeeStatus $status
  * @property CarbonImmutable|null $left_on
- * @property string|null $discord_user_id
  * @property EmploymentType $contract_type
  * @property int|null $hourly_rate
  * @property int $expected_minutes_per_day
@@ -39,14 +38,13 @@ use LogicException;
  * @property string|null $schedule_start
  * @property string|null $schedule_end
  * @property int $late_grace_minutes
- * @property bool $reminders_enabled
  * @property string|null $attendance_code_hash
  * @property CarbonImmutable|null $attendance_code_set_at
  */
 #[Fillable([
     'office_id', 'name', 'phone', 'title', 'hire_date', 'status', 'left_on',
-    'discord_user_id', 'contract_type', 'hourly_rate', 'expected_minutes_per_day',
-    'work_days', 'schedule_start', 'schedule_end', 'late_grace_minutes', 'reminders_enabled',
+    'contract_type', 'hourly_rate', 'expected_minutes_per_day',
+    'work_days', 'schedule_start', 'schedule_end', 'late_grace_minutes',
 ])]
 class Employee extends Model
 {
@@ -70,7 +68,6 @@ class Employee extends Model
             'expected_minutes_per_day' => 'integer',
             'work_days' => 'array',
             'late_grace_minutes' => 'integer',
-            'reminders_enabled' => 'boolean',
             'attendance_code_set_at' => 'immutable_datetime',
         ];
     }
@@ -141,11 +138,6 @@ class Employee extends Model
     public function isActive(): bool
     {
         return $this->status === EmployeeStatus::Active;
-    }
-
-    public function isLinked(): bool
-    {
-        return $this->discord_user_id !== null && $this->discord_user_id !== '';
     }
 
     /**

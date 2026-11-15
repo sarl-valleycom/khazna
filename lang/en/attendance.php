@@ -3,7 +3,6 @@
 return [
 
     'errors' => [
-        'not_linked' => 'Your Discord account is not linked to an employee. Ask the owner to link it.',
         'inactive' => 'Your employee record is deactivated. Nothing was recorded.',
         'no_open_session' => 'You have no open session.',
         'already_checked_in' => 'You are already checked in since :time.',

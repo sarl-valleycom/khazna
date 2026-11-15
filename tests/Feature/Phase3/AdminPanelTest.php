@@ -404,8 +404,7 @@ test('a decided correction cannot be decided twice', function () {
     expect($request->refresh()->status)->toBe(CorrectionStatus::Rejected);
 });
 
-test('the owner edits attendance settings, channels and the change is audited', function () {
-    $office = Office::factory()->create(['name' => 'Algiers']);
+test('the owner edits attendance settings and the change is audited', function () {
     $owner = $this->actingAsRole(Role::Owner);
 
     $this->get(route('attendance.settings.edit'))
@@ -413,36 +412,21 @@ test('the owner edits attendance settings, channels and the change is audited', 
         ->assertInertia(fn (Assert $page) => $page
             ->component('attendance/Settings')
             ->where('settings.autoCloseTime', '23:59')
-            ->where('settings.offices.0.id', $office->id));
+            ->where('settings.selfCorrectionEnabled', true));
 
     $this->patch(route('attendance.settings.update'), [
         'auto_close_time' => '22:30',
-        'reminders_enabled' => false,
-        'reminder_after_minutes' => 45,
-        'away_limit_minutes' => 60,
         'paid_break_minutes' => 15,
-        'self_correction_enabled' => true,
+        'self_correction_enabled' => false,
         'self_correction_hours' => 12,
-        'over_10h_reminder_enabled' => false,
-        'reports_channel_id' => '223456789012345678',
-        'offices' => [[
-            'id' => $office->id,
-            'attendance_channel_id' => '323456789012345678',
-        ]],
     ])->assertRedirect(route('attendance.settings.edit'))->assertStatus(303);
 
     $settings = AttendanceSetting::current();
 
     expect($settings->auto_close_time)->toBe('22:30:00')
-        ->and($settings->reminders_enabled)->toBeFalse()
-        ->and($settings->reminder_after_minutes)->toBe(45)
-        ->and($settings->away_limit_minutes)->toBe(60)
         ->and($settings->paid_break_minutes)->toBe(15)
-        ->and($settings->self_correction_enabled)->toBeTrue()
-        ->and($settings->self_correction_hours)->toBe(12)
-        ->and($settings->over_10h_reminder_enabled)->toBeFalse()
-        ->and($settings->reports_channel_id)->toBe('223456789012345678')
-        ->and($office->refresh()->attendance_channel_id)->toBe('323456789012345678');
+        ->and($settings->self_correction_enabled)->toBeFalse()
+        ->and($settings->self_correction_hours)->toBe(12);
 
     $activity = Activity::query()
         ->where('subject_type', AttendanceSetting::class)
@@ -454,21 +438,15 @@ test('the owner edits attendance settings, channels and the change is audited', 
         ->and($activity->causer_id)->toBe($owner->id);
 });
 
-test('attendance settings reject malformed Discord channel IDs', function () {
-    Office::factory()->create();
+test('attendance settings reject a malformed time and out-of-range numbers', function () {
     $this->actingAsRole(Role::Owner);
 
     $this->patch(route('attendance.settings.update'), [
-        'auto_close_time' => '23:59',
-        'reminders_enabled' => true,
-        'reminder_after_minutes' => 30,
-        'away_limit_minutes' => 90,
-        'paid_break_minutes' => 0,
-        'self_correction_enabled' => false,
-        'self_correction_hours' => 24,
-        'over_10h_reminder_enabled' => true,
-        'reports_channel_id' => '123',
-    ])->assertSessionHasErrors(['reports_channel_id']);
+        'auto_close_time' => 'late',
+        'paid_break_minutes' => -1,
+        'self_correction_enabled' => true,
+        'self_correction_hours' => 0,
+    ])->assertSessionHasErrors(['auto_close_time', 'paid_break_minutes', 'self_correction_hours']);
 });
 
 test('deleting a session rejects its pending correction requests', function () {

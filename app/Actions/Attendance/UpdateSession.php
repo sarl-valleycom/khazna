@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * The owner fixes a session by hand. The session keeps its source (Discord or
+ * The owner fixes a session by hand. The session keeps its source (web or
  * admin); an auto-closed row stays auto-closed, but the change marks it reviewed.
  * Changing the start or end closes the session's pending correction requests.
  */

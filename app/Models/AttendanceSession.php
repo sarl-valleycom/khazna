@@ -33,7 +33,6 @@ use Illuminate\Support\Collection;
 #[Fillable([
     'employee_id', 'started_at', 'ended_at', 'status', 'review_status',
     'report', 'blockers', 'source', 'closed_by',
-    'correction_dm_sent_at', 'long_reminder_sent_at',
 ])]
 class AttendanceSession extends Model
 {
@@ -53,8 +52,6 @@ class AttendanceSession extends Model
             'review_status' => AttendanceReviewStatus::class,
             'source' => AttendanceSource::class,
             'closed_by' => 'integer',
-            'correction_dm_sent_at' => 'immutable_datetime',
-            'long_reminder_sent_at' => 'immutable_datetime',
         ];
     }
 

@@ -95,7 +95,7 @@ function submit() {
         :description="
             editing
                 ? 'Every change needs a reason and is written to the audit log.'
-                : 'Record a session Discord missed. Leave the end empty to keep it open.'
+                : 'Record a session nobody checked in. Leave the end empty to keep it open.'
         "
         :processing="form.processing"
         :errors="form.errors"

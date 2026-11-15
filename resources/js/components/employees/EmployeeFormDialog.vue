@@ -36,7 +36,6 @@ const form = useForm({
     hire_date: null as string | null,
     office_id: null as number | null,
     status: 'active',
-    discord_user_id: '',
     contract_type: 'fixed_monthly',
     hourly_rate: null as number | null,
     expected_minutes_per_day: 480,
@@ -44,7 +43,6 @@ const form = useForm({
     schedule_start: '',
     schedule_end: '',
     late_grace_minutes: 15,
-    reminders_enabled: true,
     salary_cents: null as number | null,
     salary_from: null as string | null,
 });
@@ -89,14 +87,12 @@ watch(open, (value) => {
         form.hire_date = props.employee.hireDate;
         form.office_id = props.employee.officeId;
         form.status = props.employee.status;
-        form.discord_user_id = props.employee.discordUserId ?? '';
         form.contract_type = props.employee.contractType;
         form.expected_minutes_per_day = props.employee.expectedMinutesPerDay;
         form.work_days = [...props.employee.workDays];
         form.schedule_start = props.employee.scheduleStart?.slice(0, 5) ?? '';
         form.schedule_end = props.employee.scheduleEnd?.slice(0, 5) ?? '';
         form.late_grace_minutes = props.employee.lateGraceMinutes;
-        form.reminders_enabled = props.employee.remindersEnabled;
 
         form.hourly_rate = props.hourlyRateCents ?? null;
 
@@ -206,27 +202,6 @@ function submit() {
             </div>
         </div>
 
-        <div class="space-y-2">
-            <Label for="employee-discord">Discord user ID</Label>
-            <Input
-                id="employee-discord"
-                v-model="form.discord_user_id"
-                inputmode="numeric"
-                placeholder="e.g. 123456789012345678"
-            />
-            <p class="text-xs text-muted-foreground">
-                In Discord, turn on Developer Mode, right-click the person and
-                choose Copy User ID. Leave it empty to keep the account
-                unlinked.
-            </p>
-            <p
-                v-if="form.errors.discord_user_id"
-                class="text-sm text-destructive"
-            >
-                {{ form.errors.discord_user_id }}
-            </p>
-        </div>
-
         <div class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-2">
                 <Label>Contract type</Label>
@@ -329,11 +304,6 @@ function submit() {
                 approved leave.
             </p>
         </div>
-
-        <label class="flex items-center gap-2 text-sm">
-            <Checkbox v-model="form.reminders_enabled" />
-            Send Discord reminders to this employee
-        </label>
 
         <div
             v-if="!editing && props.canSeeSalaries"

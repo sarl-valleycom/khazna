@@ -205,12 +205,6 @@ function saveSalary() {
                     </p>
                 </div>
                 <div>
-                    <p class="text-xs text-muted-foreground">Reminders</p>
-                    <p class="font-medium">
-                        {{ person.remindersEnabled ? 'On' : 'Off' }}
-                    </p>
-                </div>
-                <div>
                     <p class="text-xs text-muted-foreground">Work days</p>
                     <p class="font-medium">
                         {{

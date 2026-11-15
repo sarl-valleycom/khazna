@@ -98,15 +98,9 @@ declare namespace App {
         };
         export type AttendanceSettingsData = {
             autoCloseTime: string;
-            remindersEnabled: boolean;
-            reminderAfterMinutes: number;
-            awayLimitMinutes: number;
             paidBreakMinutes: number;
             selfCorrectionEnabled: boolean;
             selfCorrectionHours: number;
-            over10hReminderEnabled: boolean;
-            reportsChannelId: string | null;
-            offices: App.Data.OfficeAttendanceChannelData[];
         };
         export type AttentionContractData = {
             id: number;
@@ -346,7 +340,6 @@ declare namespace App {
             statusLabel: string;
             officeId: number;
             officeName: string;
-            discordUserId: string | null;
             contractType: App.Enums.EmploymentType;
             contractTypeLabel: string;
             expectedMinutesPerDay: number;
@@ -354,7 +347,6 @@ declare namespace App {
             scheduleStart: string | null;
             scheduleEnd: string | null;
             lateGraceMinutes: number;
-            remindersEnabled: boolean;
             hasAttendanceCode: boolean;
             attendanceCodeSetAt: string | null;
         };
@@ -397,11 +389,6 @@ declare namespace App {
             locked: boolean;
             canDeliver: boolean;
             canRequest: boolean;
-        };
-        export type OfficeAttendanceChannelData = {
-            id: number;
-            name: string;
-            attendanceChannelId: string | null;
         };
         export type OfficeOptionData = {
             id: number;

@@ -20,7 +20,7 @@ class StartBreak
     public function handle(
         Employee $employee,
         string $reason,
-        AttendanceSource $source = AttendanceSource::Discord,
+        AttendanceSource $source = AttendanceSource::Web,
         ?CarbonImmutable $at = null,
     ): AttendanceBreak {
         $now = ($at ?? AlgerianDate::now())->utc();

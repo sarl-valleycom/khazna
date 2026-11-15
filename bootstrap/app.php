@@ -1,31 +1,21 @@
 <?php
 
-use App\Http\Controllers\Discord\InteractionController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
-use App\Http\Middleware\VerifyDiscordSignature;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        then: function (): void {
-            // Discord's HTTP interactions endpoint: no session and no CSRF, because
-            // the caller is Discord itself. The signature middleware is the gate.
-            Route::post('discord/interactions', InteractionController::class)
-                ->middleware(VerifyDiscordSignature::class)
-                ->name('discord.interactions');
-        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);

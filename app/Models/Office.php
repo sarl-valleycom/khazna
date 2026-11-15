@@ -16,9 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property string $city
  * @property bool $active
- * @property string|null $attendance_channel_id
  */
-#[Fillable(['name', 'city', 'active', 'attendance_channel_id'])]
+#[Fillable(['name', 'city', 'active'])]
 class Office extends Model
 {
     /** @use HasFactory<OfficeFactory> */

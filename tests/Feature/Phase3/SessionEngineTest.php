@@ -34,7 +34,7 @@ test('check-in creates one open session and records the source', function () {
     expect($result->resumed)->toBeFalse()
         ->and($result->session->employee_id)->toBe($employee->id)
         ->and($result->session->status)->toBe(AttendanceStatus::Open)
-        ->and($result->session->source)->toBe(AttendanceSource::Discord)
+        ->and($result->session->source)->toBe(AttendanceSource::Web)
         ->and($result->session->ended_at)->toBeNull();
 });
 

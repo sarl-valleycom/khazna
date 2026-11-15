@@ -14,7 +14,7 @@ enum AttendanceSource: string
     public function label(): string
     {
         return match ($this) {
-            self::Discord => 'Discord',
+            self::Discord => 'Discord (old)',
             self::Web => 'Web',
             self::Admin => 'Admin',
         };

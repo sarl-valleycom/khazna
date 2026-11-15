@@ -24,7 +24,7 @@ class AttendanceSessionFactory extends Factory
             'ended_at' => now(),
             'status' => AttendanceStatus::Closed,
             'review_status' => AttendanceReviewStatus::Ok,
-            'source' => AttendanceSource::Discord,
+            'source' => AttendanceSource::Web,
         ];
     }
 

@@ -25,7 +25,7 @@ class StartSession
 
     public function handle(
         Employee $employee,
-        AttendanceSource $source = AttendanceSource::Discord,
+        AttendanceSource $source = AttendanceSource::Web,
         ?CarbonImmutable $at = null,
     ): StartedSession {
         $now = ($at ?? AlgerianDate::now())->utc();

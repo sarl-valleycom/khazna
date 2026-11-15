@@ -21,11 +21,6 @@ final class AttendanceException extends RuntimeException
         parent::__construct($translationKey);
     }
 
-    public static function notLinked(): self
-    {
-        return new self('attendance.errors.not_linked');
-    }
-
     public static function inactive(): self
     {
         return new self('attendance.errors.inactive');

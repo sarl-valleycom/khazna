@@ -37,11 +37,6 @@ class EmployeeFactory extends Factory
         return $this->state(fn (): array => ['status' => EmployeeStatus::Inactive, 'left_on' => '2025-12-31']);
     }
 
-    public function linkedTo(string $discordUserId): static
-    {
-        return $this->state(fn (): array => ['discord_user_id' => $discordUserId]);
-    }
-
     /**
      * @param  list<int>|null  $workDays  Carbon day-of-week numbers; null means Sunday to Thursday.
      */
