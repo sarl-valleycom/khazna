@@ -3,6 +3,7 @@
 use App\Discord\DiscordClient;
 use App\Jobs\SendDiscordDm;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -72,4 +73,53 @@ test('a failed DM without a fallback channel is only logged', function () {
 
     Http::assertSentCount(1);
     Log::shouldHaveReceived('warning')->withArgs(fn (string $message): bool => str_contains($message, 'no attendance channel'));
+});
+
+test('a network failure is retried and then reported as a failed send, not thrown', function () {
+    discordMessagingConfig();
+    Sleep::fake();
+
+    Http::fake(fn () => throw new ConnectionException('cURL error 28: timed out'));
+
+    $discord = app(DiscordClient::class);
+
+    expect($discord->sendChannelMessage('777777777777777777', 'Hello'))->toBeFalse()
+        ->and($discord->sendDirectMessage('444444444444444444', 'Hello'))->toBeFalse();
+
+    Sleep::assertSleptTimes(4);
+});
+
+test('a transient network failure followed by success delivers the message', function () {
+    discordMessagingConfig();
+    Sleep::fake();
+
+    Http::fake([
+        'discord.test/api/v10/channels/777777777777777777/messages' => Http::sequence()
+            ->pushFailedConnection('timed out')
+            ->push([], 200),
+    ]);
+
+    expect(app(DiscordClient::class)->sendChannelMessage('777777777777777777', 'Hello'))->toBeTrue();
+
+    Sleep::assertSleptTimes(1);
+});
+
+test('a DM that cannot reach Discord still falls back to the attendance channel', function () {
+    discordMessagingConfig();
+    Sleep::fake();
+
+    Http::fake([
+        'discord.test/api/v10/users/@me/channels' => fn () => throw new ConnectionException('timed out'),
+        'discord.test/api/v10/channels/777777777777777777/messages' => Http::response([], 200),
+    ]);
+
+    (new SendDiscordDm(
+        '444444444444444444',
+        'You forgot to check out.',
+        [],
+        '777777777777777777',
+        '<@444444444444444444> You forgot to check out.',
+    ))->handle(app(DiscordClient::class));
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://discord.test/api/v10/channels/777777777777777777/messages');
 });

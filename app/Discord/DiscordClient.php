@@ -2,6 +2,8 @@
 
 namespace App\Discord;
 
+use GuzzleHttp\Psr7\Response as PsrResponse;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -131,7 +133,9 @@ class DiscordClient
 
     /**
      * Discord answers 429 with a Retry-After header and can briefly return a
-     * 5xx. Back off, then give up cleanly so the caller can log the failure.
+     * 5xx. A timeout or dropped connection is treated like a 5xx. Back off,
+     * then give up cleanly (a synthetic 503 when nothing came back) so the
+     * caller can log the failure and use its fallback.
      *
      * @param  array<int|string, mixed>  $payload
      */
@@ -140,7 +144,27 @@ class DiscordClient
         $attempts = 3;
 
         for ($attempt = 1; ; $attempt++) {
-            $response = $this->request()->send($method, $path, ['json' => $payload]);
+            try {
+                $response = $this->request()->send($method, $path, ['json' => $payload]);
+            } catch (ConnectionException $exception) {
+                $delay = 2 ** ($attempt - 1);
+
+                Log::warning('Discord request could not reach Discord.', [
+                    'method' => $method,
+                    'path' => $path,
+                    'attempt' => $attempt,
+                    'delay_seconds' => $delay,
+                    'error' => $exception->getMessage(),
+                ]);
+
+                if ($attempt >= $attempts) {
+                    return new Response(new PsrResponse(503));
+                }
+
+                Sleep::for($delay)->seconds();
+
+                continue;
+            }
 
             if (! in_array($response->status(), [429, 500, 502, 503, 504], true) || $attempt >= $attempts) {
                 return $response;
