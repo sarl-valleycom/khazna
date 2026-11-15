@@ -251,3 +251,21 @@ test('the sessions export is owner only and carries the screen numbers', functio
         ->and($rows[0][10])->toBe('8h 07m')
         ->and($rows[0][11])->toBe('Finished the audit.');
 });
+
+test('a zero amount is written as zero, not left as an empty cell', function () {
+    CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-11-18 12:00:00', 'Africa/Algiers'));
+    $this->actingAsRole(Role::Owner);
+    Due::factory()->forClient(exportClient(['name' => 'Amal Trading', 'office_id' => Office::factory()->create()->id]))->create([
+        'due_on' => '2026-11-10',
+        'period' => '2026-11-10',
+        'amount_due_cents' => 5000000,
+        'amount_paid_cents' => 0,
+    ]);
+
+    $sheet = exportSheet($this->get(route('dues.export', ['tab' => 'overdue'])));
+
+    // K is "Paid (DA)", M is "Credit (DA)": both are zero here and must still be cells with a 0 in them.
+    expect($sheet->getCell('K2')->getValue())->toBe(0.0)
+        ->and($sheet->getCell('K2')->getDataType())->toBe('n')
+        ->and($sheet->getCell('M2')->getValue())->toBe(0.0);
+});

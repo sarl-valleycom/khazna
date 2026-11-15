@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithFreezePane;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
@@ -23,10 +24,13 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * columns sized to their content, dates as real dates, money as numbers in DA,
  * and text that stays text.
  *
+ * A zero is written as a zero: without strict null comparison the library
+ * turns 0 into an empty cell, and a paid amount of 0.00 would look missing.
+ *
  * Text is never interpreted. A client named "=HYPERLINK(...)" is stored as the
  * words it is, not as a formula, and a phone number keeps its leading zero.
  */
-abstract class SpreadsheetExport extends DefaultValueBinder implements ShouldAutoSize, WithCustomValueBinder, WithFreezePane, WithHeadings, WithStyles, WithTitle
+abstract class SpreadsheetExport extends DefaultValueBinder implements ShouldAutoSize, WithCustomValueBinder, WithFreezePane, WithHeadings, WithStrictNullComparison, WithStyles, WithTitle
 {
     public const DATE_FORMAT = NumberFormat::FORMAT_DATE_YYYYMMDD;
 

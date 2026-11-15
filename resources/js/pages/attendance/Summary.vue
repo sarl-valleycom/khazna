@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight } from '@lucide/vue';
 import AttendanceNav from '@/components/attendance/AttendanceNav.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
+import ExportButton from '@/components/kit/ExportButton.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import { Button } from '@/components/ui/button';
 
@@ -41,7 +42,11 @@ function goTo(month: string) {
         <PageHeader
             title="Monthly summary"
             description="Hours worked against what each person was expected to work. It is information only: it never changes a salary. For the current month the target runs through today."
-        />
+        >
+            <template #actions>
+                <ExportButton href="/attendance/summary/export" />
+            </template>
+        </PageHeader>
 
         <AttendanceNav />
 
@@ -128,13 +133,28 @@ function goTo(month: string) {
                         <td class="p-3 text-right tabular-nums">
                             {{ row.daysOff }}
                         </td>
-                        <td class="p-3">
+                        <td class="space-x-3 p-3 whitespace-nowrap">
                             <Link
                                 :href="row.sessionsUrl"
                                 class="text-primary underline-offset-4 hover:underline"
                             >
                                 View
                             </Link>
+                            <a
+                                :href="`/attendance/summary/${row.employeeId}/export?month=${props.month}`"
+                                class="text-primary underline-offset-4 hover:underline"
+                                download
+                            >
+                                Excel
+                            </a>
+                            <a
+                                :href="`/attendance/summary/${row.employeeId}/pdf?month=${props.month}`"
+                                class="text-primary underline-offset-4 hover:underline"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                PDF
+                            </a>
                         </td>
                     </tr>
                 </tbody>

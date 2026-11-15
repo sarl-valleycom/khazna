@@ -25,6 +25,7 @@ use App\Http\Controllers\Employees\AttendanceCodeController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
 use App\Http\Controllers\Exports\AccountStatementController;
+use App\Http\Controllers\Exports\AttendanceReportController;
 use App\Http\Controllers\Exports\CashReportExportController;
 use App\Http\Controllers\Exports\ClientsExportController;
 use App\Http\Controllers\Exports\ClientStatementController;
@@ -140,6 +141,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('presence', AttendancePresenceController::class)->name('presence.index');
 
         Route::get('summary', AttendanceSummaryController::class)->name('summary.index');
+        Route::get('summary/export', [AttendanceReportController::class, 'team'])->name('summary.export');
+        Route::get('summary/{employee}/export', [AttendanceReportController::class, 'employeeExcel'])->whereNumber('employee')->name('summary.employee.export');
+        Route::get('summary/{employee}/pdf', [AttendanceReportController::class, 'employeePdf'])->whereNumber('employee')->name('summary.employee.pdf');
 
         Route::get('holidays', [HolidayController::class, 'index'])->name('holidays.index');
         Route::post('holidays', [HolidayController::class, 'store'])->name('holidays.store');

@@ -4,11 +4,13 @@ namespace App\Attendance;
 
 use App\Enums\AttendanceReviewStatus;
 use App\Enums\AttendanceStatus;
+use App\Enums\EmployeeStatus;
 use App\Models\AttendanceSession;
 use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Support\AlgerianDate;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * A month of attendance for each employee: worked, expected, what is left to
@@ -78,6 +80,75 @@ class MonthlySummary
         }
 
         return $summary;
+    }
+
+    /**
+     * Who the monthly summary lists for a month: the active employees, and
+     * anyone who left during or after that month. The screen and the exports
+     * share this list, so they always show the same people.
+     *
+     * @return Collection<int, Employee>
+     */
+    public function roster(CarbonImmutable $month): Collection
+    {
+        $first = AlgerianDate::toAlgiers($month)->startOfMonth();
+
+        return Employee::query()
+            ->where(function ($query) use ($first): void {
+                $query->where('status', EmployeeStatus::Active)
+                    ->orWhereDate('left_on', '>=', $first->toDateString());
+            })
+            ->with('office:id,name')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * One employee's month day by day, from the 1st through today (or the end of
+     * a past month): the minutes expected, the minutes worked, and why the day
+     * does not count when it does not: 'holiday', 'leave', 'rest' (not one of
+     * their work days) or 'not employed' (before the hire date or after the last
+     * day).
+     *
+     * @return array<string, array{expected: int, worked: int, note: string|null}>
+     */
+    public function daily(Employee $employee, CarbonImmutable $month, ?CarbonImmutable $at = null): array
+    {
+        $now = ($at ?? AlgerianDate::now())->utc();
+        $today = AlgerianDate::toAlgiers($now)->startOfDay();
+        $first = AlgerianDate::toAlgiers($month)->startOfMonth()->startOfDay();
+        $last = $first->endOfMonth()->startOfDay();
+        $through = $last->lt($today) ? $last : $today;
+
+        if ($first->gt($today)) {
+            return [];
+        }
+
+        $sessions = $employee->attendanceSessions()
+            ->whereBetween('started_at', [$first->utc(), $last->endOfDay()->utc()])
+            ->with('breaks')
+            ->get();
+
+        $workedByDay = WorkedTime::minutesByDay($sessions, $now, AttendanceSetting::current()->paid_break_minutes);
+        $hired = $employee->hire_date?->toDateString();
+        $left = $employee->left_on?->toDateString();
+        $days = [];
+
+        foreach ($this->calendar->days($employee, $first, $through) as $date => $day) {
+            $employed = ($hired === null || $date >= $hired) && ($left === null || $date <= $left);
+
+            $days[$date] = [
+                'expected' => $day['expected'],
+                'worked' => $workedByDay[$date] ?? 0,
+                'note' => match (true) {
+                    ! $employed => 'not employed',
+                    ! $employee->worksOn($date) => 'rest',
+                    default => $day['off'],
+                },
+            ];
+        }
+
+        return $days;
     }
 
     /**

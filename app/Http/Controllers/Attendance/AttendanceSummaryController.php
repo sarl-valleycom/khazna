@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Attendance;
 
 use App\Attendance\MonthlySummary;
 use App\Data\MonthlySummaryRowData;
-use App\Enums\EmployeeStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceSession;
 use App\Models\Employee;
@@ -27,15 +26,7 @@ class AttendanceSummaryController extends Controller
         $current = AlgerianDate::today()->startOfMonth();
         $month = $this->month($request->query('month'), $current);
 
-        $employees = Employee::query()
-            ->where(function ($query) use ($month): void {
-                // Active people, plus anyone who left during or after this month.
-                $query->where('status', EmployeeStatus::Active)
-                    ->orWhereDate('left_on', '>=', $month->toDateString());
-            })
-            ->with('office:id,name')
-            ->orderBy('name')
-            ->get();
+        $employees = $summary->roster($month);
 
         $rows = $summary->forMany($employees, $month);
         $from = $month->toDateString();

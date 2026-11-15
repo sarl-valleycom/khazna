@@ -72,7 +72,7 @@ The saved sample is `doc/phases/samples/arabic-client-statement.mpdf.pdf`, made 
 - [x] Exports respect the same visibility as the screens (FR-EXP-04): an account manager exports only their own clients, and a finance user cannot export salary dues, because the dues query already hides them. The sessions export is owner only, like the sessions list.
 - [x] Export buttons ("Export to Excel", carrying the screen's current filters) on **clients**, **contracts**, **dues** (the triage tab you are on; "needs attention" lists contracts, so it has none) and **sessions**.
 - [x] A spreadsheet is safe to open: text is stored as text, so a client named `=HYPERLINK(...)` is never run as a formula, and a phone number keeps its leading zero. Dates are real dates (`yyyy-mm-dd`), money is a number in DA with two decimals (it only displays; Khazna's own totals stay in centimes), the header row is bold and frozen, and columns are sized to their content.
-- [ ] **Payments** have no list screen of their own, so there is nothing to mirror. They are exported inside the client statement (4.5) and the account statement (4.6). The **cash reports** are exported in 4.6.
+- [x] **Payments** have no list screen of their own, so there is nothing to mirror. They are exported inside the client statement (4.5) and the account statement (4.6). The **cash reports** are exported in 4.6.
 
 ## 4.5 PDF documents
 
@@ -85,8 +85,14 @@ Built with mPDF (4.3). `PdfRenderer` turns a Blade view into a PDF; each documen
 
 ## 4.6 Attendance and ledger exports
 
-- [ ] **Attendance monthly export** per employee, Excel and PDF: sessions, worked, expected, to make up (FR-RPT-05).
-- [ ] **Account statement** for a date range, Excel and PDF, and the cash reports from phase 2 (money in and out by month and category, office report) as Excel. These are what an accountant will ask for. Payroll lines follow the same masking rule as the screens.
+- [x] **Account statement** (Excel and PDF): `/accounts/{id}/statement` (PDF) and `/accounts/{id}/statement/export` (Excel), with the account page's optional `from` and `to`. The statement logic moved out of the account controller into `AccountStatementQuery`, which the page and both files now share: the opening balance carried into the period, the movements with a **running balance** that is exact on every page and in every chunk, and the totals. Payroll is collapsed to one anonymous "Payroll" line a day for anyone without the salary permission, in the Excel and the PDF as on screen (decision 18). The Excel has a Summary sheet and an Entries sheet. The PDF refuses a period of more than 2 000 lines and points to Excel. Same permission as viewing the account, including the office restriction. Buttons on the account page.
+- [x] **Cash reports** as Excel: `/reports/cash/export` with the report's own filters (`from`, `to`, `office`, `account`) and the very array `CashReportQuery` builds for the screen: a "By category" sheet (money in and out by category and month, with the totals and the cash result) and a "By office" sheet (result, balance, transfers). Payroll is out of the totals for anyone without the salary permission. Button on the cash report.
+- [x] **Attendance monthly export** (FR-RPT-05), owner only, built from `MonthlySummary` so it agrees with the screen:
+  - **Team, Excel:** `/attendance/summary/export?month=`, one row per employee (minutes and h:mm, to make up, extra, days worked, days off, sessions not yet checked), for the same people the screen lists.
+  - **One employee, Excel:** `/attendance/summary/{id}/export?month=` with three sheets: Summary, Days (expected against worked for each day, with the reason a day does not count: holiday, leave, rest, not employed) and Sessions.
+  - **One employee, PDF:** `/attendance/summary/{id}/pdf?month=`: the summary, the days and the sessions with their reports.
+  - Buttons on the monthly summary page (team in the header, Excel and PDF on each row).
+- [x] **Zeros stay zeros.** The Excel library writes a number `0` as an empty cell unless an export asks for strict null comparison, so a paid amount of 0.00 or 0 minutes worked would look missing. Every export now sets it (`SpreadsheetExport`), and a test fails without it.
 
 ---
 
