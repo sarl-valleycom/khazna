@@ -91,8 +91,7 @@ watch(open, (value) => {
         form.status = props.employee.status;
         form.discord_user_id = props.employee.discordUserId ?? '';
         form.contract_type = props.employee.contractType;
-        form.expected_minutes_per_day =
-            props.employee.expectedMinutesPerDay;
+        form.expected_minutes_per_day = props.employee.expectedMinutesPerDay;
         form.work_days = [...props.employee.workDays];
         form.schedule_start = props.employee.scheduleStart?.slice(0, 5) ?? '';
         form.schedule_end = props.employee.scheduleEnd?.slice(0, 5) ?? '';
@@ -124,11 +123,10 @@ function submit() {
         return;
     }
 
-    form.transform(
-        ({ salary_cents, salary_from, hourly_rate, ...rest }) =>
-            props.canSeeSalaries
-                ? { ...rest, salary_cents, salary_from, hourly_rate }
-                : rest,
+    form.transform(({ salary_cents, salary_from, hourly_rate, ...rest }) =>
+        props.canSeeSalaries
+            ? { ...rest, salary_cents, salary_from, hourly_rate }
+            : rest,
     ).post('/employees', options);
 }
 </script>

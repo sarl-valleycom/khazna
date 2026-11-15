@@ -70,6 +70,8 @@ export default defineConfig({
             '.github/**',
             'composer.json',
             'resources/js/components/ui/*',
+            'resources/js/types/generated.d.ts',
+            'resources/js/types/typescript-transformer-manifest.json',
             'resources/views/mail/*',
         ],
         sortTailwindcss: {

@@ -97,9 +97,7 @@ function openEdit(session: App.Data.AttendanceSessionData) {
                 <template v-else-if="column.key === 'actions'">
                     <SessionActions
                         :session="row as App.Data.AttendanceSessionData"
-                        @edit="
-                            openEdit(row as App.Data.AttendanceSessionData)
-                        "
+                        @edit="openEdit(row as App.Data.AttendanceSessionData)"
                     />
                 </template>
                 <template v-else>{{ row[column.key] }}</template>

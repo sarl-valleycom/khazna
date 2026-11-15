@@ -92,7 +92,7 @@ function tone(state: string): string {
                         </p>
                     </div>
                     <div class="flex items-center gap-4">
-                        <p class="text-sm tabular-nums text-muted-foreground">
+                        <p class="text-sm text-muted-foreground tabular-nums">
                             Today {{ row.todayFormatted }}
                         </p>
                         <StatusBadge

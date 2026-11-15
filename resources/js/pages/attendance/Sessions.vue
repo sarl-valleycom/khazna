@@ -202,7 +202,9 @@ function reviewTone(status: string): string {
                             ? 'all'
                             : String(props.filters.employee)
                     "
-                    @update:model-value="(value) => choose('employee', String(value))"
+                    @update:model-value="
+                        (value) => choose('employee', String(value))
+                    "
                 >
                     <SelectTrigger aria-label="Employee">
                         <SelectValue />
@@ -230,7 +232,9 @@ function reviewTone(status: string): string {
                             ? 'all'
                             : String(props.filters.office)
                     "
-                    @update:model-value="(value) => choose('office', String(value))"
+                    @update:model-value="
+                        (value) => choose('office', String(value))
+                    "
                 >
                     <SelectTrigger aria-label="Office">
                         <SelectValue />
@@ -254,7 +258,9 @@ function reviewTone(status: string): string {
                 >
                 <Select
                     :model-value="props.filters.status || 'all'"
-                    @update:model-value="(value) => choose('status', String(value))"
+                    @update:model-value="
+                        (value) => choose('status', String(value))
+                    "
                 >
                     <SelectTrigger aria-label="Status">
                         <SelectValue />
@@ -359,9 +365,7 @@ function reviewTone(status: string): string {
                 <template v-else-if="column.key === 'actions'">
                     <SessionActions
                         :session="row as App.Data.AttendanceSessionData"
-                        @edit="
-                            openEdit(row as App.Data.AttendanceSessionData)
-                        "
+                        @edit="openEdit(row as App.Data.AttendanceSessionData)"
                     />
                 </template>
                 <template v-else>{{ row[column.key] }}</template>

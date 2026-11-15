@@ -91,9 +91,7 @@ function submit() {
                         v-model="form.reminders_enabled"
                     />
                     <div>
-                        <Label for="reminders-enabled"
-                            >Reminders enabled</Label
-                        >
+                        <Label for="reminders-enabled">Reminders enabled</Label>
                         <p class="text-xs text-muted-foreground">
                             Sends the not-checked-in and long-break reminders.
                         </p>
@@ -141,9 +139,7 @@ function submit() {
                         v-model="form.over_10h_reminder_enabled"
                     />
                     <div>
-                        <Label for="over-10h"
-                            >Remind after 10 hours</Label
-                        >
+                        <Label for="over-10h">Remind after 10 hours</Label>
                         <p class="text-xs text-muted-foreground">
                             Asks the employee whether they forgot to check out.
                         </p>
@@ -195,9 +191,7 @@ function submit() {
                         />
                     </div>
                     <div class="space-y-2">
-                        <Label for="reports-channel"
-                            >Reports channel ID</Label
-                        >
+                        <Label for="reports-channel">Reports channel ID</Label>
                         <Input
                             id="reports-channel"
                             v-model="form.reports_channel_id"

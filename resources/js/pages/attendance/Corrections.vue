@@ -137,7 +137,9 @@ function close() {
 
     <ConfirmDialog
         :open="selected !== null"
-        :title="action === 'approve' ? 'Approve correction?' : 'Reject correction?'"
+        :title="
+            action === 'approve' ? 'Approve correction?' : 'Reject correction?'
+        "
         :description="
             selected
                 ? `${selected.employeeName}'s session will be ${
