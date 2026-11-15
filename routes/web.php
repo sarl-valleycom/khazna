@@ -25,6 +25,7 @@ use App\Http\Controllers\Employees\AttendanceCodeController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
 use App\Http\Controllers\Exports\ClientsExportController;
+use App\Http\Controllers\Exports\ClientStatementController;
 use App\Http\Controllers\Exports\ContractsExportController;
 use App\Http\Controllers\Exports\DuesExportController;
 use App\Http\Controllers\Exports\SessionsExportController;
@@ -71,6 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('clients/import/confirm', [ClientImportController::class, 'confirm'])->name('clients.import.confirm');
     Route::post('clients', [ClientController::class, 'store'])->name('clients.store');
     Route::post('clients/{client}/dues', [DueController::class, 'store'])->whereNumber('client')->name('dues.store');
+    Route::get('clients/{client}/statement', ClientStatementController::class)->whereNumber('client')->name('clients.statement');
     Route::get('clients/{client}', [ClientController::class, 'show'])->whereNumber('client')->name('clients.show');
     Route::patch('clients/{client}', [ClientController::class, 'update'])->whereNumber('client')->name('clients.update');
     Route::delete('clients/{client}', [ClientController::class, 'destroy'])->whereNumber('client')->name('clients.destroy');
