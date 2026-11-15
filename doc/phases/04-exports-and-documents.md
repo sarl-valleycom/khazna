@@ -18,11 +18,11 @@ Build in this order: 4.1, then 4.2, then the PDF spike (4.3) before any PDF work
 
 The hours-to-make-up numbers on the employee page already subtract holidays and approved leave (`WorkCalendar`), but today the owner has no way to enter either. Until then every holiday counts as missed time.
 
-- [ ] **Holidays** (owner only): list, add (date and label) and remove. Islamic holidays follow the moon and are announced late, so **do not compute them**; the owner enters them when they are announced. A note on the screen says so.
-- [ ] **Leave** (owner only): add leave for an employee with type (paid, unpaid, sick), first and last day, and a reason. The owner enters it, so it is approved at once (status `approved`, decided by the owner). Cancel a leave from the list. Employees do not request leave in this phase.
-- [ ] The type is a label only. It does not change pay: the owner decides any deduction in the month's adjustments.
-- [ ] Every change is audited, with a reason for a cancellation.
-- [ ] Hand-computed test: a 5 day week with one holiday and one approved leave day gives the expected minutes on the employee page (for example 3 working days left × 480 = 1 440 minutes).
+- [x] **Holidays** (owner only): list, add (date and label) and remove. Islamic holidays follow the moon and are announced late, so **do not compute them**; the owner enters them when they are announced. A note on the screen says so.
+- [x] **Leave** (owner only): add leave for an employee with type (paid, unpaid, sick), first and last day, and a reason. The owner enters it, so it is approved at once (status `approved`, decided by the owner). Cancel a leave from the list. Employees do not request leave in this phase.
+- [x] The type is a label only. It does not change pay: the owner decides any deduction in the month's adjustments.
+- [x] Every change is audited, with a reason for a cancellation.
+- [x] Hand-computed test: a 5 day week with one holiday and one approved leave day gives the expected minutes on the employee page (for example 3 working days left × 480 = 1 440 minutes).
 
 ## 4.2 Monthly attendance summary
 

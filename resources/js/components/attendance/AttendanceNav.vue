@@ -7,6 +7,8 @@ const items = [
     { label: 'Sessions', href: '/attendance/sessions' },
     { label: 'Who is working', href: '/attendance/presence' },
     { label: 'Corrections', href: '/attendance/corrections' },
+    { label: 'Holidays', href: '/attendance/holidays' },
+    { label: 'Leave', href: '/attendance/leave' },
     { label: 'Settings', href: '/attendance/settings' },
 ];
 

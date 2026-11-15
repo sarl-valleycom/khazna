@@ -373,6 +373,24 @@ declare namespace App {
             outflow: number;
             balance: number;
         };
+        export type HolidayData = {
+            id: number;
+            date: string;
+            weekday: string;
+            label: string;
+        };
+        export type LeaveEntryData = {
+            id: number;
+            employeeId: number;
+            employeeName: string;
+            officeName: string;
+            type: string;
+            typeLabel: string;
+            from: string;
+            to: string;
+            workDays: number;
+            reason: string | null;
+        };
         export type MilestoneData = {
             id: number;
             position: number;

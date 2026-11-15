@@ -9,6 +9,8 @@ use App\Http\Controllers\Attendance\AttendanceCorrectionController;
 use App\Http\Controllers\Attendance\AttendancePresenceController;
 use App\Http\Controllers\Attendance\AttendanceSessionController;
 use App\Http\Controllers\Attendance\AttendanceSettingsController;
+use App\Http\Controllers\Attendance\HolidayController;
+use App\Http\Controllers\Attendance\LeaveController;
 use App\Http\Controllers\Categories\CategoryController;
 use App\Http\Controllers\Clients\ClientController;
 use App\Http\Controllers\Clients\ClientImportController;
@@ -118,6 +120,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('sessions/{attendanceSession}/approve', [AttendanceSessionController::class, 'approve'])->whereNumber('attendanceSession')->name('sessions.approve');
 
         Route::get('presence', AttendancePresenceController::class)->name('presence.index');
+
+        Route::get('holidays', [HolidayController::class, 'index'])->name('holidays.index');
+        Route::post('holidays', [HolidayController::class, 'store'])->name('holidays.store');
+        Route::delete('holidays/{holiday}', [HolidayController::class, 'destroy'])->whereNumber('holiday')->name('holidays.destroy');
+
+        Route::get('leave', [LeaveController::class, 'index'])->name('leave.index');
+        Route::post('leave', [LeaveController::class, 'store'])->name('leave.store');
+        Route::delete('leave/{leave}', [LeaveController::class, 'destroy'])->whereNumber('leave')->name('leave.destroy');
 
         Route::get('corrections', [AttendanceCorrectionController::class, 'index'])->name('corrections.index');
         Route::patch('corrections/{correctionRequest}/approve', [AttendanceCorrectionController::class, 'approve'])->whereNumber('correctionRequest')->name('corrections.approve');
