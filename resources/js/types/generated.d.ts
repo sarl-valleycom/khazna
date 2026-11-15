@@ -534,6 +534,8 @@ declare namespace App {
         export type EmployeeStatus = "active" | "inactive";
         export type EmploymentType =
             "fixed_monthly" | "hourly" | "part_time" | "freelancer";
+        export type LeaveStatus = "pending" | "approved" | "rejected";
+        export type LeaveType = "paid" | "unpaid" | "sick";
         export type MilestoneTrigger = "date" | "delivery";
         export type PaymentMethod =
             "cash" | "ccp" | "baridimob" | "bank_transfer" | "other";

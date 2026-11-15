@@ -45,6 +45,11 @@ return [
         'write_report' => 'Write today\'s report',
     ],
 
+    'reminders' => [
+        'not_checked_in' => 'You were expected to check in at :time. Are you working today?',
+        'away_too_long' => 'You have been away since :time, over :minutes minutes. Are you back?',
+    ],
+
     'report' => [
         'modal_title' => 'Write today\'s report',
         'what_did_you_do' => 'What did you do today?',

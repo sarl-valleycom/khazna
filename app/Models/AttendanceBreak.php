@@ -18,8 +18,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property CarbonImmutable|null $ended_at
  * @property string|null $reason
  * @property bool $paid
+ * @property CarbonImmutable|null $away_reminder_sent_at
  */
-#[Fillable(['session_id', 'started_at', 'ended_at', 'reason', 'paid'])]
+#[Fillable(['session_id', 'started_at', 'ended_at', 'reason', 'paid', 'away_reminder_sent_at'])]
 class AttendanceBreak extends Model
 {
     /** @use HasFactory<AttendanceBreakFactory> */
@@ -32,6 +33,7 @@ class AttendanceBreak extends Model
             'started_at' => 'immutable_datetime',
             'ended_at' => 'immutable_datetime',
             'paid' => 'boolean',
+            'away_reminder_sent_at' => 'immutable_datetime',
         ];
     }
 

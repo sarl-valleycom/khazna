@@ -35,3 +35,15 @@ Schedule::command('attendance:remind')
     ->everyFiveMinutes()
     ->timezone('Africa/Algiers')
     ->withoutOverlapping();
+
+Schedule::command('attendance:digest-daily')
+    ->everyMinute()
+    ->timezone('Africa/Algiers')
+    ->withoutOverlapping()
+    ->when(fn (): bool => AlgerianDate::now()->format('H:i') === substr(AttendanceSetting::current()->digest_time, 0, 5));
+
+Schedule::command('attendance:digest-weekly')
+    ->sundays()
+    ->at('08:00')
+    ->timezone('Africa/Algiers')
+    ->withoutOverlapping();

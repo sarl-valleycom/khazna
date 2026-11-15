@@ -31,7 +31,7 @@ class AttendanceCorrectionRemindersCommand extends Command
             ->whereHas('employee', fn ($query) => $query
                 ->where('status', EmployeeStatus::Active)
                 ->whereNotNull('discord_user_id'))
-            ->with('employee')
+            ->with(['employee.office'])
             ->orderBy('id')
             ->chunkById(100, function ($sessions) use (&$sent): void {
                 foreach ($sessions as $session) {
@@ -61,13 +61,18 @@ class AttendanceCorrectionRemindersCommand extends Command
                         ],
                     ];
 
+                    $content = (string) __('discord.corrections.dm', [
+                        'date' => $endedAt->format('d M Y'),
+                        'time' => $endedAt->format('H:i'),
+                    ]);
+                    $channelId = $employee->office?->attendance_channel_id;
+
                     SendDiscordDm::dispatch(
                         $employee->discord_user_id,
-                        (string) __('discord.corrections.dm', [
-                            'date' => $endedAt->format('d M Y'),
-                            'time' => $endedAt->format('H:i'),
-                        ]),
+                        $content,
                         $components,
+                        $channelId,
+                        $channelId === null ? null : '<@'.$employee->discord_user_id.'> '.$content,
                     );
 
                     $session->update(['correction_dm_sent_at' => AlgerianDate::now()->utc()]);

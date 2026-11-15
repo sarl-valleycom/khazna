@@ -3,8 +3,10 @@
 namespace App\Discord;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Sleep;
 
 /**
  * The only place that talks to the Discord REST API. Channel IDs and user IDs
@@ -31,7 +33,8 @@ class DiscordClient
             return false;
         }
 
-        $response = $this->request()->put(
+        $response = $this->sendWithRetry(
+            'PUT',
             "/applications/{$applicationId}/guilds/{$guildId}/commands",
             $commands,
         );
@@ -57,7 +60,7 @@ class DiscordClient
      */
     public function sendDirectMessage(string $userId, string $content, array $components = []): bool
     {
-        $channel = $this->request()->post('/users/@me/channels', ['recipient_id' => $userId]);
+        $channel = $this->sendWithRetry('POST', '/users/@me/channels', ['recipient_id' => $userId]);
 
         if (! $channel->successful()) {
             Log::error('Discord DM channel could not be opened.', [
@@ -83,7 +86,7 @@ class DiscordClient
             $payload['components'] = $components;
         }
 
-        $message = $this->request()->post("/channels/{$channelId}/messages", $payload);
+        $message = $this->sendWithRetry('POST', "/channels/{$channelId}/messages", $payload);
 
         if (! $message->successful()) {
             Log::error('Discord DM failed.', [
@@ -99,20 +102,19 @@ class DiscordClient
     }
 
     /**
-     * Post a plain message to a channel. Rate-limit handling is added in the
-     * reminders/digests section; this method only owns the HTTP call.
+     * Post a plain message to a channel.
      *
      * @param  list<array<string, mixed>>  $embeds
      */
     public function sendChannelMessage(string $channelId, string $content, array $embeds = []): bool
     {
-        $payload = ['content' => $content];
+        $payload = $content === '' ? [] : ['content' => $content];
 
         if ($embeds !== []) {
             $payload['embeds'] = $embeds;
         }
 
-        $response = $this->request()->post("/channels/{$channelId}/messages", $payload);
+        $response = $this->sendWithRetry('POST', "/channels/{$channelId}/messages", $payload);
 
         if (! $response->successful()) {
             Log::error('Discord channel message failed.', [
@@ -125,6 +127,47 @@ class DiscordClient
         }
 
         return true;
+    }
+
+    /**
+     * Discord answers 429 with a Retry-After header and can briefly return a
+     * 5xx. Back off, then give up cleanly so the caller can log the failure.
+     *
+     * @param  array<int|string, mixed>  $payload
+     */
+    private function sendWithRetry(string $method, string $path, array $payload): Response
+    {
+        $attempts = 3;
+
+        for ($attempt = 1; ; $attempt++) {
+            $response = $this->request()->send($method, $path, ['json' => $payload]);
+
+            if (! in_array($response->status(), [429, 500, 502, 503, 504], true) || $attempt >= $attempts) {
+                return $response;
+            }
+
+            $delay = $response->status() === 429
+                ? $this->retryAfter($response)
+                : 2 ** ($attempt - 1);
+
+            Log::warning('Discord request failed; retrying with backoff.', [
+                'method' => $method,
+                'path' => $path,
+                'status' => $response->status(),
+                'attempt' => $attempt,
+                'delay_seconds' => $delay,
+            ]);
+
+            Sleep::for($delay)->seconds();
+        }
+    }
+
+    private function retryAfter(Response $response): int
+    {
+        $header = $response->header('Retry-After');
+        $seconds = is_numeric($header) ? (float) $header : 1.0;
+
+        return (int) max(1, min(30, ceil($seconds)));
     }
 
     private function request(): PendingRequest

@@ -97,6 +97,12 @@ class Employee extends Model
         return $this->hasMany(AttendanceSession::class);
     }
 
+    /** @return HasMany<LeaveRequest, $this> */
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
     /** The monthly salary in force on a date: the latest raise on or before it. Null before the first one. */
     public function salaryOn(CarbonInterface|string $date): ?int
     {
