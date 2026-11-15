@@ -2,6 +2,11 @@
 
 return [
 
+    'errors' => [
+        'unknown_interaction' => 'That command is not available.',
+        'generic' => 'Something went wrong. Please try again.',
+    ],
+
     'commands' => [
         'check_in' => 'Start a work session',
         'check_out' => 'End your work session',
