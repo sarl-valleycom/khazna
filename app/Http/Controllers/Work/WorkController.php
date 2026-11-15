@@ -25,6 +25,7 @@ use App\Support\AlgerianDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -39,6 +40,16 @@ class WorkController extends Controller
     private const SESSION_KEY = 'work.employee_id';
 
     private const EXPIRES_KEY = 'work.expires_at';
+
+    private const FINGERPRINT_KEY = 'work.code_fingerprint';
+
+    /** Wrong codes allowed per address, then a pause. Right codes never count. */
+    private const FAILS_PER_MINUTE = 10;
+
+    private const FAILS_PER_HOUR = 40;
+
+    /** Wrong codes across every address, so a spread-out guesser still cannot get through. */
+    private const FAILS_PER_HOUR_ALL = 400;
 
     /** A working day, so a phone left logged in does not stay open for ever. */
     private const SESSION_HOURS = 14;
@@ -60,14 +71,32 @@ class WorkController extends Controller
     {
         $validated = $request->validate(['code' => ['required', 'string', 'max:20']]);
 
+        $keys = [
+            'work-fail-minute:'.$request->ip() => [self::FAILS_PER_MINUTE, 60],
+            'work-fail-hour:'.$request->ip() => [self::FAILS_PER_HOUR, 3600],
+            'work-fail-all' => [self::FAILS_PER_HOUR_ALL, 3600],
+        ];
+
+        // Only wrong codes count, so a whole office behind one address can sign in together.
+        foreach ($keys as $key => [$max]) {
+            if (RateLimiter::tooManyAttempts($key, $max)) {
+                return back(303)->withErrors(['code' => __('attendance.errors.too_many_attempts')]);
+            }
+        }
+
         $employee = $codes->find($validated['code']);
 
         if ($employee === null) {
+            foreach ($keys as $key => [, $seconds]) {
+                RateLimiter::hit($key, $seconds);
+            }
+
             return back(303)->withErrors(['code' => __('attendance.errors.invalid_code')]);
         }
 
         $request->session()->regenerate();
         $request->session()->put(self::SESSION_KEY, $employee->id);
+        $request->session()->put(self::FINGERPRINT_KEY, $codes->fingerprint($employee));
         $request->session()->put(self::EXPIRES_KEY, AlgerianDate::now()->addHours(self::SESSION_HOURS)->getTimestamp());
 
         return redirect()->route('work.show');
@@ -75,7 +104,7 @@ class WorkController extends Controller
 
     public function leave(Request $request): RedirectResponse
     {
-        $request->session()->forget([self::SESSION_KEY, self::EXPIRES_KEY]);
+        $request->session()->forget([self::SESSION_KEY, self::EXPIRES_KEY, self::FINGERPRINT_KEY]);
         $request->session()->regenerateToken();
 
         return redirect()->route('work.show');
@@ -198,20 +227,30 @@ class WorkController extends Controller
         $expires = (int) $request->session()->get(self::EXPIRES_KEY, 0);
 
         if (! is_int($id) || $expires < AlgerianDate::now()->getTimestamp()) {
-            $request->session()->forget([self::SESSION_KEY, self::EXPIRES_KEY]);
+            $this->forget($request);
 
             return null;
         }
 
         $employee = Employee::query()->find($id);
+        $fingerprint = $employee === null ? null : app(AttendanceCode::class)->fingerprint($employee);
 
-        if ($employee === null || ! $employee->isActive()) {
-            $request->session()->forget([self::SESSION_KEY, self::EXPIRES_KEY]);
+        // A replaced or removed code ends the sign-in made with the old one.
+        if ($employee === null
+            || ! $employee->isActive()
+            || $fingerprint === null
+            || ! hash_equals($fingerprint, (string) $request->session()->get(self::FINGERPRINT_KEY))) {
+            $this->forget($request);
 
             return null;
         }
 
         return $employee;
+    }
+
+    private function forget(Request $request): void
+    {
+        $request->session()->forget([self::SESSION_KEY, self::EXPIRES_KEY, self::FINGERPRINT_KEY]);
     }
 
     private function ownSession(Employee $employee, AttendanceSession $session): AttendanceSession

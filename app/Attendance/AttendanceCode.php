@@ -57,6 +57,18 @@ final class AttendanceCode
             ->first();
     }
 
+    /**
+     * A fingerprint of the employee's current code. The page keeps it in the
+     * session, so replacing or removing the code ends every sign-in made with
+     * the old one.
+     */
+    public function fingerprint(Employee $employee): ?string
+    {
+        return $employee->attendance_code_hash === null
+            ? null
+            : hash('sha256', $employee->attendance_code_hash);
+    }
+
     private function hash(string $code): string
     {
         return hash_hmac('sha256', $code, (string) config('app.key'));

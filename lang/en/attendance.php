@@ -16,7 +16,7 @@ return [
         'not_checked_out' => 'Check out before writing your report.',
         'report_required' => 'Write what you did today.',
         'invalid_code' => 'That code is not right. Check it with the owner.',
-        'too_many_attempts' => 'Too many tries. Wait a minute and try again.',
+        'too_many_attempts' => 'Too many wrong codes. Wait a few minutes and try again.',
         'session_expired' => 'Enter your code again.',
     ],
 

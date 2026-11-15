@@ -38,7 +38,7 @@ use Illuminate\Support\Facades\Route;
 // The employee page: no login, a personal code instead (see WorkController).
 Route::prefix('work')->name('work.')->group(function () {
     Route::get('/', [WorkController::class, 'show'])->name('show');
-    Route::post('enter', [WorkController::class, 'enter'])->middleware('throttle:work-code')->name('enter');
+    Route::post('enter', [WorkController::class, 'enter'])->name('enter');
     Route::post('leave', [WorkController::class, 'leave'])->name('leave');
     Route::post('check-in', [WorkController::class, 'checkIn'])->name('check-in');
     Route::post('check-out', [WorkController::class, 'checkOut'])->name('check-out');

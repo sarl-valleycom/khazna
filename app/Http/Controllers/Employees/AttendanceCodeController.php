@@ -8,7 +8,7 @@ use App\Models\Employee;
 use Illuminate\Http\RedirectResponse;
 
 /**
- * The owner gives an employee a personal attendance code. The code is shown
+ * Only the owner gives an employee a personal attendance code: whoever holds it can act as that employee on the attendance page. The code is shown
  * once, right after it is made, and cannot be read back: a lost code is
  * replaced by making a new one.
  */
@@ -16,7 +16,7 @@ class AttendanceCodeController extends Controller
 {
     public function store(Employee $employee, AttendanceCode $codes): RedirectResponse
     {
-        $this->authorize('update', $employee);
+        $this->authorize('manage-attendance-codes');
 
         abort_unless($employee->isActive(), 422);
 
@@ -27,7 +27,7 @@ class AttendanceCodeController extends Controller
 
     public function destroy(Employee $employee, AttendanceCode $codes): RedirectResponse
     {
-        $this->authorize('update', $employee);
+        $this->authorize('manage-attendance-codes');
 
         $codes->revoke($employee);
 

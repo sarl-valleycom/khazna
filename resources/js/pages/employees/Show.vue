@@ -21,6 +21,7 @@ defineOptions({
 
 type Props = {
     newAttendanceCode?: string | null;
+    canManageAttendanceCode?: boolean;
     employee:
         | App.Data.EmployeeWithSalaryData
         | { employee: App.Data.EmployeeData };
@@ -162,7 +163,10 @@ function saveSalary() {
                         }}
                     </p>
                     <div
-                        v-if="person.status === 'active'"
+                        v-if="
+                            props.canManageAttendanceCode &&
+                            person.status === 'active'
+                        "
                         class="mt-2 flex gap-2"
                     >
                         <Button size="sm" variant="outline" @click="makeCode">

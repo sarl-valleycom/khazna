@@ -86,15 +86,64 @@ test('only a keyed hash of the code is stored', function () {
         ->and(json_encode($employee->toArray()))->not->toContain($employee->attendance_code_hash);
 });
 
-test('code guessing is rate limited', function () {
-    RateLimiter::clear('work-code-minute:127.0.0.1');
-    workEmployee();
+test('wrong codes are limited with a friendly message, not a raw error', function () {
+    RateLimiter::clear('work-fail-minute:127.0.0.1');
+    RateLimiter::clear('work-fail-hour:127.0.0.1');
+    RateLimiter::clear('work-fail-all');
+    [, $code] = workEmployee();
 
-    foreach (range(1, 5) as $attempt) {
-        $this->post(route('work.enter'), ['code' => '111111'])->assertSessionHasErrors('code');
+    foreach (range(1, 10) as $attempt) {
+        $this->post(route('work.enter'), ['code' => '111111'])
+            ->assertSessionHasErrors(['code' => __('attendance.errors.invalid_code')]);
     }
 
-    $this->post(route('work.enter'), ['code' => '111111'])->assertStatus(429);
+    // Even the right code waits once the limit is reached.
+    $this->post(route('work.enter'), ['code' => $code])
+        ->assertStatus(303)
+        ->assertSessionHasErrors(['code' => __('attendance.errors.too_many_attempts')]);
+});
+
+test('right codes never count, so a whole office behind one address can sign in', function () {
+    RateLimiter::clear('work-fail-minute:127.0.0.1');
+    RateLimiter::clear('work-fail-hour:127.0.0.1');
+    RateLimiter::clear('work-fail-all');
+
+    foreach (range(1, 15) as $number) {
+        [, $code] = workEmployee();
+        $this->post(route('work.enter'), ['code' => $code])->assertRedirect(route('work.show'));
+        $this->post(route('work.leave'));
+    }
+});
+
+test('replacing or removing a code ends the sign-in made with the old one', function () {
+    [$employee, $code] = workEmployee();
+    workSignIn($this, $code);
+    $this->get(route('work.show'))->assertInertia(fn ($page) => $page->component('work/Dashboard'));
+
+    app(AttendanceCode::class)->generate($employee->refresh());
+
+    $this->get(route('work.show'))->assertInertia(fn ($page) => $page->component('work/Enter'));
+    $this->post(route('work.check-in'))->assertRedirect(route('work.show'));
+    $this->assertDatabaseCount('attendance_sessions', 0);
+
+    $new = app(AttendanceCode::class)->generate($employee->refresh());
+    workSignIn($this, $new);
+
+    app(AttendanceCode::class)->revoke($employee->refresh());
+    $this->get(route('work.show'))->assertInertia(fn ($page) => $page->component('work/Enter'));
+});
+
+test('only the owner can make or remove a code', function () {
+    $employee = Employee::factory()->forOffice(Office::factory()->create())->create();
+
+    foreach ([Role::Finance, Role::AccountManager] as $role) {
+        $this->actingAsRole($role);
+
+        $this->post(route('employees.attendance-code.store', $employee))->assertForbidden();
+        $this->delete(route('employees.attendance-code.destroy', $employee))->assertForbidden();
+    }
+
+    expect($employee->refresh()->hasAttendanceCode())->toBeFalse();
 });
 
 test('check-in, break, back and check-out are saved through the web page', function () {
