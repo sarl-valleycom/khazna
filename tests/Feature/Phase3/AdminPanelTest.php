@@ -515,3 +515,76 @@ test('attendance settings reject malformed Discord channel IDs', function () {
         'reports_channel_id' => '123',
     ])->assertSessionHasErrors(['owner_digest_channel_id', 'reports_channel_id']);
 });
+
+test('deleting a session rejects its pending correction requests', function () {
+    CarbonImmutable::setTestNow(adminAt('2026-11-17 09:00:00'));
+
+    $employee = adminEmployee('Deleted');
+    $session = adminSessionFor($employee, '2026-11-16 09:00:00', '2026-11-16 17:00:00', [
+        'status' => AttendanceStatus::AutoClosed,
+        'review_status' => AttendanceReviewStatus::NeedsReview,
+    ]);
+    $request = CorrectionRequest::factory()->create([
+        'session_id' => $session->id,
+        'employee_id' => $employee->id,
+        'proposed_ended_at' => adminAt('2026-11-16 18:30:00')->utc(),
+    ]);
+    $this->actingAsRole(Role::Owner);
+
+    $this->delete(route('attendance.sessions.destroy', $session), ['reason' => 'Duplicate entry.'])
+        ->assertStatus(303);
+
+    $request->refresh();
+
+    expect($request->status)->toBe(CorrectionStatus::Rejected)
+        ->and($request->decided_at)->not->toBeNull()
+        ->and(CorrectionRequest::query()->pending()->count())->toBe(0);
+});
+
+test('editing the end of a session rejects its stale pending correction', function () {
+    CarbonImmutable::setTestNow(adminAt('2026-11-17 09:00:00'));
+
+    $employee = adminEmployee('Edited');
+    $session = adminSessionFor($employee, '2026-11-16 09:00:00', '2026-11-16 17:00:00', [
+        'status' => AttendanceStatus::AutoClosed,
+        'review_status' => AttendanceReviewStatus::NeedsReview,
+    ]);
+    $request = CorrectionRequest::factory()->create([
+        'session_id' => $session->id,
+        'employee_id' => $employee->id,
+        'proposed_ended_at' => adminAt('2026-11-16 18:30:00')->utc(),
+    ]);
+    $this->actingAsRole(Role::Owner);
+
+    $this->patch(route('attendance.sessions.update', $session), adminSessionPayload($employee, [
+        'ended_at' => '2026-11-16T17:45',
+        'reason' => 'Checked with the employee.',
+    ]))->assertSessionHasNoErrors();
+
+    expect($request->refresh()->status)->toBe(CorrectionStatus::Rejected)
+        ->and($session->refresh()->ended_at?->toDateTimeString())->toBe('2026-11-16 16:45:00');
+});
+
+test('editing only the report leaves a pending correction alone', function () {
+    CarbonImmutable::setTestNow(adminAt('2026-11-17 09:00:00'));
+
+    $employee = adminEmployee('Report');
+    $session = adminSessionFor($employee, '2026-11-16 09:00:00', '2026-11-16 17:00:00', [
+        'status' => AttendanceStatus::AutoClosed,
+        'review_status' => AttendanceReviewStatus::NeedsReview,
+    ]);
+    $request = CorrectionRequest::factory()->create([
+        'session_id' => $session->id,
+        'employee_id' => $employee->id,
+        'proposed_ended_at' => adminAt('2026-11-16 18:30:00')->utc(),
+    ]);
+    $this->actingAsRole(Role::Owner);
+
+    $this->patch(route('attendance.sessions.update', $session), adminSessionPayload($employee, [
+        'ended_at' => '2026-11-16T17:00',
+        'report' => 'A better report.',
+        'reason' => 'Report typo.',
+    ]))->assertSessionHasNoErrors();
+
+    expect($request->refresh()->status)->toBe(CorrectionStatus::Pending);
+});

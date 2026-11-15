@@ -3,6 +3,7 @@
 namespace App\Actions\Attendance;
 
 use App\Actions\Attendance\Concerns\LocksEmployee;
+use App\Actions\Attendance\Concerns\RejectsPendingCorrections;
 use App\Enums\AttendanceReviewStatus;
 use App\Enums\AttendanceStatus;
 use App\Models\AttendanceSession;
@@ -15,10 +16,12 @@ use Illuminate\Validation\ValidationException;
 /**
  * The owner fixes a session by hand. The session keeps its source (Discord or
  * admin); an auto-closed row stays auto-closed, but the change marks it reviewed.
+ * Changing the start or end closes the session's pending correction requests.
  */
 class UpdateSession
 {
     use LocksEmployee;
+    use RejectsPendingCorrections;
 
     public function handle(
         AttendanceSession $session,
@@ -67,6 +70,11 @@ class UpdateSession
                 default => AttendanceStatus::Closed,
             };
 
+            $previousEnd = $locked->ended_at;
+            $timesChanged = ! $locked->started_at->equalTo($startedAt)
+                || ($previousEnd === null) !== ($endedAt === null)
+                || ($previousEnd !== null && $endedAt !== null && ! $previousEnd->equalTo($endedAt));
+
             app(AuditContext::class)->withReason($reason, fn () => $locked->update([
                 'started_at' => $startedAt,
                 'ended_at' => $endedAt,
@@ -76,6 +84,11 @@ class UpdateSession
                 'blockers' => self::text($blockers),
                 'closed_by' => $endedAt === null ? null : ($locked->closed_by ?? $actor->id),
             ]));
+
+            if ($timesChanged) {
+                // Approving the old proposal later would overwrite this edit.
+                $this->rejectPendingCorrections($locked, $actor);
+            }
 
             return $locked->refresh()->load('breaks');
         });
