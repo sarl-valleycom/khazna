@@ -75,6 +75,16 @@ final class AttendanceException extends RuntimeException
         return new self('attendance.errors.report_required');
     }
 
+    public static function reportAlreadySaved(): self
+    {
+        return new self('attendance.errors.report_already_saved');
+    }
+
+    public static function reportTooOld(): self
+    {
+        return new self('attendance.errors.report_too_old');
+    }
+
     public static function invalidEndTime(): self
     {
         return new self('attendance.errors.invalid_end_time');

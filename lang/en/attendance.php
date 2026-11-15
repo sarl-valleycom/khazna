@@ -15,6 +15,8 @@ return [
         'invalid_time_format' => 'Use HH:MM in Algiers time.',
         'not_checked_out' => 'Check out before writing your report.',
         'report_required' => 'Write what you did today.',
+        'report_already_saved' => 'This session already has a report. Ask the owner to change it.',
+        'report_too_old' => 'It is too late to add a report to this session. Ask the owner.',
         'invalid_code' => 'That code is not right. Check it with the owner.',
         'too_many_attempts' => 'Too many wrong codes. Wait a few minutes and try again.',
         'session_expired' => 'Enter your code again.',

@@ -53,7 +53,8 @@ class AttendanceSessionData extends Data
             $officeName = $employee->office->name ?? '';
         }
 
-        $workedMinutes = WorkedTime::sessionMinutes($session, $now);
+        // The paid break allowance counts for this session's day, like the daily totals.
+        $workedMinutes = WorkedTime::minutesForSessions([$session], $now);
 
         return new self(
             id: $session->id,

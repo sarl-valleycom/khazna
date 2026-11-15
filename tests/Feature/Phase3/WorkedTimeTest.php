@@ -184,3 +184,38 @@ test('the batched today total matches the per-employee total', function () {
         $without->id => 0,
     ])->and($batched[$withSession->id])->toBe(465);
 });
+
+test('per-session minutes spend the daily allowance in order and add up to the day total', function () {
+    CarbonImmutable::setTestNow(algiers('2026-11-16 20:00:00'));
+
+    $employee = Employee::factory()->create();
+    $morning = AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => algiers('2026-11-16 08:00:00'),
+        'ended_at' => algiers('2026-11-16 12:00:00'),
+    ]);
+    AttendanceBreak::factory()->create([
+        'session_id' => $morning->id,
+        'started_at' => algiers('2026-11-16 10:00:00'),
+        'ended_at' => algiers('2026-11-16 10:20:00'),
+    ]);
+    $afternoon = AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => algiers('2026-11-16 13:00:00'),
+        'ended_at' => algiers('2026-11-16 17:00:00'),
+    ]);
+    AttendanceBreak::factory()->create([
+        'session_id' => $afternoon->id,
+        'started_at' => algiers('2026-11-16 15:00:00'),
+        'ended_at' => algiers('2026-11-16 15:30:00'),
+    ]);
+
+    $sessions = AttendanceSession::query()->where('employee_id', $employee->id)->with('breaks')->get();
+
+    // 30 minute allowance: the morning break (20) is fully paid, 10 of the afternoon's 30 are paid.
+    $perSession = WorkedTime::minutesPerSession($sessions, paidBreakAllowanceMinutes: 30);
+
+    expect($perSession[$morning->id])->toBe(240)
+        ->and($perSession[$afternoon->id])->toBe(240 - 20)
+        ->and(array_sum($perSession))->toBe(WorkedTime::minutesForSessions($sessions, paidBreakAllowanceMinutes: 30));
+});

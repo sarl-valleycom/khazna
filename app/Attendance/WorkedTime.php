@@ -98,6 +98,52 @@ final class WorkedTime
     }
 
     /**
+     * Worked minutes of each session, with the paid break allowance spent
+     * session by session through each Algiers day, in start order. The pieces
+     * add up to exactly the day's total from minutesForSessions(), so a list of
+     * sessions and the daily total never disagree.
+     *
+     * @param  iterable<AttendanceSession>  $sessions
+     * @return array<int, int> session id => minutes
+     */
+    public static function minutesPerSession(
+        iterable $sessions,
+        ?CarbonImmutable $at = null,
+        ?int $paidBreakAllowanceMinutes = null,
+    ): array {
+        $now = ($at ?? AlgerianDate::now())->utc();
+        $allowance = $paidBreakAllowanceMinutes
+            ?? AttendanceSetting::current()->paid_break_minutes;
+
+        $ordered = collect($sessions)->sortBy(fn (AttendanceSession $session): int => $session->started_at->getTimestamp());
+
+        /** @var array<string, int> $left allowance seconds still unspent, per Algiers day */
+        $left = [];
+        $minutes = [];
+
+        foreach ($ordered as $session) {
+            $end = self::effectiveEnd($session, $now);
+            $day = $session->started_at->setTimezone(AlgerianDate::TZ)->toDateString();
+            $left[$day] ??= max(0, $allowance) * 60;
+
+            if ($end->lte($session->started_at)) {
+                $minutes[$session->id] = 0;
+
+                continue;
+            }
+
+            $gross = $end->getTimestamp() - $session->started_at->getTimestamp();
+            $breaks = self::breakSeconds($session, $end);
+            $credit = min($breaks, $left[$day]);
+            $left[$day] -= $credit;
+
+            $minutes[$session->id] = intdiv(max(0, $gross - ($breaks - $credit)), 60);
+        }
+
+        return $minutes;
+    }
+
+    /**
      * Worked minutes for one employee's sessions. The paid break allowance is a
      * per-day rule (BR-02): it is subtracted from each Algiers day's break time
      * once, never once for the whole range.

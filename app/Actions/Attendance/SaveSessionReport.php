@@ -6,6 +6,7 @@ use App\Actions\Attendance\Concerns\LocksEmployee;
 use App\Attendance\AttendanceException;
 use App\Enums\AttendanceStatus;
 use App\Models\AttendanceSession;
+use App\Support\AlgerianDate;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -16,6 +17,9 @@ use Illuminate\Support\Facades\DB;
 class SaveSessionReport
 {
     use LocksEmployee;
+
+    /** How long after the check-out an employee can still write the report. */
+    public const WINDOW_HOURS = 36;
 
     public function handle(AttendanceSession $session, string $report, ?string $blockers): AttendanceSession
     {
@@ -41,6 +45,16 @@ class SaveSessionReport
 
             if ($locked->ended_at === null || $locked->status === AttendanceStatus::Open) {
                 throw AttendanceException::notCheckedOut();
+            }
+
+            // An employee writes the report once, soon after the session. Later
+            // changes are the owner's, through the session edit (with a reason).
+            if ($locked->report !== null && trim($locked->report) !== '') {
+                throw AttendanceException::reportAlreadySaved();
+            }
+
+            if ($locked->ended_at->lt(AlgerianDate::now()->utc()->subHours(self::WINDOW_HOURS))) {
+                throw AttendanceException::reportTooOld();
             }
 
             $locked->update([

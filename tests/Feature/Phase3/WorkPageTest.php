@@ -7,6 +7,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\EmployeeStatus;
 use App\Enums\Role;
 use App\Models\Activity;
+use App\Models\AttendanceBreak;
 use App\Models\AttendanceSession;
 use App\Models\AttendanceSetting;
 use App\Models\CorrectionRequest;
@@ -384,4 +385,55 @@ test('changing a code is audited without writing the hash to the log', function 
 
     expect($activities->where('event', 'security_changed'))->not->toBeEmpty()
         ->and(json_encode($activities->map->properties))->not->toContain($employee->refresh()->attendance_code_hash);
+});
+
+test('a report is written once and only soon after the session', function () {
+    CarbonImmutable::setTestNow(workAt('2026-11-16 18:00:00'));
+    [$employee, $code] = workEmployee();
+    $done = AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => workAt('2026-11-16 09:00:00')->utc(),
+        'ended_at' => workAt('2026-11-16 17:00:00')->utc(),
+        'status' => AttendanceStatus::Closed,
+        'review_status' => AttendanceReviewStatus::Ok,
+        'report' => 'The owner approved this one.',
+    ]);
+    $old = AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => workAt('2026-11-01 09:00:00')->utc(),
+        'ended_at' => workAt('2026-11-01 17:00:00')->utc(),
+        'status' => AttendanceStatus::Closed,
+        'review_status' => AttendanceReviewStatus::Ok,
+    ]);
+    workSignIn($this, $code);
+
+    $this->post(route('work.report', $done), ['report' => 'Changed'])->assertSessionHas('error', __('attendance.errors.report_already_saved'));
+    $this->post(route('work.report', $old), ['report' => 'Too late'])->assertSessionHas('error', __('attendance.errors.report_too_old'));
+
+    expect($done->refresh()->report)->toBe('The owner approved this one.')
+        ->and($old->refresh()->report)->toBeNull();
+});
+
+test('the recent sessions and the daily total share the paid break allowance', function () {
+    CarbonImmutable::setTestNow(workAt('2026-11-16 20:00:00'));
+    [$employee, $code] = workEmployee(['expected_minutes_per_day' => 480]);
+    AttendanceSetting::current()->update(['paid_break_minutes' => 60]);
+
+    $session = AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => workAt('2026-11-16 09:00:00')->utc(),
+        'ended_at' => workAt('2026-11-16 17:00:00')->utc(),
+        'status' => AttendanceStatus::Closed,
+        'review_status' => AttendanceReviewStatus::Ok,
+    ]);
+    AttendanceBreak::factory()->create([
+        'session_id' => $session->id,
+        'started_at' => workAt('2026-11-16 12:00:00')->utc(),
+        'ended_at' => workAt('2026-11-16 13:00:00')->utc(),
+    ]);
+    workSignIn($this, $code);
+
+    $this->get(route('work.show'))->assertInertia(fn ($page) => $page
+        ->where('dashboard.today.workedMinutes', 480)
+        ->where('dashboard.recent.0.workedMinutes', 480));
 });

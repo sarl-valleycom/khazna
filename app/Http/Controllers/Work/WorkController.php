@@ -20,6 +20,7 @@ use App\Enums\AttendanceSource;
 use App\Enums\AttendanceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceSession;
+use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Support\AlgerianDate;
 use Carbon\CarbonImmutable;
@@ -266,6 +267,7 @@ class WorkController extends Controller
     {
         $now = AlgerianDate::now()->utc();
         $hours = $balance->for($employee, $now);
+        $paidBreak = AttendanceSetting::current()->paid_break_minutes;
 
         $open = AttendanceSession::query()
             ->where('employee_id', $employee->id)
@@ -281,6 +283,8 @@ class WorkController extends Controller
             ->limit(10)
             ->get();
 
+        $recentMinutes = WorkedTime::minutesPerSession($recent, $now, $paidBreak);
+
         $correctionSession = AttendanceSession::query()
             ->where('employee_id', $employee->id)
             ->where('status', AttendanceStatus::AutoClosed)
@@ -293,7 +297,7 @@ class WorkController extends Controller
             ->where('employee_id', $employee->id)
             ->whereNotNull('ended_at')
             ->whereNull('report')
-            ->where('started_at', '>=', $now->subHours(36))
+            ->where('ended_at', '>=', $now->subHours(SaveSessionReport::WINDOW_HOURS))
             ->orderByDesc('started_at')
             ->first();
 
@@ -311,7 +315,7 @@ class WorkController extends Controller
             today: WorkHoursPeriodData::fromPeriod($hours['today']),
             week: WorkHoursPeriodData::fromPeriod($hours['week']),
             month: WorkHoursPeriodData::fromPeriod($hours['month']),
-            recent: array_values($recent->map(fn (AttendanceSession $session): WorkSessionData => WorkSessionData::fromSession($session, $now))->all()),
+            recent: array_values($recent->map(fn (AttendanceSession $session): WorkSessionData => WorkSessionData::fromSession($session, $recentMinutes[$session->id] ?? 0))->all()),
             correction: $correctionSession === null ? null : [
                 'id' => $correctionSession->id,
                 'label' => $correctionSession->started_at->setTimezone(AlgerianDate::TZ)->format('D d M, H:i'),

@@ -6,7 +6,6 @@ use App\Attendance\WorkedTime;
 use App\Enums\AttendanceStatus;
 use App\Models\AttendanceSession;
 use App\Support\AlgerianDate;
-use Carbon\CarbonImmutable;
 use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
@@ -25,10 +24,9 @@ class WorkSessionData extends Data
         public ?string $blockers,
     ) {}
 
-    public static function fromSession(AttendanceSession $session, CarbonImmutable $now): self
+    public static function fromSession(AttendanceSession $session, int $minutes): self
     {
         $start = $session->started_at->setTimezone(AlgerianDate::TZ);
-        $minutes = WorkedTime::sessionMinutes($session, $now);
 
         return new self(
             id: $session->id,
