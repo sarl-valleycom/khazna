@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ref, watchEffect } from 'vue';
+import { Head, Link, router, usePage, setLayoutProps } from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
 import AccountFormDialog from '@/components/accounts/AccountFormDialog.vue';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,16 @@ type Props = {
 
 const props = defineProps<Props>();
 const page = usePage();
+
+// The static layout breadcrumb only names the section; add the record being viewed.
+watchEffect(() =>
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Accounts', href: '/accounts' },
+            { title: props.account.name, href: page.url },
+        ],
+    }),
+);
 
 const from = ref<string | null>(props.filters.from);
 const to = ref<string | null>(props.filters.to);

@@ -57,18 +57,23 @@ class ContractRequest extends FormRequest
             // Optional so existing callers keep creating SaaS renewals; fixed once a contract exists.
             // On an update it may be left out, but if sent it has to be the contract's own.
             'type' => ['sometimes', Rule::in($existing instanceof Contract ? [$existing->type->value] : self::creatableTypes())],
+            // The form always sends every id key, so the ones that do not apply arrive as null:
+            // "prohibited" is an implicit rule, so without "nullable" the integer rule would reject them.
             'client_id' => [
                 $isCost ? 'prohibited' : 'required',
+                'nullable',
                 'integer',
                 Rule::exists('clients', 'id')->whereNull('deleted_at'),
             ],
             'supplier_id' => [
                 $isCost ? 'required' : 'prohibited',
+                'nullable',
                 'integer',
                 Rule::exists('suppliers', 'id')->whereNull('deleted_at'),
             ],
             'category_id' => [
                 $isCost ? 'required' : 'prohibited',
+                'nullable',
                 'integer',
                 Rule::exists('categories', 'id')->where('kind', CategoryKind::Cost->value)->where('active', true),
             ],
@@ -81,7 +86,10 @@ class ContractRequest extends FormRequest
             'starts_on' => ['required', 'date_format:Y-m-d'],
             'ends_on' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:starts_on'],
             'auto_renew' => [$isProject ? 'sometimes' : 'required', 'boolean'],
-            'milestones' => [$isProject && $creating ? 'required' : 'prohibited', 'array', 'min:1', 'max:50'],
+            // Only a project being created has milestones; elsewhere an empty list is the same as none.
+            'milestones' => $isProject && $creating
+                ? ['required', 'array', 'min:1', 'max:50']
+                : ['prohibited', 'array'],
             'milestones.*.label' => ['required', 'string', 'max:255'],
             'milestones.*.mode' => ['required', Rule::in(['percent', 'amount'])],
             'milestones.*.value' => ['required', 'numeric', 'min:0'],

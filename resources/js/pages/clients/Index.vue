@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Plus, Trash2, Upload } from '@lucide/vue';
+import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,7 @@ import FilterBar from '@/components/kit/FilterBar.vue';
 import FormDialog from '@/components/kit/FormDialog.vue';
 import ExportButton from '@/components/kit/ExportButton.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
+import { useClearErrorsOnEdit } from '@/composables/useClearErrorsOnEdit';
 import type { DataTableColumn, SelectFilter } from '@/components/kit/types';
 
 defineOptions({
@@ -80,6 +82,8 @@ const form = useForm({
     account_manager_id: null as number | null,
     office_id: null as number | null,
 });
+
+useClearErrorsOnEdit(form);
 
 const deleting = ref<App.Data.ClientRowData | null>(null);
 const deleteOpen = ref(false);
@@ -238,12 +242,20 @@ function confirmDelete() {
         :title="editing ? 'Edit client' : 'New client'"
         :processing="form.processing"
         :errors="form.errors"
+        :inline-fields="[
+            'name',
+            'phone',
+            'email',
+            'account_manager_id',
+            'office_id',
+        ]"
         @submit="submit"
     >
         <div class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-2">
                 <Label for="client-name">Name</Label>
                 <Input id="client-name" v-model="form.name" />
+                <InputError :message="form.errors.name" />
             </div>
             <div class="space-y-2">
                 <Label for="client-contact">Contact person</Label>
@@ -259,10 +271,12 @@ function confirmDelete() {
                     inputmode="tel"
                     placeholder="0550 12 34 56"
                 />
+                <InputError :message="form.errors.phone" />
             </div>
             <div class="space-y-2">
                 <Label for="client-email">Email</Label>
                 <Input id="client-email" v-model="form.email" type="email" />
+                <InputError :message="form.errors.email" />
             </div>
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
@@ -299,6 +313,7 @@ function confirmDelete() {
                 >
                     {{ page.props.auth.user?.name }}
                 </p>
+                <InputError :message="form.errors.account_manager_id" />
             </div>
             <div v-if="canChooseOffice" class="space-y-2">
                 <Label>Office</Label>
@@ -326,6 +341,7 @@ function confirmDelete() {
                         </SelectItem>
                     </SelectContent>
                 </Select>
+                <InputError :message="form.errors.office_id" />
             </div>
         </div>
         <div class="space-y-2">

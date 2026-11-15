@@ -55,6 +55,7 @@ class ForecastQuery
         $accounts = Account::query()
             ->visibleTo($user)
             ->where('active', true)
+            ->with('office:id,name')
             ->withBalance()
             ->get();
 
@@ -189,6 +190,7 @@ class ForecastQuery
             ->map(fn (Account $account): array => [
                 'id' => $account->id,
                 'name' => $account->name,
+                'officeName' => $account->office->name ?? null,
                 'lastReconciled' => $reconciled->get($account->id) === null ? null : CarbonImmutable::parse((string) $reconciled->get($account->id))->toDateString(),
             ])
             ->values()

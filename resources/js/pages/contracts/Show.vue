@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
+import { Head, Link, usePage, setLayoutProps } from '@inertiajs/vue3';
 import { ArrowLeft, FileText, Pencil } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,16 @@ const page = usePage();
 const dialogOpen = ref(false);
 const title = computed(
     () => `${props.contract.typeLabel} · ${props.contract.partyName}`,
+);
+
+// The static layout breadcrumb only names the section; add the record being viewed.
+watchEffect(() =>
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Contracts', href: '/contracts' },
+            { title: title.value, href: page.url },
+        ],
+    }),
 );
 </script>
 

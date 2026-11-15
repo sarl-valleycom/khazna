@@ -63,19 +63,50 @@ function apply() {
     );
 }
 
-function changeSummary(changes: unknown): string {
-    if (changes === null || typeof changes !== 'object') {
+function formatValue(value: unknown): string {
+    if (value === null || value === undefined || value === '') {
         return '—';
     }
 
-    const fields = changes as Record<string, unknown>;
-    const attributes =
-        fields['attributes'] && typeof fields['attributes'] === 'object'
-            ? (fields['attributes'] as Record<string, unknown>)
-            : fields;
+    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+}
 
-    return Object.entries(attributes)
-        .map(([key, value]) => `${key}: ${String(value ?? '—')}`)
+function asRecord(value: unknown): Record<string, unknown> | null {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : null;
+}
+
+// Activity changes arrive as {attributes} (created), {attributes, old} (updated)
+// or {old} (deleted). Anything else is shown as plain key/value pairs.
+function changeSummary(changes: unknown): string {
+    const fields = asRecord(changes);
+
+    if (fields === null || Object.keys(fields).length === 0) {
+        return '—';
+    }
+
+    const attributes = asRecord(fields['attributes']);
+    const old = asRecord(fields['old']);
+
+    if (attributes === null && old === null) {
+        return Object.entries(fields)
+            .map(([key, value]) => `${key}: ${formatValue(value)}`)
+            .join(', ');
+    }
+
+    if (attributes === null && old !== null) {
+        return Object.entries(old)
+            .map(([key, value]) => `${key}: ${formatValue(value)}`)
+            .join(', ');
+    }
+
+    return Object.entries(attributes ?? {})
+        .map(([key, value]) =>
+            old !== null && key in old
+                ? `${key}: ${formatValue(old[key])} → ${formatValue(value)}`
+                : `${key}: ${formatValue(value)}`,
+        )
         .join(', ');
 }
 </script>

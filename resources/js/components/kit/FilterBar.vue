@@ -163,7 +163,7 @@ function commitDateRange() {
                 :model-value="select.value ?? 'all'"
                 @update:model-value="(value) => chooseSelect(String(value))"
             >
-                <SelectTrigger class="w-full sm:w-44">
+                <SelectTrigger class="w-full sm:w-auto sm:min-w-44">
                     <SelectValue :placeholder="select.label" />
                 </SelectTrigger>
                 <SelectContent>
