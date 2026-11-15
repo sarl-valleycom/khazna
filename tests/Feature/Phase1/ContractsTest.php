@@ -337,3 +337,39 @@ test('contracts cannot be permanently deleted', function () {
     expect(fn () => $contract->forceDelete())->toThrow(LogicException::class)
         ->and(Contract::query()->whereKey($contract->id)->exists())->toBeTrue();
 });
+
+test('the contract form can create and update a client contract with the null ids it always sends', function () {
+    $this->actingAsRole(Role::Owner);
+    $office = Office::factory()->create();
+    $manager = User::factory()->accountManager()->forOffice($office->id)->create();
+    $client = Client::factory()->forManager($manager)->forOffice($office)->create();
+
+    // Exactly what the browser form posts: every id key is present, the unused ones as null,
+    // and an empty milestones list for a type that has none.
+    $formPayload = contractPayload($client, [
+        'type' => ContractType::SaasRenewal->value,
+        'supplier_id' => null,
+        'category_id' => null,
+        'milestones' => [],
+    ]);
+
+    $this->post(route('contracts.store'), $formPayload)
+        ->assertSessionHasNoErrors()
+        ->assertStatus(303);
+
+    $contract = Contract::query()->sole();
+
+    $this->patch(route('contracts.update', $contract), [...$formPayload, 'amount_cents' => 5_000_000])
+        ->assertSessionHasNoErrors()
+        ->assertStatus(303);
+
+    expect($contract->refresh()->amount_cents)->toBe(5_000_000);
+});
+
+test('a client contract still rejects a supplier or category', function () {
+    $this->actingAsRole(Role::Owner);
+    $client = Client::factory()->create();
+
+    $this->post(route('contracts.store'), contractPayload($client, ['supplier_id' => 1, 'category_id' => 1]))
+        ->assertSessionHasErrors(['supplier_id', 'category_id']);
+});

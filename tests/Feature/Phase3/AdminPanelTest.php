@@ -20,6 +20,12 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
+// The fixtures record work on 16-17 Nov 2026; manual sessions cannot lie in the future,
+// so the clock starts after them. Tests that need a specific moment set their own.
+beforeEach(function () {
+    CarbonImmutable::setTestNow(adminAt('2026-11-30 12:00:00'));
+});
+
 afterEach(function () {
     CarbonImmutable::setTestNow();
 });
@@ -594,4 +600,22 @@ test('clearing every work day is refused', function () {
         'office_id' => $employee->office_id,
         'work_days' => [],
     ])->assertSessionHasErrors('work_days');
+});
+
+test('a manual session cannot start or end in the future', function () {
+    CarbonImmutable::setTestNow(adminAt('2026-11-16 12:00:00'));
+    $employee = Employee::factory()->forOffice(Office::factory()->create())->create();
+    $this->actingAsRole(Role::Owner);
+
+    $this->post(route('attendance.sessions.store'), adminSessionPayload($employee, [
+        'started_at' => '2026-11-17T09:00',
+        'ended_at' => '2026-11-17T17:00',
+    ]))->assertSessionHasErrors(['started_at', 'ended_at']);
+
+    $this->post(route('attendance.sessions.store'), adminSessionPayload($employee, [
+        'started_at' => '2026-11-16T09:00',
+        'ended_at' => '2026-11-16T12:00',
+    ]))->assertSessionHasNoErrors();
+
+    expect(AttendanceSession::query()->count())->toBe(1);
 });

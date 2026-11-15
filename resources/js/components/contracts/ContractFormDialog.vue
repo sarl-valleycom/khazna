@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
+import InputError from '@/components/InputError.vue';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,6 +18,7 @@ import MoneyInput from '@/components/kit/MoneyInput.vue';
 import MilestoneRows, {
     type MilestoneRow,
 } from '@/components/contracts/MilestoneRows.vue';
+import { useClearErrorsOnEdit } from '@/composables/useClearErrorsOnEdit';
 import { toCalendarDate } from '@/lib/format';
 
 type Props = {
@@ -55,6 +57,8 @@ const form = useForm({
     attachment: null as File | null,
     milestones: [] as MilestoneRow[],
 });
+
+useClearErrorsOnEdit(form);
 
 const editing = computed(() => props.contract !== null);
 const isCost = computed(() => form.type === 'recurring_cost');
@@ -183,6 +187,13 @@ function submit() {
         "
         :processing="form.processing"
         :errors="form.errors"
+        :inline-fields="[
+            'client_id',
+            'supplier_id',
+            'category_id',
+            'amount_cents',
+            'office_id',
+        ]"
         wide
         @submit="submit"
     >
@@ -235,6 +246,7 @@ function submit() {
                 <p v-if="editing" class="text-xs text-muted-foreground">
                     The client of an existing contract cannot be changed.
                 </p>
+                <InputError :message="form.errors.client_id" />
             </div>
 
             <div v-if="isCost" class="space-y-2">
@@ -261,6 +273,7 @@ function submit() {
                         </SelectItem>
                     </SelectContent>
                 </Select>
+                <InputError :message="form.errors.supplier_id" />
             </div>
 
             <div class="space-y-2">
@@ -270,6 +283,7 @@ function submit() {
                     v-model="form.amount_cents"
                     :symbol="page.props.settings.currencySymbol"
                 />
+                <InputError :message="form.errors.amount_cents" />
             </div>
         </div>
 
@@ -299,6 +313,7 @@ function submit() {
             <p class="text-xs text-muted-foreground">
                 Every due and payment of this cost is filed under it.
             </p>
+            <InputError :message="form.errors.category_id" />
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
@@ -367,6 +382,7 @@ function submit() {
                 >
                     {{ forcedOfficeName }}
                 </p>
+                <InputError :message="form.errors.office_id" />
             </div>
         </div>
 
@@ -411,6 +427,7 @@ function submit() {
             <FileInput
                 v-model="form.attachment"
                 accept=".pdf,.jpg,.jpeg,.png,.webp"
+                hint="PDF, JPG, PNG or WebP"
                 :max-size-mb="10"
             />
             <p
@@ -422,6 +439,7 @@ function submit() {
         </div>
 
         <div
+            v-if="editing"
             class="rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
         >
             Changing the amount only affects dues generated afterwards. Existing

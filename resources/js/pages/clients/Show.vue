@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { ref, watchEffect } from 'vue';
+import { Head, Link, usePage, setLayoutProps } from '@inertiajs/vue3';
 import { ArrowLeft, Mail, MapPin, Phone, Plus, UserRound } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +32,16 @@ type Props = {
 
 const props = defineProps<Props>();
 const page = usePage();
+
+// The static layout breadcrumb only names the section; add the record being viewed.
+watchEffect(() =>
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Clients', href: '/clients' },
+            { title: props.client.name, href: page.url },
+        ],
+    }),
+);
 const manualDueOpen = ref(false);
 </script>
 

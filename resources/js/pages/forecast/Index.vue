@@ -53,6 +53,7 @@ type Scope = {
     staleAccounts: Array<{
         id: number;
         name: string;
+        officeName: string | null;
         lastReconciled: string | null;
     }>;
 };
@@ -207,6 +208,9 @@ const scopes = computed(() =>
                                 :href="`/accounts/${account.id}`"
                                 class="font-medium underline"
                                 >{{ account.name }}</Link
+                            >
+                            <template v-if="account.officeName">
+                                · {{ account.officeName }}</template
                             >
                             <template v-if="account.lastReconciled">
                                 ({{

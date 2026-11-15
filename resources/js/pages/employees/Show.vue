@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref, watchEffect } from 'vue';
+import {
+    Head,
+    Link,
+    router,
+    useForm,
+    usePage,
+    setLayoutProps,
+} from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +42,7 @@ type Props = {
 
 const props = defineProps<Props>();
 const page = usePage();
+
 const editOpen = ref(false);
 const salaryOpen = ref(false);
 const advanceOpen = ref(false);
@@ -56,6 +64,16 @@ function removeCode() {
 }
 
 const person = computed(() => props.employee.employee);
+
+// The static layout breadcrumb only names the section; add the record being viewed.
+watchEffect(() =>
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Employees', href: '/employees' },
+            { title: person.value.name, href: page.url },
+        ],
+    }),
+);
 const withSalary = computed(() =>
     'salaryHistory' in props.employee ? props.employee : null,
 );
