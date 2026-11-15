@@ -37,14 +37,13 @@ use LogicException;
  * @property array<int, int>|null $work_days
  * @property string|null $schedule_start
  * @property string|null $schedule_end
- * @property int $late_grace_minutes
  * @property string|null $attendance_code_hash
  * @property CarbonImmutable|null $attendance_code_set_at
  */
 #[Fillable([
     'office_id', 'name', 'phone', 'title', 'hire_date', 'status', 'left_on',
     'contract_type', 'hourly_rate', 'expected_minutes_per_day',
-    'work_days', 'schedule_start', 'schedule_end', 'late_grace_minutes',
+    'work_days', 'schedule_start', 'schedule_end',
 ])]
 class Employee extends Model
 {
@@ -67,7 +66,6 @@ class Employee extends Model
             'hourly_rate' => 'integer',
             'expected_minutes_per_day' => 'integer',
             'work_days' => 'array',
-            'late_grace_minutes' => 'integer',
             'attendance_code_set_at' => 'immutable_datetime',
         ];
     }

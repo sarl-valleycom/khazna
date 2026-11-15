@@ -346,7 +346,6 @@ declare namespace App {
             workDays: number[];
             scheduleStart: string | null;
             scheduleEnd: string | null;
-            lateGraceMinutes: number;
             hasAttendanceCode: boolean;
             attendanceCodeSetAt: string | null;
         };

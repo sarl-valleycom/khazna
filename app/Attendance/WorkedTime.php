@@ -155,6 +155,21 @@ final class WorkedTime
         ?CarbonImmutable $at = null,
         ?int $paidBreakAllowanceMinutes = null,
     ): int {
+        return array_sum(self::minutesByDay($sessions, $at, $paidBreakAllowanceMinutes));
+    }
+
+    /**
+     * Worked minutes for each Algiers day the sessions started on, with the
+     * paid break allowance taken from each day's break time once.
+     *
+     * @param  iterable<AttendanceSession>  $sessions
+     * @return array<string, int> date (Y-m-d) => minutes
+     */
+    public static function minutesByDay(
+        iterable $sessions,
+        ?CarbonImmutable $at = null,
+        ?int $paidBreakAllowanceMinutes = null,
+    ): array {
         $now = ($at ?? AlgerianDate::now())->utc();
         $allowance = $paidBreakAllowanceMinutes
             ?? AttendanceSetting::current()->paid_break_minutes;
@@ -177,14 +192,14 @@ final class WorkedTime
             $days[$day]['breaks'] += self::breakSeconds($session, $end);
         }
 
-        $seconds = 0;
+        $minutes = [];
 
-        foreach ($days as $day) {
+        foreach ($days as $date => $day) {
             $unpaidBreakSeconds = max(0, $day['breaks'] - $paidBreakSeconds);
-            $seconds += max(0, $day['gross'] - $unpaidBreakSeconds);
+            $minutes[$date] = intdiv(max(0, $day['gross'] - $unpaidBreakSeconds), 60);
         }
 
-        return intdiv($seconds, 60);
+        return $minutes;
     }
 
     public static function format(int $minutes): string

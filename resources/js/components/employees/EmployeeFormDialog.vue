@@ -42,7 +42,6 @@ const form = useForm({
     work_days: [0, 1, 2, 3, 4] as number[],
     schedule_start: '',
     schedule_end: '',
-    late_grace_minutes: 15,
     salary_cents: null as number | null,
     salary_from: null as string | null,
 });
@@ -92,7 +91,6 @@ watch(open, (value) => {
         form.work_days = [...props.employee.workDays];
         form.schedule_start = props.employee.scheduleStart?.slice(0, 5) ?? '';
         form.schedule_end = props.employee.scheduleEnd?.slice(0, 5) ?? '';
-        form.late_grace_minutes = props.employee.lateGraceMinutes;
 
         form.hourly_rate = props.hourlyRateCents ?? null;
 
@@ -263,21 +261,8 @@ function submit() {
                     max="1440"
                 />
                 <p class="text-xs text-muted-foreground">
-                    Used for auto-close and the weekly expected hours. 480 means
-                    8 hours.
-                </p>
-            </div>
-            <div class="space-y-2">
-                <Label for="employee-grace">Late grace (minutes)</Label>
-                <Input
-                    id="employee-grace"
-                    v-model.number="form.late_grace_minutes"
-                    type="number"
-                    min="0"
-                    max="240"
-                />
-                <p class="text-xs text-muted-foreground">
-                    An employee without a schedule is never marked late.
+                    Used for auto-close and the hours to make up. 480 means 8
+                    hours.
                 </p>
             </div>
         </div>

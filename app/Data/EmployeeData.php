@@ -34,7 +34,6 @@ class EmployeeData extends Data
         public array $workDays,
         public ?string $scheduleStart,
         public ?string $scheduleEnd,
-        public int $lateGraceMinutes,
         public bool $hasAttendanceCode = false,
         public ?string $attendanceCodeSetAt = null,
     ) {}
@@ -57,7 +56,6 @@ class EmployeeData extends Data
             workDays: $employee->workDays(),
             scheduleStart: $employee->schedule_start,
             scheduleEnd: $employee->schedule_end,
-            lateGraceMinutes: $employee->late_grace_minutes,
             hasAttendanceCode: $employee->hasAttendanceCode(),
             attendanceCodeSetAt: $employee->attendance_code_set_at?->toIso8601String(),
         );

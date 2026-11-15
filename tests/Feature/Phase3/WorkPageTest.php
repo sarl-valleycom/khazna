@@ -15,6 +15,7 @@ use App\Models\Employee;
 use App\Models\Office;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 
 uses(RefreshDatabase::class);
@@ -436,4 +437,39 @@ test('the recent sessions and the daily total share the paid break allowance', f
     $this->get(route('work.show'))->assertInertia(fn ($page) => $page
         ->where('dashboard.today.workedMinutes', 480)
         ->where('dashboard.recent.0.workedMinutes', 480));
+});
+
+test('the page runs the same few queries however much history there is', function () {
+    CarbonImmutable::setTestNow(workAt('2026-11-16 12:00:00'));
+    [$employee, $code] = workEmployee();
+    workSignIn($this, $code);
+
+    $makeSession = fn (int $day) => AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => workAt('2026-11-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT).' 09:00:00')->utc(),
+        'ended_at' => workAt('2026-11-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT).' 17:00:00')->utc(),
+        'status' => AttendanceStatus::Closed,
+        'review_status' => AttendanceReviewStatus::Ok,
+        'report' => 'Done.',
+    ]);
+
+    $queries = function (): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->get(route('work.show'))->assertOk();
+        DB::disableQueryLog();
+
+        return count(DB::getQueryLog());
+    };
+
+    $makeSession(1);
+    $queries(); // warm the settings row
+    $one = $queries();
+
+    foreach (range(2, 12) as $day) {
+        $makeSession($day);
+    }
+
+    expect($queries())->toBe($one)
+        ->and($one)->toBeLessThanOrEqual(20);
 });

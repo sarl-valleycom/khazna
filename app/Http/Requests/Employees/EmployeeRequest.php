@@ -37,7 +37,6 @@ class EmployeeRequest extends FormRequest
             'work_days.*' => ['integer', 'between:0,6', 'distinct'],
             'schedule_start' => ['nullable', 'date_format:H:i', 'required_with:schedule_end'],
             'schedule_end' => ['nullable', 'date_format:H:i', 'required_with:schedule_start'],
-            'late_grace_minutes' => ['sometimes', 'integer', 'min:0', 'max:240'],
             // "amount from a date" for a new employee; later raises go through the salary route.
             'salary_cents' => [...$salary, 'integer', 'min:1', 'max:99999999999999'],
             'salary_from' => [...$salary, 'date_format:Y-m-d', 'required_with:salary_cents'],

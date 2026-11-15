@@ -92,5 +92,5 @@
 
 1. **Employees fix their own forgotten check-out.** Self-correction is on by default with a 24 hour window. The owner can turn it off in settings. An existing database keeps its saved setting.
 2. **No chat channels.** Nothing is posted anywhere. The owner reads sessions, reports and presence on the owner pages.
-3. **Defaults:** auto-close at 23:59, and a 15 minute grace on the employee schedule.
+3. **Defaults:** auto-close at 23:59. The command runs every minute and closes whatever was open at the most recent auto-close time, so a late scheduler catches up.
 4. **One place.** Both offices use the same page and the same owner pages. Working hours and work days are set per employee.

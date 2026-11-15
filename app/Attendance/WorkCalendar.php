@@ -10,53 +10,25 @@ use App\Support\AlgerianDate;
 use Carbon\CarbonInterface;
 
 /**
- * Answers the calendar questions shared by reminders and auto-close: is this a
- * working day for this employee, and how many minutes were expected in a
- * range? Weekends, public holidays and approved leave are excluded.
+ * How many minutes an employee is expected to work, day by day. A day counts
+ * only when it is one of the employee's work days, not a public holiday and
+ * not covered by approved leave.
  */
 class WorkCalendar
 {
-    public function isWorkingDay(Employee $employee, CarbonInterface|string $date): bool
-    {
-        $day = AlgerianDate::toAlgiers($date)->startOfDay();
-
-        if (! $employee->worksOn($day)) {
-            return false;
-        }
-
-        if ($this->isHoliday($day)) {
-            return false;
-        }
-
-        return ! $this->isOnApprovedLeave($employee, $day);
-    }
-
-    public function isHoliday(CarbonInterface|string $date): bool
-    {
-        return Holiday::query()
-            ->whereDate('date', AlgerianDate::toAlgiers($date)->toDateString())
-            ->exists();
-    }
-
-    public function isOnApprovedLeave(Employee $employee, CarbonInterface|string $date): bool
-    {
-        $day = AlgerianDate::toAlgiers($date)->toDateString();
-
-        return LeaveRequest::query()
-            ->where('employee_id', $employee->id)
-            ->where('status', LeaveStatus::Approved)
-            ->whereDate('from', '<=', $day)
-            ->whereDate('to', '>=', $day)
-            ->exists();
-    }
-
-    public function expectedMinutes(Employee $employee, CarbonInterface|string $from, CarbonInterface|string $to): int
+    /**
+     * Expected minutes for each day from the first to the last date, in two
+     * queries (holidays and leave) however long the range is.
+     *
+     * @return array<string, int> date (Y-m-d) => minutes, with 0 for a day off
+     */
+    public function expectedByDay(Employee $employee, CarbonInterface|string $from, CarbonInterface|string $to): array
     {
         $start = AlgerianDate::toAlgiers($from)->startOfDay();
         $end = AlgerianDate::toAlgiers($to)->startOfDay();
 
         if ($end->lt($start)) {
-            return 0;
+            return [];
         }
 
         $holidays = Holiday::query()
@@ -72,20 +44,15 @@ class WorkCalendar
             ->whereDate('to', '>=', $start->toDateString())
             ->get();
 
-        $minutes = 0;
+        $minutes = [];
 
         for ($day = $start; $day->lte($end); $day = $day->addDay()) {
             $date = $day->toDateString();
+            $off = ! $employee->worksOn($day)
+                || in_array($date, $holidays, true)
+                || $leaves->contains(fn (LeaveRequest $leave): bool => $leave->coversOn($date));
 
-            if (! $employee->worksOn($day) || in_array($date, $holidays, true)) {
-                continue;
-            }
-
-            $onLeave = $leaves->contains(fn (LeaveRequest $leave): bool => $leave->coversOn($date));
-
-            if (! $onLeave) {
-                $minutes += $employee->expected_minutes_per_day;
-            }
+            $minutes[$date] = $off ? 0 : $employee->expected_minutes_per_day;
         }
 
         return $minutes;
