@@ -16,7 +16,7 @@
 | React or Vue | **Vue 3** (decided, see `README.md` section 1) |
 | Laravel major | The current stable major (13 at the time of writing). Check the official Vue starter kit supports it. The CRM helpers are plain PHP and port across majors |
 | Money storage | Integer centimes. If the CRM `Money` helper stores decimals, port its API but keep integer storage |
-| Hosting | One VPS with Nginx, PHP-FPM, MySQL, Supervisor for the queue, cron for the scheduler. Managed alternatives (Forge, Ploi) are fine. Needs a public HTTPS domain, because Discord must reach the app (phase 3) |
+| Hosting | One VPS with Nginx, PHP-FPM, MySQL, Supervisor for the queue, cron for the scheduler. Managed alternatives (Forge, Ploi) are fine. Needs a public HTTPS domain, because employees reach the attendance page from their phones (phase 3) |
 | Repo | `git init`, private remote, short-lived branches merged through pull requests |
 | Language and font | English only, left-to-right (decided). One self-hosted font. No runtime call to Google Fonts |
 
@@ -61,7 +61,6 @@ app/
   Actions/            one class per business operation (RecordPayment, GenerateDues, CloseMonth…)
   Console/Commands/   dues:generate, attendance:auto-close…
   Data/               spatie/laravel-data classes: the typed shape of Inertia props
-  Discord/            interaction router, handlers, DiscordClient (phase 3)
   Enums/              Role, DueStatus, Direction, ContractType, Cycle, PaymentMethod…
   Http/
     Controllers/      thin: authorize, call an Action, return Inertia::render
@@ -75,17 +74,17 @@ resources/js/
   components/         shared UI kit (0.7)
   composables/        useAbilities, useMoney…
   types/              generated types + hand-written helpers
-lang/en/              backend messages (validation, Discord replies, notifications)
+lang/en/              backend messages (validation, messages shown to employees, notifications)
 ```
 
 Patterns to follow:
 
-- **Action:** a plain class with one public method. It opens its own transaction, locks what it changes, and throws a domain exception on a rule violation. Controllers, commands and Discord handlers all call the same Action.
+- **Action:** a plain class with one public method. It opens its own transaction, locks what it changes, and throws a domain exception on a rule violation. Controllers and commands all call the same Action.
 - **Query object:** builds the filtered, sorted, paginated query for a list page from the URL query string. The same object feeds the Excel export in phase 4, so the export always matches the screen.
 - **Page props:** built from `Data` classes, never from raw models. This is what keeps salary fields from leaking and gives TypeScript its types.
 - **Abilities:** each list row and page includes `abilities: { pay: true, postpone: true, … }` computed from policies. The UI uses it only to show or hide.
 - **Errors:** domain exceptions become validation errors or flash messages in plain English. Never show a raw stack message.
-- **Text:** backend messages (validation, Discord replies, notifications, reminder templates) live in `lang/en/` and are read with `__()`, so the wording changes in one place. Vue pages use plain English text, with no frontend translation library. If a second language becomes likely, add one to the frontend before the number of screens grows.
+- **Text:** backend messages (validation, employee messages, notifications, reminder templates) live in `lang/en/` and are read with `__()`, so the wording changes in one place. Vue pages use plain English text, with no frontend translation library. If a second language becomes likely, add one to the frontend before the number of screens grows.
 
 ---
 
@@ -193,10 +192,10 @@ Notes:
 - Playwright has a login-to-dashboard smoke test. The triage step is `fixme` because `/triage` belongs to phase 1, so this box stays open until that route exists.
 ## 0.10 Environments, deploy and backups
 
-- [ ] Three environments: local, staging, production, each with its own `.env`, database and Discord application (phase 3).
+- [ ] Three environments: local, staging, production, each with its own `.env` and database.
 - [x] Deploy script: pull, `composer install --no-dev`, build assets, migrate with `--force`, clear and warm caches, restart the queue worker. Run on staging first.
 - [x] Supervisor program for `queue:work`. Cron entry for `schedule:run` every minute.
-- [ ] HTTPS with automatic renewal. For local Discord testing in phase 3, use a tunnel such as `cloudflared`.
+- [ ] HTTPS with automatic renewal. To try the employee page on a phone while developing, use a tunnel such as `cloudflared`.
 - [ ] **Backups:** daily database dump plus the private storage disk, copied to a different provider. Retention 30 days. **Do one restore test now**, not at go-live.
 - [ ] Error tracking (Sentry or equivalent) and an uptime check on a health endpoint.
 - [x] Log rotation, and make sure logs never contain amounts tied to salaries or full phone numbers.
@@ -237,4 +236,4 @@ Notes:
 | Arabic client names render badly in the English page | The 0.3 check: `dir="auto"` on user text and `<bdi>` around names |
 | The UI kit grows into a big side project | Build only the components in 0.7. Add another only when a phase needs it |
 | Time or money bugs appear in production | Hand-computed tests before any feature code, and the rules in `README.md` section 3 |
-| Hosting is chosen too late | Decide in 0.1. Discord needs a public HTTPS URL from phase 3 |
+| Hosting is chosen too late | Decide in 0.1. Employees need a public HTTPS URL from phase 3 |

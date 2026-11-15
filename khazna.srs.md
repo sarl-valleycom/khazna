@@ -161,7 +161,7 @@ Priority: **M** = must, **S** = should, **C** = could. Phase refers to section 9
 | FR-AUTH-04 | `account_manager` sees only clients, contracts, dues and payments that belong to them | M | 1 |
 | FR-AUTH-05 | Salary-related data (employees' salaries, salary dues, adjustments, payroll proposals) is visible to `owner` only, unless the owner grants it to `finance` in settings | M | 2 |
 | FR-AUTH-06 | The owner can deactivate a user. Deactivated users cannot sign in, but their history stays | M | 1 |
-| FR-AUTH-07 | Two-factor authentication for `owner` and `finance` | C | 4 |
+| FR-AUTH-07 | Two-factor authentication for `owner` and `finance` *(dropped: not planned now; optional two-factor stays, see doc/phases/README.md, Later)* | C | dropped |
 | FR-AUTH-08 | A user can be restricted to one office (see FR-OFF-02) | M | 1 |
 
 ### 3.2 Parties (clients, employees, suppliers)
@@ -242,7 +242,7 @@ Priority: **M** = must, **S** = should, **C** = could. Phase refers to section 9
 | FR-SAL-06 | After a salary due is created, later adjustments to that month update the due while it is still unpaid. After payment they require an explicit correction by the owner | M | 2 |
 | FR-SAL-07 | Salary due date is configurable (default the 5th of the following month) | M | 2 |
 | FR-SAL-08 | A payslip (PDF) per employee per month | C | 4 |
-| FR-SAL-09 | Hours from attendance feed month-close as proposals (see section 3.12) | M | 4 |
+| FR-SAL-09 | Hours from attendance feed month-close as proposals (see section 3.12) *(dropped: salary does not depend on fixed hours)* | M | dropped |
 
 ### 3.8 Project milestones
 
@@ -273,19 +273,19 @@ Priority: **M** = must, **S** = should, **C** = could. Phase refers to section 9
 | FR-REM-01 | The WhatsApp row action opens a link with a message containing the client name, amount, due date and a payment instruction | M | 1 |
 | FR-REM-02 | The message template is editable by the owner | S | 1 |
 | FR-REM-03 | Reminders sent are logged against the due (who, when, template) | S | 1 |
-| FR-REM-04 | Automatic reminders through n8n at J−7, J−1 and J+3 relative to the due date | S | 4 |
-| FR-REM-05 | Automatic reminders stop when the due is paid, postponed, or canceled, and can be disabled per client | S | 4 |
-| FR-REM-06 | Notification to the owner (Discord DM or panel) for dues becoming overdue and renewals approaching | C | 4 |
+| FR-REM-04 | Automatic reminders through n8n at J−7, J−1 and J+3 relative to the due date *(dropped: not planned now; manual WhatsApp reminders stay)* | S | dropped |
+| FR-REM-05 | Automatic reminders stop when the due is paid, postponed, or canceled, and can be disabled per client *(dropped: goes with FR-REM-04)* | S | dropped |
+| FR-REM-06 | Notification to the owner (Discord DM or panel) for dues becoming overdue and renewals approaching *(dropped: there is no chat bot to notify through)* | C | dropped |
 
 ### 3.11 CRM integration
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
 | FR-CRM-01 | Khazna starts standalone with clients imported from CSV | M | 1 |
-| FR-CRM-02 | An endpoint receives a webhook from the CRM when a lead becomes **won** and creates a client | S | 4 |
-| FR-CRM-03 | The endpoint verifies the `X-Webhook-Secret` header with a constant-time comparison | S | 4 |
-| FR-CRM-04 | The sync is idempotent, keyed by the CRM lead ID. A repeated webhook updates nothing and creates no duplicate | S | 4 |
-| FR-CRM-05 | Khazna never writes back to the CRM | S | 4 |
+| FR-CRM-02 | An endpoint receives a webhook from the CRM when a lead becomes **won** and creates a client *(dropped: not planned now)* | S | dropped |
+| FR-CRM-03 | The endpoint verifies the `X-Webhook-Secret` header with a constant-time comparison *(dropped: goes with FR-CRM-02)* | S | dropped |
+| FR-CRM-04 | The sync is idempotent, keyed by the CRM lead ID. A repeated webhook updates nothing and creates no duplicate *(dropped: goes with FR-CRM-02)* | S | dropped |
+| FR-CRM-05 | Khazna never writes back to the CRM *(dropped: goes with FR-CRM-02)* | S | dropped |
 
 ### 3.12 Attendance (Discord)
 
@@ -293,13 +293,13 @@ The full specification is in `khazna-attendance.srs.md`. This section lists its 
 
 | ID | Requirement | Pri | Phase |
 |---|---|---|---|
-| FR-ATT-01 | Employees record work with `/check-in`, `/check-out`, `/tmp-check-out` in Discord. The system enforces one open session per employee | M | 3 |
-| FR-ATT-02 | Sessions left open are closed automatically, flagged for review, and excluded from pay until approved | M | 3 |
+| FR-ATT-01 | Employees record work on a web page, with a personal code and no login: check in, take a break, check out. The system enforces one open session per employee | M | 3 |
+| FR-ATT-02 | Sessions left open are closed automatically and flagged. The employee corrects the end time on the page | M | 3 |
 | FR-ATT-03 | The owner can review, correct and approve sessions, with a reason and an audit trail | M | 3 |
-| FR-ATT-04 | End-of-day report, reminders, daily digest and weekly summary are posted in Discord | S | 3 |
-| FR-ATT-05 | At month-close, worked hours against expected hours produce **proposed** adjustments. Nothing becomes a deduction or a bonus without the owner's approval | M | 4 |
-| FR-ATT-06 | Sessions can be tagged with a project, which allows a profitability report per contract (hours × cost per hour against the amount contracted) | S | 5 |
-| FR-ATT-07 | Employees can request leave in Discord and the owner approves it | S | 5 |
+| FR-ATT-04 | An end-of-day report is written on the page. The page shows the live timer and the hours still to make up (no reminders, digests or chat messages) | S | 3 |
+| FR-ATT-05 | At month-close, worked hours against expected hours produce **proposed** adjustments. Nothing becomes a deduction or a bonus without the owner's approval *(dropped: salary does not depend on fixed hours; the owner enters adjustments by hand)* | M | dropped |
+| FR-ATT-06 | Sessions can be tagged with a project, which allows a profitability report per contract (hours × cost per hour against the amount contracted) *(dropped: not planned now, see doc/phases/README.md, Later)* | S | dropped |
+| FR-ATT-07 | Employees can request leave in Discord and the owner approves it *(dropped: the owner enters leave on the web app in phase 4; employees do not request it)* | S | dropped |
 
 ### 3.13 Exports and documents
 
@@ -494,9 +494,10 @@ Key constraints:
 |---|---|---|
 | **1. MVP** | Authentication, roles, clients with CSV import, contracts, `dues:generate`, offices, money accounts and ledger, payments with private receipts, triage page, manual WhatsApp reminders, audit log, settings | You can run all receivables from Khazna instead of a spreadsheet, and see the balance of every account in each office |
 | **2. Money out** | Employees, suppliers, recurring costs, project milestones, month-close, advances and adjustments, transfers, manual entries, categories, reconciliation, dashboard, per-office forecast | You see the cash picture of each office and can close a month's salaries |
-| **3. Attendance** | Discord commands, auto-close, review and correction, end-of-day report, reminders, daily and weekly digest (annex phases 1–2) | The team uses `/check-in` daily and you trust the numbers |
-| **4. Automation and payroll link** | Attendance feeding month-close, automatic WhatsApp reminders through n8n, CRM sync, Excel/PDF exports, payslips, optional two-factor | Month-close is prepared from approved hours with no spreadsheet |
-| **5. Profitability and leave** | Project tagging, cost per hour, margin per contract, leave requests and balances (annex phases 4–5) | You know which contracts make money |
+| **3. Attendance** | Employee web page with a personal code (check in, break, check out, report, correction), live timer, hours to make up, auto-close, owner session pages (annex phases 1–2, redesigned: no Discord) | The team uses the page daily and you trust the numbers |
+| **4. Exports and documents** | Holiday and leave screens, monthly attendance summary, Excel exports, PDF statements, monthly summary and payslips | You can hand a client, an employee or the accountant a clean file |
+
+Everything planned beyond phase 4 (payroll from hours, automatic WhatsApp reminders, CRM sync, project profitability, leave requests by employees) is listed in `doc/phases/README.md` under "Later".
 
 Phases 3 and 4 depend on phase 2, because attendance needs the employees table and month-close.
 
@@ -516,7 +517,7 @@ Phases 3 and 4 depend on phase 2, because attendance needs the employees table a
 | 8 | Can finance see salaries? | No, owner only |
 | 9 | Contract types and pay rules of the team (fixed, hourly, part-time, freelancer) | Fixed monthly and hourly |
 | 10 | Is `/tmp-check-out` time paid? | Not paid |
-| 11 | Do auto-closed attendance sessions count for pay before review? | No |
+| 11 | Do auto-closed attendance sessions count for pay before review? | Not applicable: salary does not depend on hours |
 | 12 | Language of the interface and bot messages | English (decided). A second language can be added later |
 | 13 | Payment terms for custom project milestones after delivery | 0 days (due on delivery) |
 | 14 | Hosting and backup location | Not decided. To choose before launch |
@@ -525,4 +526,4 @@ Phases 3 and 4 depend on phase 2, because attendance needs the employees table a
 | 17 | Who manages each office's cash, and should they be restricted to their office? | Owner and finance see all offices. Other users can be restricted to one |
 | 18 | Can finance see payroll lines in the ledger? | No. One masked "Payroll" line. Balances still reveal the payroll total, so this is a limited protection |
 | 19 | Who pays a transfer fee, and are transfers between offices settled in any special way? | The fee is an expense on the source account. No settlement process |
-| 20 | Do both offices share one Discord server? | Yes, with a separate attendance feed per office |
+| 20 | Do both offices share one attendance page? | Yes. One page, one code per employee, no Discord |
