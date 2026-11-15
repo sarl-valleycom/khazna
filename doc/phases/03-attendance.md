@@ -83,7 +83,7 @@ Discord only allows a modal as the **immediate** answer to an interaction, and a
 
 1. `/check-out` closes the session at once and replies with a short summary and a **"Write today's report"** button.
 2. The button opens a modal with two fields: what you did (required), blockers (optional).
-3. Submitting saves both on the closed session (FR-REP-01..03).
+3. Submitting saves both on the closed session (FR-REP-01..03) and posts the report, with the employee's mention and the date, to the reports channel through a queued job. With no reports channel set, the report is only saved. A report is cut to fit one Discord message.
 
 This is a small change from the annex wording ("`/check-out` opens a modal"). The result for the employee is the same, and the session is always closed (FR-REP-02).
 

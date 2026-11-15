@@ -66,6 +66,8 @@ return [
         'modal_title' => 'Write today\'s report',
         'what_did_you_do' => 'What did you do today?',
         'any_blockers' => 'Any blockers?',
+        'post' => ':mention report for :date',
+        'post_blockers' => 'Blockers: :blockers',
     ],
 
     'corrections' => [

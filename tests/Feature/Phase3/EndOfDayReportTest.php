@@ -3,7 +3,9 @@
 use App\Discord\InteractionResponse;
 use App\Enums\AttendanceReviewStatus;
 use App\Enums\AttendanceStatus;
+use App\Jobs\SendAttendanceEvent;
 use App\Models\AttendanceSession;
+use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Models\Office;
 use Carbon\CarbonImmutable;
@@ -209,4 +211,47 @@ test('a report can only be written after checking out', function () {
         ->assertJsonPath('data.content', 'Check out before writing your report.');
 
     expect($session->refresh()->report)->toBeNull();
+});
+
+test('a saved report is posted to the reports channel', function () {
+    Queue::fake();
+    $signer = SignedInteraction::make()->configure();
+    $employee = reportEmployee('444444444444444444');
+    $session = reportSession($employee);
+    AttendanceSetting::current()->update(['reports_channel_id' => '888888888888888888']);
+
+    $signer->post($this, reportModal('444444444444444444', $session->id, 'Reviewed the client file.', 'Waiting on the contract.'))
+        ->assertOk();
+
+    Queue::assertPushed(SendAttendanceEvent::class, fn (SendAttendanceEvent $job): bool => $job->channelId === '888888888888888888'
+        && str_contains($job->content, '<@444444444444444444> report for 16 Nov 2026')
+        && str_contains($job->content, 'Reviewed the client file.')
+        && str_contains($job->content, 'Blockers: Waiting on the contract.'));
+});
+
+test('a report is still saved when no reports channel is set', function () {
+    Queue::fake();
+    config()->set('discord.channels.reports', null);
+    $signer = SignedInteraction::make()->configure();
+    $employee = reportEmployee('444444444444444444');
+    $session = reportSession($employee);
+
+    $signer->post($this, reportModal('444444444444444444', $session->id, 'Reviewed the client file.'))
+        ->assertOk()
+        ->assertJsonPath('data.content', 'Thanks, your report is saved.');
+
+    Queue::assertNotPushed(SendAttendanceEvent::class);
+    expect($session->refresh()->report)->toBe('Reviewed the client file.');
+});
+
+test('a very long report is cut to fit one Discord message', function () {
+    Queue::fake();
+    $signer = SignedInteraction::make()->configure();
+    $employee = reportEmployee('444444444444444444');
+    $session = reportSession($employee);
+    AttendanceSetting::current()->update(['reports_channel_id' => '888888888888888888']);
+
+    $signer->post($this, reportModal('444444444444444444', $session->id, str_repeat('word ', 900)))->assertOk();
+
+    Queue::assertPushed(SendAttendanceEvent::class, fn (SendAttendanceEvent $job): bool => mb_strlen($job->content) <= 2000);
 });
