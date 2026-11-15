@@ -618,3 +618,23 @@ test('the presence page runs the same number of queries however many employees t
 
     expect($queriesFor())->toBe($few);
 });
+
+test('the review queue paginates in the database and still labels reasons on the page', function () {
+    CarbonImmutable::setTestNow(adminAt('2026-11-16 23:00:00'));
+
+    foreach (range(1, 30) as $number) {
+        adminSessionFor(adminEmployee('Auto '.$number), '2026-11-16 09:00:00', '2026-11-16 17:00:00', [
+            'status' => AttendanceStatus::AutoClosed,
+            'review_status' => AttendanceReviewStatus::NeedsReview,
+        ]);
+    }
+
+    $this->actingAsRole(Role::Owner);
+
+    $page = $this->get(route('attendance.review.index'))->assertOk()->viewData('page');
+    $rows = collect($page['props']['sessions']);
+
+    expect($page['props']['total'])->toBe(30)
+        ->and($rows)->toHaveCount(25)
+        ->and($rows->every(fn (array $row): bool => in_array('Auto-closed and waiting for review.', $row['reviewReasons'], true)))->toBeTrue();
+});

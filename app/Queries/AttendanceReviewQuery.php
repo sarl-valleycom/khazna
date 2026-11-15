@@ -7,6 +7,7 @@ use App\Enums\AttendanceStatus;
 use App\Models\AttendanceSession;
 use App\Support\AlgerianDate;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
@@ -17,30 +18,36 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class AttendanceReviewQuery
 {
     /**
+     * One query, paginated in SQL. The reasons are worked out afterwards for
+     * the rows on the page only, so the cost follows the page size and not the
+     * length of the attendance history.
+     *
      * @return LengthAwarePaginator<int, AttendanceSession>
      */
     public function rows(?CarbonImmutable $now = null, int $perPage = 25): LengthAwarePaginator
     {
         $now = ($now ?? AlgerianDate::now())->utc();
 
-        $autoClosed = $this->autoClosedIds();
-        $long = $this->longIds($now);
-        $overlapping = $this->overlappingIds();
-
-        $ids = array_values(array_unique([...$autoClosed, ...$long, ...$overlapping]));
-        $reasons = $this->reasons($autoClosed, $long, $overlapping);
-
         $rows = AttendanceSession::query()
             ->with(['employee:id,name,office_id', 'employee.office:id,name', 'breaks'])
-            ->when(
-                $ids === [],
-                fn ($query) => $query->whereRaw('1 = 0'),
-                fn ($query) => $query->whereIn('id', $ids),
-            )
+            ->where(function (Builder $query) use ($now): void {
+                $query
+                    ->where(fn (Builder $auto) => $this->autoClosed($auto))
+                    ->orWhere(fn (Builder $long) => $this->long($long, $now))
+                    ->orWhere(fn (Builder $overlap) => $this->overlapping($overlap));
+            })
             ->orderByDesc('started_at')
             ->orderByDesc('id')
             ->paginate($perPage)
             ->withQueryString();
+
+        $pageIds = $rows->getCollection()->map(fn (AttendanceSession $session): int => $session->id)->all();
+
+        $autoClosed = $this->idsOnPage($pageIds, fn (Builder $query) => $this->autoClosed($query));
+        $long = $this->idsOnPage($pageIds, fn (Builder $query) => $this->long($query, $now));
+        $overlapping = $this->idsOnPage($pageIds, fn (Builder $query) => $this->overlapping($query));
+
+        $reasons = $this->reasons($autoClosed, $long, $overlapping);
 
         $rows->getCollection()->each(
             fn (AttendanceSession $session) => $session->setAttribute('review_reasons', $reasons[$session->id] ?? []),
@@ -50,50 +57,62 @@ class AttendanceReviewQuery
     }
 
     /**
-     * @return list<int>
+     * @param  Builder<AttendanceSession>  $query
      */
-    private function autoClosedIds(): array
+    private function autoClosed(Builder $query): void
     {
-        return array_values(AttendanceSession::query()
+        $query
             ->where('status', AttendanceStatus::AutoClosed)
-            ->where('review_status', AttendanceReviewStatus::NeedsReview)
-            ->pluck('id')
-            ->map(fn (int $id): int => $id)
-            ->all());
+            ->where('review_status', AttendanceReviewStatus::NeedsReview);
     }
 
     /**
-     * @return list<int>
+     * @param  Builder<AttendanceSession>  $query
      */
-    private function longIds(CarbonImmutable $now): array
+    private function long(Builder $query, CarbonImmutable $now): void
     {
-        return array_values(AttendanceSession::query()
+        $query
             ->where('review_status', '!=', AttendanceReviewStatus::Approved)
             ->whereRaw(
                 'TIMESTAMPDIFF(SECOND, started_at, COALESCE(ended_at, ?)) > ?',
                 [$now->toDateTimeString(), AttendanceSession::LONG_SESSION_SECONDS],
-            )
-            ->pluck('id')
-            ->map(fn (int $id): int => $id)
-            ->all());
+            );
     }
 
     /**
-     * @return list<int>
+     * @param  Builder<AttendanceSession>  $query
      */
-    private function overlappingIds(): array
+    private function overlapping(Builder $query): void
     {
-        return array_values(AttendanceSession::query()
+        $query
             ->where('review_status', '!=', AttendanceReviewStatus::Approved)
-            ->whereExists(function ($query): void {
-                $query->selectRaw('1')
+            ->whereExists(function ($exists): void {
+                $exists->selectRaw('1')
                     ->from('attendance_sessions as other')
                     ->whereColumn('other.employee_id', 'attendance_sessions.employee_id')
                     ->whereColumn('other.id', '!=', 'attendance_sessions.id')
                     ->whereNull('other.deleted_at')
                     ->whereRaw('attendance_sessions.started_at < COALESCE(other.ended_at, ?)', ['9999-12-31 23:59:59'])
                     ->whereRaw('COALESCE(attendance_sessions.ended_at, ?) > other.started_at', ['9999-12-31 23:59:59']);
-            })
+            });
+    }
+
+    /**
+     * Which of the page's sessions match one condition.
+     *
+     * @param  array<int, int>  $pageIds
+     * @param  callable(Builder<AttendanceSession>): void  $condition
+     * @return list<int>
+     */
+    private function idsOnPage(array $pageIds, callable $condition): array
+    {
+        if ($pageIds === []) {
+            return [];
+        }
+
+        return array_values(AttendanceSession::query()
+            ->whereIn('id', $pageIds)
+            ->where(fn (Builder $query) => $condition($query))
             ->pluck('id')
             ->map(fn (int $id): int => $id)
             ->all());
