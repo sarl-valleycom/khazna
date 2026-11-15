@@ -6,9 +6,13 @@
 | Effort | 2 to 3 weeks |
 | Depends on | Phase 2 (employees, month-close) and a public HTTPS URL |
 | Outcome | The team uses `/check-in` daily and you trust the numbers |
-| Requirements | FR-ATT-01..04. From the annex: FR-ID-01..04, FR-SES-01..09, FR-AUTO-01..03 and 05, FR-REP-01..04, FR-REM-01..03, FR-ADM-01..06, FR-RPT-01..04 |
+| Requirements | FR-ATT-01..04. From the annex: FR-ID-01..04, FR-SES-01..09, FR-AUTO-01..03 and 05, FR-REP-01..04, FR-REM-01..03, FR-ADM-01..03 and 05..06, FR-RPT-03 and 04 |
 
-Payroll use of the hours (FR-AUTO-04, FR-ATT-05) comes in phase 4. Until then, hours are visible but do not touch salaries.
+**How it works, in short.** An employee sends `/check-in` to the bot in a DM (or in the server). The session is saved, and each day the app counts how much time they worked. That is all the employee has to do.
+
+Salary does not depend on fixed hours. Payroll use of the hours (FR-AUTO-04, FR-ATT-05) comes in phase 4. Until then, hours are visible but do not touch salaries.
+
+The Discord digests (FR-RPT-01, 02) and the owner "needs review" page are not part of this phase. The owner finds auto-closed sessions with the status filter on the sessions list.
 
 ---
 
@@ -18,7 +22,7 @@ Do this per environment (local, staging, production each get their own applicati
 
 - [ ] Create the application in the Discord developer portal. Note the **Application ID**, **Public Key** and **Bot Token**.
 - [ ] Invite the bot to the company server with the `applications.commands` and `bot` scopes. Permissions: view channels, send messages. No privileged intents are needed because the app uses HTTP interactions and no gateway connection.
-- [ ] Note the **Guild ID** and create the channels: one attendance feed **per office**, a private owner digest, and reports. Both offices share one Discord server (open question 4).
+- [ ] Note the **Guild ID** and create the channels: one attendance feed **per office**, and reports. Both offices share one Discord server (open question 4).
 - [ ] Store the values in `.env` and `config/discord.php`. Nothing about Discord is hardcoded.
 - [ ] Set the **Interactions Endpoint URL** to `https://<domain>/discord/interactions`. Discord verifies it by sending a signed ping and an invalid-signature probe, so the endpoint must already work.
 - [ ] For local work, expose the dev server with a tunnel such as `cloudflared`.
@@ -31,11 +35,11 @@ Do this per environment (local, staging, production each get their own applicati
   - Reject with 401 when invalid. Never parse the body before verifying.
 - [ ] Answer the ping interaction (type 1) with type 1.
 - [ ] `InteractionRouter`: maps interaction type and command name (or button `custom_id` prefix) to a handler class. Handlers return an `InteractionResponse` object with helpers for a normal message, an ephemeral message, a deferred response, and a modal.
-- [ ] Reject interactions from any guild other than the configured one (FR-ID-04). Slash commands must carry the configured `guild_id`. Buttons and modals sent from a DM (the correction reminder) have no `guild_id` and are let through, because the handlers only act for a linked employee on their own sessions.
+- [ ] Reject interactions from any server other than the configured one (FR-ID-04). A command, button or modal sent in a **DM with the bot** has no `guild_id` and is routed, because the handlers only act for a linked employee on their own sessions. An unlinked user gets a private explanation.
 - [ ] **Time budget:** each handler must answer within 3 seconds. Handlers only touch the database. Posting to channels and sending DMs happens in queued jobs. For anything slower, send a deferred response and finish by editing the original message.
 - [ ] Handlers call the **same Actions** as the web app (`StartSession`, `EndSession`…). They contain no business rules.
 - [ ] All replies come from `lang/en/discord.php`. Replies that carry personal data or errors are ephemeral.
-- [ ] `CommandRegistry` is the single definition of the commands. The artisan command `discord:register-commands` pushes it to the guild (guild commands update instantly, global ones can take up to an hour).
+- [ ] `CommandRegistry` is the single definition of the commands. Every command is registered **globally** with `contexts` for a server and for a DM with the bot, because Discord only shows a command in a DM when it is global. The artisan command `discord:register-commands` pushes it, then clears the old guild copies so a command does not appear twice. Global commands can take up to an hour to show after a change.
 
 ## 3.3 Linking employees
 
@@ -58,7 +62,7 @@ Tables: `attendance_sessions`, `attendance_breaks`, `attendance_settings` (annex
 - [ ] Replies include the time in Algiers and today's running total (FR-SES-07). Events are posted to the attendance channel through a queued job (FR-SES-09).
 - [ ] Worked-time calculation (`WorkedTime`): session duration minus breaks, using real timestamps, assigned to the day the session started. The paid break allowance is a per-day rule: it is subtracted from each Algiers day's break time once, never once for a whole week or month. Unit tests for sessions crossing midnight, several breaks, an open break at close, and the allowance over several days.
 
-## 3.5 Auto-close and review
+## 3.5 Auto-close and corrections
 
 - [ ] `attendance:auto-close`, scheduled at the configured time (default 23:59 Algiers).
 - [ ] Closing time: the employee's scheduled end if it exists, otherwise start plus expected daily minutes. If the session started **after** that time, close at the current time. Always mark `needs_review` and `status = auto_closed` (FR-AUTO-01, 02).
@@ -68,8 +72,7 @@ Tables: `attendance_sessions`, `attendance_breaks`, `attendance_settings` (annex
 
 ## 3.6 Admin pages (Vue)
 
-- [ ] **Sessions** list with filters (employee, office, date range, status), using `DataTable` and a `SessionIndexQuery` (FR-ADM-01).
-- [ ] **Needs review** view: auto-closed sessions, sessions over 12 hours, overlapping sessions. Approve, edit or delete (FR-ADM-04). One paginated SQL query; the reasons are worked out only for the rows on the page.
+- [ ] **Sessions** list with filters (employee, office, date range, status), using `DataTable` and a `SessionIndexQuery` (FR-ADM-01). The status filter finds auto-closed sessions, and the owner can approve (mark as checked), edit or delete them.
 - [ ] **Edit session** dialog: every change needs a reason and writes an audit row (FR-ADM-02, 03). Deleting a session, or changing its start or end, rejects its pending correction requests so a stale proposal cannot overwrite the owner's edit.
 - [ ] **Who is working now** page (working, away, offline), refreshed every 30 seconds with Inertia's polling helper and a partial reload of one prop (FR-ADM-06). Today's hours for all employees load in two queries.
 - [ ] Correction requests inbox with approve and reject (FR-ADM-05).
@@ -84,13 +87,12 @@ Discord only allows a modal as the **immediate** answer to an interaction, and a
 
 This is a small change from the annex wording ("`/check-out` opens a modal"). The result for the employee is the same, and the session is always closed (FR-REP-02).
 
-## 3.8 Reminders, digests and presence
+## 3.8 Reminders and presence
 
 - [ ] `DiscordClient` service: sends channel messages and DMs through the REST API. Handles rate limits (honors the retry-after delay), retries 5xx errors and network failures (timeouts, dropped connections) with backoff, and logs failures. After the last attempt it reports a failed send and never throws into a job, so the DM fallback always runs.
 - [ ] **DMs can fail** when the employee has DMs from server members turned off. Fall back to a mention in the attendance channel and log it.
 - [ ] `attendance:remind`, every 5 minutes: not checked in 30 minutes after the scheduled start (not on weekends, holidays or leave), away longer than the limit. Respect `reminders_enabled` globally and per employee (FR-REM-01..03).
-- [ ] `attendance:digest-daily` at the configured time. Content, **grouped by office**: who is in, late, absent, away, forgotten, plus the end-of-day reports (FR-RPT-01). An employee's check-in events go to the feed of their own office. A long digest is split by line into several messages (`EmbedSplitter`) so each one stays inside Discord's limits: 1024 characters per field, 25 fields, and 6000 characters in total per message.
-- [ ] `attendance:digest-weekly`, every Sunday morning, summarizing the previous week, Sunday to Saturday so weekend work is counted: hours against expected (expected follows each employee's own work days), late count, overtime (FR-RPT-02). The paid break allowance is applied per day, and the digest is split the same way as the daily one.
+- [ ] An employee's check-in events go to the attendance feed of their own office.
 - [ ] Optional live "who is online" message, edited in place on every state change (FR-RPT-04).
 - [ ] Use embeds with English text and real mentions (`<@id>`).
 
@@ -107,7 +109,6 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 |---|---|---|
 | `POST /discord/interactions` | none | Discord only (signature) |
 | `/attendance/sessions` | `attendance/sessions` | owner |
-| `/attendance/review` | `attendance/review` | owner |
 | `/attendance/presence` | `attendance/presence` | owner |
 | `/attendance/corrections` | `attendance/corrections` | owner |
 | `/attendance/settings` | `attendance/settings` | owner |
@@ -116,12 +117,12 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 
 - A `SignedInteraction` test helper: generates an Ed25519 keypair, signs the payload, and posts it. Used by every handler test.
 - Annex scenarios 1 to 5 and 7 to 10, with `Carbon::setTestNow` for time.
-- Wrong or missing signature returns 401. A command from the wrong guild or from a DM is rejected; a button or modal from a DM is routed.
+- Wrong or missing signature returns 401. A command from the wrong server is rejected. A command, button or modal sent in a DM is routed, and a linked employee's DM `/check-in` saves a session.
+- `discord:register-commands` registers global commands with DM context and clears the guild copies.
 - A network failure to Discord is retried and then reported as a failed send, and the DM falls back to the attendance channel.
 - Self-correction: a manually closed session, a second correction, and a session over 12 hours all wait for the owner.
 - Deleting or editing a session rejects its pending corrections.
-- The paid break allowance is applied per day over a week. A Saturday worker is counted in the weekly digest.
-- A digest too large for one message is split, every part within Discord's limits.
+- The paid break allowance is applied per day over a week in `/my-hours`.
 - Double `/check-in`: the second one fails cleanly. A test that inserts two open rows must hit the unique index.
 - Session crossing midnight (22:00 to 02:00) counts four hours on the start day.
 - Auto-close for a session started after the scheduled end.
@@ -132,7 +133,7 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 
 - [ ] Real Discord server on staging, with the whole team's accounts linked.
 - [ ] One week of pilot with 2 or 3 employees. Every forgotten check-out was caught and reviewed.
-- [ ] Digest and reminders arrive at the right Algiers times.
+- [ ] Reminders arrive at the right Algiers times.
 - [ ] Owner pages reviewed on a phone.
 - [ ] Staff were told what is recorded and who sees it (NFR-13).
 
@@ -140,7 +141,7 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 
 | Risk | Mitigation |
 |---|---|
-| Employees forget to check in or out | Reminders, auto-close with review, and a simple correction path |
+| Employees forget to check in or out | Reminders, auto-close, and a simple correction path |
 | The 3-second limit is missed | Handlers touch only the database. Everything else is queued or deferred |
 | A Discord outage blocks work records | The web app lets the owner enter or fix sessions manually |
 | Staff see the system as surveillance | Record only the commands they send, explain it first, no extra monitoring |
@@ -150,5 +151,5 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 
 1. May an employee fix their own forgotten check-out within 24 hours, or must the owner approve every correction?
 2. Which channels are visible to all employees, and which are owner-only?
-3. Daily digest time, auto-close time and late grace period (defaults: 18:00, 23:59, 15 minutes).
+3. Auto-close time and late grace period (defaults: 23:59, 15 minutes).
 4. Do both offices share one Discord server (assumed), with a separate attendance feed per office? Do the offices have different working hours or work days? The employee schedule already supports this per person.

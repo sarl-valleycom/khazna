@@ -11,7 +11,7 @@ This folder says **how** and **in what order** Khazna is built. The requirements
 | `00-foundation.md` | Scaffold, architecture, helpers, shared UI kit, CI, deploy |
 | `01-mvp-receivables.md` | Clients, contracts, dues, payments, triage |
 | `02-money-out.md` | Employees, costs, milestones, payroll, dashboard, forecast |
-| `03-attendance.md` | Discord bot, sessions, review, reminders, digests |
+| `03-attendance.md` | Discord bot (works in a DM), sessions, corrections, reminders |
 | `04-automation-and-payroll-link.md` | Hours → payroll, WhatsApp automation, CRM sync, exports |
 | `05-profitability-and-leave.md` | Project time tagging, margin per contract, leave |
 
