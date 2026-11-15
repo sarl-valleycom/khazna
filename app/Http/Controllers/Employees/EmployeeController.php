@@ -73,6 +73,8 @@ class EmployeeController extends Controller
         $employee->load('office:id,name');
 
         return Inertia::render('employees/Show', [
+            // Flashed by AttendanceCodeController: shown once, then gone.
+            'newAttendanceCode' => $request->session()->get('attendance_code'),
             'employee' => $actor->can('view-salaries')
                 ? EmployeeWithSalaryData::fromEmployee($employee, withHistory: true)
                 : ['employee' => EmployeeData::fromEmployee($employee)],

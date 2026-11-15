@@ -18,6 +18,7 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dev\DevUiController;
 use App\Http\Controllers\Dues\DueController;
 use App\Http\Controllers\Dues\DueReminderController;
+use App\Http\Controllers\Employees\AttendanceCodeController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
 use App\Http\Controllers\Forecast\ForecastController;
@@ -30,8 +31,22 @@ use App\Http\Controllers\Reconciliation\ReconciliationController;
 use App\Http\Controllers\Reports\CashReportController;
 use App\Http\Controllers\Suppliers\SupplierController;
 use App\Http\Controllers\Triage\TriageController;
+use App\Http\Controllers\Work\WorkController;
 use App\Http\Middleware\EnsureDevToolsEnabled;
 use Illuminate\Support\Facades\Route;
+
+// The employee page: no login, a personal code instead (see WorkController).
+Route::prefix('work')->name('work.')->group(function () {
+    Route::get('/', [WorkController::class, 'show'])->name('show');
+    Route::post('enter', [WorkController::class, 'enter'])->middleware('throttle:work-code')->name('enter');
+    Route::post('leave', [WorkController::class, 'leave'])->name('leave');
+    Route::post('check-in', [WorkController::class, 'checkIn'])->name('check-in');
+    Route::post('check-out', [WorkController::class, 'checkOut'])->name('check-out');
+    Route::post('break', [WorkController::class, 'startBreak'])->name('break');
+    Route::post('back', [WorkController::class, 'endBreak'])->name('back');
+    Route::post('sessions/{attendanceSession}/report', [WorkController::class, 'report'])->whereNumber('attendanceSession')->name('report');
+    Route::post('sessions/{attendanceSession}/correct', [WorkController::class, 'correct'])->whereNumber('attendanceSession')->name('correct');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', TriageController::class)->name('home');
@@ -92,6 +107,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
     Route::get('employees/{employee}', [EmployeeController::class, 'show'])->whereNumber('employee')->name('employees.show');
     Route::patch('employees/{employee}', [EmployeeController::class, 'update'])->whereNumber('employee')->name('employees.update');
+    Route::post('employees/{employee}/attendance-code', [AttendanceCodeController::class, 'store'])->whereNumber('employee')->name('employees.attendance-code.store');
+    Route::delete('employees/{employee}/attendance-code', [AttendanceCodeController::class, 'destroy'])->whereNumber('employee')->name('employees.attendance-code.destroy');
 
     Route::prefix('attendance')->name('attendance.')->group(function () {
         Route::get('sessions', [AttendanceSessionController::class, 'index'])->name('sessions.index');

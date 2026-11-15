@@ -37,6 +37,8 @@ class EmployeeData extends Data
         public ?string $scheduleEnd,
         public int $lateGraceMinutes,
         public bool $remindersEnabled,
+        public bool $hasAttendanceCode = false,
+        public ?string $attendanceCodeSetAt = null,
     ) {}
 
     public static function fromEmployee(Employee $employee): self
@@ -60,6 +62,8 @@ class EmployeeData extends Data
             scheduleEnd: $employee->schedule_end,
             lateGraceMinutes: $employee->late_grace_minutes,
             remindersEnabled: $employee->reminders_enabled,
+            hasAttendanceCode: $employee->hasAttendanceCode(),
+            attendanceCodeSetAt: $employee->attendance_code_set_at?->toIso8601String(),
         );
     }
 }

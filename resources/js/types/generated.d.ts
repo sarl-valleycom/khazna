@@ -355,6 +355,8 @@ declare namespace App {
             scheduleEnd: string | null;
             lateGraceMinutes: number;
             remindersEnabled: boolean;
+            hasAttendanceCode: boolean;
+            attendanceCodeSetAt: string | null;
         };
         export type EmployeeWithSalaryData = {
             employee: App.Data.EmployeeData;
@@ -511,12 +513,56 @@ declare namespace App {
             active: boolean;
             isSelf: boolean;
         };
+        export type WorkDashboardData = {
+            name: string;
+            state: string;
+            serverNow: string;
+            sessionStartedAt: string | null;
+            breakStartedAt: string | null;
+            todayWorkedMinutes: number;
+            today: App.Data.WorkHoursPeriodData;
+            week: App.Data.WorkHoursPeriodData;
+            month: App.Data.WorkHoursPeriodData;
+            recent: App.Data.WorkSessionData[];
+            correction: {
+                id: number;
+                label: string;
+                endTime: string;
+            } | null;
+            reportPrompt: {
+                id: number;
+                label: string;
+            } | null;
+        };
+        export type WorkHoursPeriodData = {
+            expectedMinutes: number;
+            workedMinutes: number;
+            remainingMinutes: number;
+            extraMinutes: number;
+            behindBeforeTodayMinutes: number;
+            expectedFormatted: string;
+            workedFormatted: string;
+            remainingFormatted: string;
+            extraFormatted: string;
+            behindBeforeTodayFormatted: string;
+        };
+        export type WorkSessionData = {
+            id: number;
+            dateLabel: string;
+            startLabel: string;
+            endLabel: string | null;
+            workedMinutes: number;
+            workedFormatted: string;
+            autoClosed: boolean;
+            report: string | null;
+            blockers: string | null;
+        };
     }
     namespace Enums {
         export type AccountType = "cash" | "ccp" | "bank" | "other";
         export type AdjustmentType = "advance" | "bonus" | "deduction";
         export type AttendanceReviewStatus = "ok" | "needs_review" | "approved";
-        export type AttendanceSource = "discord" | "admin";
+        export type AttendanceSource = "discord" | "web" | "admin";
         export type AttendanceStatus = "open" | "closed" | "auto_closed";
         export type CategoryKind = "cost" | "income";
         export type ContractStatus = "active" | "paused" | "canceled";

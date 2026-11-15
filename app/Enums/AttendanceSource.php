@@ -8,12 +8,14 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 enum AttendanceSource: string
 {
     case Discord = 'discord';
+    case Web = 'web';
     case Admin = 'admin';
 
     public function label(): string
     {
         return match ($this) {
             self::Discord => 'Discord',
+            self::Web => 'Web',
             self::Admin => 'Admin',
         };
     }

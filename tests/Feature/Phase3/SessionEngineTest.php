@@ -50,7 +50,7 @@ test('a second check-in is refused with the original start time', function () {
         app(StartSession::class)->handle($employee);
         $this->fail('The second check-in should have been refused.');
     } catch (AttendanceException $exception) {
-        expect($exception->translationKey)->toBe('discord.errors.already_checked_in')
+        expect($exception->translationKey)->toBe('attendance.errors.already_checked_in')
             ->and($exception->parameters['time'])->toBe('09:00');
     }
 
@@ -73,7 +73,7 @@ test('a deactivated employee cannot start a session', function () {
         app(StartSession::class)->handle($employee);
         $this->fail('An inactive employee should not start a session.');
     } catch (AttendanceException $exception) {
-        expect($exception->translationKey)->toBe('discord.errors.inactive');
+        expect($exception->translationKey)->toBe('attendance.errors.inactive');
     }
 
     expect(AttendanceSession::query()->count())->toBe(0);
@@ -105,7 +105,7 @@ test('a break requires an open session and cannot be opened twice', function () 
         app(StartBreak::class)->handle($employee, 'Coffee');
         $this->fail('A break without a session should fail.');
     } catch (AttendanceException $exception) {
-        expect($exception->translationKey)->toBe('discord.errors.no_open_session');
+        expect($exception->translationKey)->toBe('attendance.errors.no_open_session');
     }
 
     app(StartSession::class)->handle($employee);
@@ -115,7 +115,7 @@ test('a break requires an open session and cannot be opened twice', function () 
         app(StartBreak::class)->handle($employee, 'Again');
         $this->fail('A second break should fail.');
     } catch (AttendanceException $exception) {
-        expect($exception->translationKey)->toBe('discord.errors.already_away');
+        expect($exception->translationKey)->toBe('attendance.errors.already_away');
     }
 
     expect(AttendanceBreak::query()->count())->toBe(1);
@@ -138,7 +138,7 @@ test('ending a break without being away is refused', function () {
         app(EndBreak::class)->handle($employee);
         $this->fail('Ending a break that does not exist should fail.');
     } catch (AttendanceException $exception) {
-        expect($exception->translationKey)->toBe('discord.errors.not_away');
+        expect($exception->translationKey)->toBe('attendance.errors.not_away');
     }
 });
 
@@ -167,6 +167,6 @@ test('check-out without an open session is refused', function () {
         app(EndSession::class)->handle($employee);
         $this->fail('A check-out without a session should fail.');
     } catch (AttendanceException $exception) {
-        expect($exception->translationKey)->toBe('discord.errors.no_open_session');
+        expect($exception->translationKey)->toBe('attendance.errors.no_open_session');
     }
 });

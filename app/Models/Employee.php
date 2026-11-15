@@ -40,6 +40,8 @@ use LogicException;
  * @property string|null $schedule_end
  * @property int $late_grace_minutes
  * @property bool $reminders_enabled
+ * @property string|null $attendance_code_hash
+ * @property CarbonImmutable|null $attendance_code_set_at
  */
 #[Fillable([
     'office_id', 'name', 'phone', 'title', 'hire_date', 'status', 'left_on',
@@ -49,7 +51,12 @@ use LogicException;
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
-    use Auditable, HasFactory, HasVisibility, SoftDeletes;
+    use Auditable, HasFactory, HasVisibility, SoftDeletes {
+        Auditable::auditSecurityAttributes as private baseAuditSecurityAttributes;
+    }
+
+    /** @var list<string> */
+    protected $hidden = ['attendance_code_hash'];
 
     protected function casts(): array
     {
@@ -64,7 +71,24 @@ class Employee extends Model
             'work_days' => 'array',
             'late_grace_minutes' => 'integer',
             'reminders_enabled' => 'boolean',
+            'attendance_code_set_at' => 'immutable_datetime',
         ];
+    }
+
+    /**
+     * Changing the attendance code leaves an audit row (who and when) without
+     * ever logging the hash.
+     *
+     * @return list<string>
+     */
+    protected function auditSecurityAttributes(): array
+    {
+        return [...$this->baseAuditSecurityAttributes(), 'attendance_code_hash'];
+    }
+
+    public function hasAttendanceCode(): bool
+    {
+        return $this->attendance_code_hash !== null;
     }
 
     /** @return BelongsTo<Office, $this> */
