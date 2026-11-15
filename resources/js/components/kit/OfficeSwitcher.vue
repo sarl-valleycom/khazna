@@ -47,7 +47,9 @@ function choose(value: string) {
             :model-value="office ?? 'all'"
             @update:model-value="(value) => choose(String(value))"
         >
-            <SelectTrigger class="w-full min-w-44">
+            <SelectTrigger
+                class="w-full min-w-44 border-sidebar-border bg-sidebar-accent/50 text-sidebar-foreground shadow-none hover:border-sidebar-ring/50 hover:bg-sidebar-accent dark:bg-sidebar-accent/50 dark:hover:bg-sidebar-accent"
+            >
                 <SelectValue placeholder="All offices" />
             </SelectTrigger>
             <SelectContent>

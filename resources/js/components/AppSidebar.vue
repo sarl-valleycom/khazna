@@ -162,13 +162,35 @@ const mainNavItems: NavItem[] = [
 
 const abilities = computed(() => page.props.auth.user?.abilities ?? {});
 
+const navGroups: Record<string, string> = {
+    Triage: 'Overview',
+    Dashboard: 'Overview',
+    Forecast: 'Overview',
+    'Cash report': 'Overview',
+    Clients: 'Receivables',
+    Contracts: 'Receivables',
+    Accounts: 'Money',
+    Suppliers: 'Money',
+    Categories: 'Money',
+    Employees: 'Team',
+    Attendance: 'Team',
+    Payroll: 'Team',
+    Users: 'Admin',
+    Offices: 'Admin',
+    Settings: 'Admin',
+    'Audit log': 'Admin',
+    'UI kit': 'Admin',
+};
+
 const visibleMainNavItems = computed(() =>
-    mainNavItems.filter(
-        (item) =>
-            (!item.roles ||
-                (role.value !== null && item.roles.includes(role.value))) &&
-            (!item.ability || abilities.value[item.ability] === true),
-    ),
+    mainNavItems
+        .map((item) => ({ ...item, group: navGroups[item.title] }))
+        .filter(
+            (item) =>
+                (!item.roles ||
+                    (role.value !== null && item.roles.includes(role.value))) &&
+                (!item.ability || abilities.value[item.ability] === true),
+        ),
 );
 </script>
 

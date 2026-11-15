@@ -121,7 +121,7 @@ function money(cents: number): string {
                                 {{ transfer.toName }}
                                 <span
                                     v-if="transfer.interOffice"
-                                    class="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs font-normal text-sky-800 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300"
+                                    class="rounded-full border border-info-border bg-info-soft px-2 py-0.5 text-xs font-normal text-info"
                                 >
                                     Inter-office: {{ transfer.fromOffice }} →
                                     {{ transfer.toOffice }}

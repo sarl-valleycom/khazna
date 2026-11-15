@@ -160,8 +160,8 @@ function money(cents: number): string {
                                 class="font-medium tabular-nums"
                                 :class="
                                     entry.direction === 'in'
-                                        ? 'text-emerald-700 dark:text-emerald-400'
-                                        : 'text-red-700 dark:text-red-400'
+                                        ? 'text-success'
+                                        : 'text-danger'
                                 "
                             >
                                 {{ entry.direction === 'in' ? '+' : '−'

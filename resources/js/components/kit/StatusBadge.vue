@@ -11,26 +11,32 @@ const props = withDefaults(defineProps<Props>(), {
     labels: () => ({}),
 });
 
-const tone = computed(() => {
+const variant = computed(() => {
     switch (props.status) {
         case 'paid':
         case 'active':
         case 'completed':
-            return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300';
+        case 'approved':
+        case 'closed':
+            return 'success';
         case 'pending':
         case 'partial':
         case 'warning':
-            return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300';
+        case 'paused':
+        case 'open':
+            return 'warning';
         case 'overdue':
         case 'failed':
         case 'canceled':
         case 'cancelled':
-            return 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300';
+        case 'rejected':
+        case 'reversed':
+            return 'danger';
         case 'draft':
         case 'inactive':
-            return 'border-neutral-200 bg-neutral-100 text-neutral-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300';
+            return 'neutral';
         default:
-            return '';
+            return 'outline';
     }
 });
 
@@ -42,7 +48,7 @@ const label = computed(
 </script>
 
 <template>
-    <Badge variant="outline" class="gap-1.5 font-medium" :class="tone">
+    <Badge :variant="variant" class="gap-1.5 font-medium">
         <span class="size-1.5 rounded-full bg-current" aria-hidden="true" />
         {{ label }}
     </Badge>

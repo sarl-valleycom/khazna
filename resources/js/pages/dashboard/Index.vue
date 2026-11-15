@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { Deferred, Head, Link, usePage } from '@inertiajs/vue3';
+import {
+    AlertTriangle,
+    CalendarClock,
+    HandCoins,
+    Repeat,
+    Users,
+    Wallet,
+} from '@lucide/vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import EmptyState from '@/components/kit/EmptyState.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
@@ -63,7 +71,7 @@ function money(cents: number): string {
 
         <div
             v-if="props.ledgerCheck && props.ledgerCheck.total > 0"
-            class="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+            class="rounded-md border border-danger-border bg-danger-soft p-4 text-sm text-danger"
             role="alert"
         >
             <p class="font-medium">
@@ -110,22 +118,40 @@ function money(cents: number): string {
                 <StatCard
                     label="Collected this month"
                     :value="money(props.kpis.collectedCents)"
+                    :icon="Wallet"
+                    tone="success"
                 />
                 <StatCard
                     label="Outstanding"
                     :value="money(props.kpis.outstandingCents)"
+                    :icon="HandCoins"
+                    tone="warning"
                 />
-                <Link href="/?tab=overdue">
+                <Link
+                    href="/?tab=overdue"
+                    class="block h-full rounded-xl transition-transform hover:-translate-y-0.5 focus-visible:ring-[3px] focus-visible:ring-ring/35 focus-visible:outline-none"
+                >
                     <StatCard
                         label="Overdue"
                         :value="money(props.kpis.overdueCents)"
+                        :icon="AlertTriangle"
+                        :tone="
+                            props.kpis.overdueCents > 0 ? 'danger' : 'neutral'
+                        "
                     />
                 </Link>
-                <StatCard label="MRR" :value="money(props.kpis.mrrCents)" />
+                <StatCard
+                    label="MRR"
+                    :value="money(props.kpis.mrrCents)"
+                    :icon="Repeat"
+                    tone="info"
+                />
                 <StatCard
                     label="Renewals in 30 days"
                     :value="props.kpis.renewals.count"
                     :hint="money(props.kpis.renewals.cents) + ' to collect'"
+                    :icon="CalendarClock"
+                    tone="info"
                 />
             </div>
         </Deferred>
@@ -141,6 +167,9 @@ function money(cents: number): string {
                 <StatCard
                     label="Salary bill (per month)"
                     :value="money(props.salary.billCents)"
+                    hint="All active salaries"
+                    :icon="Users"
+                    tone="neutral"
                 />
             </div>
         </Deferred>

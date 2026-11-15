@@ -14,4 +14,6 @@ export type NavItem = {
     roles?: App.Enums.Role[];
     /** Needs this ability from the signed-in user (for example `view-salaries`). */
     ability?: string;
+    /** Section heading the item sits under in the sidebar. */
+    group?: string;
 };

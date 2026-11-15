@@ -32,11 +32,11 @@ const signedText = computed(() => {
 
 const tone = computed(() => {
     if (props.direction === 'in') {
-        return 'text-emerald-700 dark:text-emerald-400';
+        return 'text-success';
     }
 
     if (props.direction === 'out') {
-        return 'text-red-700 dark:text-red-400';
+        return 'text-danger';
     }
 
     return '';
@@ -44,5 +44,5 @@ const tone = computed(() => {
 </script>
 
 <template>
-    <span class="font-medium tabular-nums" :class="tone">{{ signedText }}</span>
+    <span class="figure font-medium" :class="tone">{{ signedText }}</span>
 </template>

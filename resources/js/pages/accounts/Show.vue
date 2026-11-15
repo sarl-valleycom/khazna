@@ -191,12 +191,12 @@ function clearFilters() {
                                     {{ entry.description }}
                                 </td>
                                 <td
-                                    class="px-4 py-2 text-right text-emerald-700 tabular-nums dark:text-emerald-400"
+                                    class="px-4 py-2 text-right text-success tabular-nums"
                                 >
                                     {{ entry.inFormatted }}
                                 </td>
                                 <td
-                                    class="px-4 py-2 text-right text-red-700 tabular-nums dark:text-red-400"
+                                    class="px-4 py-2 text-right text-danger tabular-nums"
                                 >
                                     {{ entry.outFormatted }}
                                 </td>

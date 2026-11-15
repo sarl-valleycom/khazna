@@ -9,13 +9,16 @@ defineProps<Props>();
 
 <template>
     <div
-        class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
     >
         <div class="min-w-0">
-            <h1 class="truncate text-2xl font-semibold tracking-tight">
+            <h1 class="truncate text-[1.7rem] leading-tight font-semibold">
                 {{ title }}
             </h1>
-            <p v-if="description" class="mt-1 text-sm text-muted-foreground">
+            <p
+                v-if="description"
+                class="mt-1 max-w-2xl text-sm text-balance text-muted-foreground"
+            >
                 {{ description }}
             </p>
         </div>

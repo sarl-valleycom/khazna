@@ -140,10 +140,7 @@ function submit() {
                     v-model="form.amount_cents"
                     :symbol="symbol"
                 />
-                <p
-                    v-if="overpaying"
-                    class="text-xs text-amber-700 dark:text-amber-400"
-                >
+                <p v-if="overpaying" class="text-xs text-warning">
                     This is more than the remaining amount. You will be asked to
                     confirm it as a credit.
                 </p>
@@ -226,7 +223,7 @@ function submit() {
 
         <div
             v-if="needsConfirmation"
-            class="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950"
+            class="flex items-start gap-2 rounded-md border border-warning-border bg-warning-soft p-3 text-sm"
         >
             <Checkbox
                 id="pay-confirm"

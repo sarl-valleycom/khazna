@@ -176,8 +176,8 @@ const textarea =
                 <span
                     class="size-3 rounded-full"
                     :class="{
-                        'bg-green-500': dashboard.state === 'working',
-                        'bg-amber-500': dashboard.state === 'away',
+                        'bg-success': dashboard.state === 'working',
+                        'bg-warning': dashboard.state === 'away',
                         'bg-muted-foreground/40': dashboard.state === 'offline',
                     }"
                 />
@@ -319,7 +319,7 @@ const textarea =
         </CardContent>
     </Card>
 
-    <Card v-if="dashboard.correction" class="border-amber-500/50">
+    <Card v-if="dashboard.correction" class="border-warning-border">
         <CardHeader class="pb-2">
             <CardTitle class="text-base">You forgot to check out</CardTitle>
         </CardHeader>
@@ -390,7 +390,7 @@ const textarea =
                         class="font-semibold tabular-nums"
                         :class="
                             period.data.behindBeforeTodayMinutes > 0
-                                ? 'text-amber-600'
+                                ? 'text-warning'
                                 : ''
                         "
                     >
@@ -434,7 +434,7 @@ const textarea =
                             {{ session.workedFormatted }}
                         </span>
                     </div>
-                    <p v-if="session.autoClosed" class="text-xs text-amber-600">
+                    <p v-if="session.autoClosed" class="text-xs text-warning">
                         Closed automatically
                     </p>
                     <p

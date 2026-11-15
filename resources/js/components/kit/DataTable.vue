@@ -184,7 +184,7 @@ function changePerPage(event: Event) {
                                 <button
                                     v-if="column.sortable"
                                     type="button"
-                                    class="inline-flex items-center gap-1 hover:text-foreground"
+                                    class="inline-flex items-center gap-1 tracking-[inherit] uppercase hover:text-foreground"
                                     @click="toggleSort(column)"
                                 >
                                     {{ column.label }}
