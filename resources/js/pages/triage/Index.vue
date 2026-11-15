@@ -4,6 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import DueRow from '@/components/dues/DueRow.vue';
+import ExportButton from '@/components/kit/ExportButton.vue';
 import EmptyState from '@/components/kit/EmptyState.vue';
 import FilterBar from '@/components/kit/FilterBar.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
@@ -76,7 +77,14 @@ const hint = computed(() =>
         <PageHeader
             title="Triage"
             description="Every open due, by how soon it needs you."
-        />
+        >
+            <template #actions>
+                <ExportButton
+                    v-if="props.filters.tab !== 'attention'"
+                    href="/dues/export"
+                />
+            </template>
+        </PageHeader>
 
         <FilterBar
             :tabs="filterTabs"

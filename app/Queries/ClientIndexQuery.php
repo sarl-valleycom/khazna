@@ -11,9 +11,22 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class ClientIndexQuery
 {
     /**
+     * The screen's page of clients.
+     *
      * @return LengthAwarePaginator<int, Client>
      */
     public function handle(User $user, ClientFiltersData $filters): LengthAwarePaginator
+    {
+        return $this->query($user, $filters)->paginate($filters->perPage)->withQueryString();
+    }
+
+    /**
+     * Every client the filters match, in the screen's order. The Excel export
+     * walks this same builder, so what is exported is exactly what is shown.
+     *
+     * @return Builder<Client>
+     */
+    public function query(User $user, ClientFiltersData $filters): Builder
     {
         $query = Client::query()
             ->visibleTo($user)
@@ -32,9 +45,9 @@ class ClientIndexQuery
         }
 
         $direction = $filters->direction === 'desc' ? 'desc' : 'asc';
-        $query->orderBy($filters->sort, $direction);
 
-        return $query->paginate($filters->perPage)->withQueryString();
+        // The id makes the order unique, so paging and chunked exports never skip or repeat a row.
+        return $query->orderBy($filters->sort, $direction)->orderBy('id');
     }
 
     /**

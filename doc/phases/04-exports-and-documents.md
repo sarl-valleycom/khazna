@@ -67,11 +67,12 @@ The saved sample is `doc/phases/samples/arabic-client-statement.mpdf.pdf`, made 
 
 ## 4.4 Excel exports
 
-- [ ] Install `maatwebsite/excel`.
-- [ ] An export uses the **same query object** as the screen, so a filtered list exports exactly what is shown (FR-EXP-01). The query objects already exist: `ClientIndexQuery`, `ContractIndexQuery`, `DueTriageQuery`, `SessionIndexQuery`, `CashReportQuery`.
-- [ ] Chunk large exports.
-- [ ] Exports respect the same permissions as the screens (FR-EXP-04). A finance user cannot export salary dues, and payroll lines follow the same masking rule as the screens.
-- [ ] Export buttons on: clients, contracts, dues, payments, the sessions list, and the cash reports.
+- [x] `maatwebsite/excel` 4.x installed (it supports Laravel 13).
+- [x] An export walks the **same query builder** as its screen, so a filtered list exports exactly what is shown, all pages and not just the one on screen (FR-EXP-01). The query objects now expose `query()` (`rowsQuery()` for dues) and the screen paginates that same builder. Each query ends with a unique tie-break (the id), because a chunked export that pages with `LIMIT/OFFSET` would otherwise skip or repeat rows that tie on the sort column. Chunked by 1 000 rows.
+- [x] Exports respect the same visibility as the screens (FR-EXP-04): an account manager exports only their own clients, and a finance user cannot export salary dues, because the dues query already hides them. The sessions export is owner only, like the sessions list.
+- [x] Export buttons ("Export to Excel", carrying the screen's current filters) on **clients**, **contracts**, **dues** (the triage tab you are on; "needs attention" lists contracts, so it has none) and **sessions**.
+- [x] A spreadsheet is safe to open: text is stored as text, so a client named `=HYPERLINK(...)` is never run as a formula, and a phone number keeps its leading zero. Dates are real dates (`yyyy-mm-dd`), money is a number in DA with two decimals (it only displays; Khazna's own totals stay in centimes), the header row is bold and frozen, and columns are sized to their content.
+- [ ] **Payments** have no list screen of their own, so there is nothing to mirror. They are exported inside the client statement (4.5) and the account statement (4.6). The **cash reports** are exported in 4.6.
 
 ## 4.5 PDF documents
 
@@ -90,7 +91,7 @@ The saved sample is `doc/phases/samples/arabic-client-statement.mpdf.pdf`, made 
 
 - Every hand-computed example above.
 - Leave and holiday screens: only the owner can open them. A day marked as a holiday or leave changes the expected minutes on the employee page.
-- An export contains exactly the rows of the filtered screen. A finance user cannot export salary dues or see the payroll line.
+- An export contains exactly the rows of the filtered screen (all pages), never skips or repeats a row, and keeps phone numbers and formula-like text intact. A finance user cannot export salary dues or see the payroll line.
 - The payslip net equals the month-close net for the same employee and month.
 - The PDF renders an Arabic client name correctly (visual check kept as a saved sample).
 

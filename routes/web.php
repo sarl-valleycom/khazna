@@ -24,6 +24,10 @@ use App\Http\Controllers\Dues\DueReminderController;
 use App\Http\Controllers\Employees\AttendanceCodeController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\SalaryController;
+use App\Http\Controllers\Exports\ClientsExportController;
+use App\Http\Controllers\Exports\ContractsExportController;
+use App\Http\Controllers\Exports\DuesExportController;
+use App\Http\Controllers\Exports\SessionsExportController;
 use App\Http\Controllers\Forecast\ForecastController;
 use App\Http\Controllers\Ledger\ManualEntryController;
 use App\Http\Controllers\Ledger\TransferController;
@@ -53,9 +57,11 @@ Route::prefix('work')->name('work.')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/', TriageController::class)->name('home');
+    Route::get('dues/export', DuesExportController::class)->name('dues.export');
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('clients', [ClientController::class, 'index'])->name('clients.index');
+    Route::get('clients/export', ClientsExportController::class)->name('clients.export');
     Route::get('clients/import', [ClientImportController::class, 'create'])->name('clients.import');
     Route::post('clients/import/preview', [ClientImportController::class, 'preview'])->name('clients.import.preview');
     Route::get('clients/import/template', [ClientImportController::class, 'template'])->name('clients.import.template');
@@ -70,6 +76,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('clients/{client}', [ClientController::class, 'destroy'])->whereNumber('client')->name('clients.destroy');
 
     Route::get('contracts', [ContractController::class, 'index'])->name('contracts.index');
+    Route::get('contracts/export', ContractsExportController::class)->name('contracts.export');
     Route::post('contracts', [ContractController::class, 'store'])->name('contracts.store');
     Route::get('contracts/{contract}/attachment', [ContractController::class, 'attachment'])->whereNumber('contract')->name('contracts.attachment');
     Route::patch('contracts/{contract}/status', [ContractController::class, 'status'])->whereNumber('contract')->name('contracts.status');
@@ -115,6 +122,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('attendance')->name('attendance.')->group(function () {
         Route::get('sessions', [AttendanceSessionController::class, 'index'])->name('sessions.index');
+        Route::get('sessions/export', SessionsExportController::class)->name('sessions.export');
         Route::post('sessions', [AttendanceSessionController::class, 'store'])->name('sessions.store');
         Route::patch('sessions/{attendanceSession}', [AttendanceSessionController::class, 'update'])->whereNumber('attendanceSession')->name('sessions.update');
         Route::delete('sessions/{attendanceSession}', [AttendanceSessionController::class, 'destroy'])->whereNumber('attendanceSession')->name('sessions.destroy');

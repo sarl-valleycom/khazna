@@ -110,7 +110,9 @@ function period(leave: App.Data.LeaveEntryData): string {
             title="Leave"
             description="Leave you record is approved at once. Those days are not expected, so no hours are missing. The type is only a label: it never changes pay, you decide any deduction in the month's adjustments."
         >
-            <Button @click="openAdd">Add leave</Button>
+            <template #actions>
+                <Button @click="openAdd">Add leave</Button>
+            </template>
         </PageHeader>
 
         <AttendanceNav />

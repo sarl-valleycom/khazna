@@ -17,6 +17,7 @@ import SessionActions from '@/components/attendance/SessionActions.vue';
 import SessionDialog from '@/components/attendance/SessionDialog.vue';
 import DataTable from '@/components/kit/DataTable.vue';
 import DateInput from '@/components/kit/DateInput.vue';
+import ExportButton from '@/components/kit/ExportButton.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import StatusBadge from '@/components/kit/StatusBadge.vue';
 import type { DataTableColumn } from '@/components/kit/types';
@@ -166,6 +167,7 @@ function reviewTone(status: string): string {
             description="Every recorded session. Manual changes need a reason and are audited."
         >
             <template #actions>
+                <ExportButton href="/attendance/sessions/export" />
                 <Button @click="openCreate">Add session</Button>
             </template>
         </PageHeader>

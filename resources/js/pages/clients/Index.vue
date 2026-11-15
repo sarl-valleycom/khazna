@@ -16,6 +16,7 @@ import ConfirmDialog from '@/components/kit/ConfirmDialog.vue';
 import DataTable from '@/components/kit/DataTable.vue';
 import FilterBar from '@/components/kit/FilterBar.vue';
 import FormDialog from '@/components/kit/FormDialog.vue';
+import ExportButton from '@/components/kit/ExportButton.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import type { DataTableColumn, SelectFilter } from '@/components/kit/types';
 
@@ -160,6 +161,7 @@ function confirmDelete() {
             description="Search the client list, keep contacts up to date and import a spreadsheet."
         >
             <template #actions>
+                <ExportButton href="/clients/export" />
                 <Button v-if="props.canImport" variant="outline" as-child>
                     <Link href="/clients/import">
                         <Upload class="mr-1 size-4" /> Import CSV

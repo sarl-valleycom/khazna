@@ -85,7 +85,9 @@ function remove(reason: string | null) {
             title="Holidays"
             description="A holiday is not a working day: nobody is expected to work, and no hours are missing. Islamic holidays follow the moon and are announced late, so enter them when they are announced."
         >
-            <Button @click="openAdd">Add a holiday</Button>
+            <template #actions>
+                <Button @click="openAdd">Add a holiday</Button>
+            </template>
         </PageHeader>
 
         <AttendanceNav />

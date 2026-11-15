@@ -8,6 +8,7 @@ import ContractStatusActions from '@/components/contracts/ContractStatusActions.
 import DataTable from '@/components/kit/DataTable.vue';
 import FilterBar from '@/components/kit/FilterBar.vue';
 import MoneyText from '@/components/kit/MoneyText.vue';
+import ExportButton from '@/components/kit/ExportButton.vue';
 import PageHeader from '@/components/kit/PageHeader.vue';
 import StatusBadge from '@/components/kit/StatusBadge.vue';
 import type { DataTableColumn, SelectFilter } from '@/components/kit/types';
@@ -80,6 +81,7 @@ function openEdit(contract: App.Data.ContractData) {
             description="SaaS renewals, their cycles and their current state."
         >
             <template #actions>
+                <ExportButton href="/contracts/export" />
                 <Button
                     :disabled="props.clients.length === 0"
                     @click="openCreate"
