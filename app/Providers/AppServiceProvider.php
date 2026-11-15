@@ -7,6 +7,8 @@ use App\Discord\Handlers\Attendance\BackHandler;
 use App\Discord\Handlers\Attendance\BreakHandler;
 use App\Discord\Handlers\Attendance\CheckInHandler;
 use App\Discord\Handlers\Attendance\CheckOutHandler;
+use App\Discord\Handlers\Attendance\CorrectionModalHandler;
+use App\Discord\Handlers\Attendance\OpenCorrectionModalHandler;
 use App\Discord\InteractionRouter;
 use App\Models\User;
 use App\Support\AuditContext;
@@ -37,6 +39,10 @@ class AppServiceProvider extends ServiceProvider
             ],
             componentPrefixes: [
                 'attendance:back' => BackHandler::class,
+                'attendance:correct:' => OpenCorrectionModalHandler::class,
+            ],
+            modalPrefixes: [
+                'attendance:correct:' => CorrectionModalHandler::class,
             ],
         ));
     }

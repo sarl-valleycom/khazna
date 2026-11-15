@@ -32,6 +32,7 @@ use Illuminate\Support\Collection;
 #[Fillable([
     'employee_id', 'started_at', 'ended_at', 'status', 'review_status',
     'report', 'blockers', 'source', 'closed_by',
+    'correction_dm_sent_at', 'long_reminder_sent_at',
 ])]
 class AttendanceSession extends Model
 {
@@ -48,6 +49,8 @@ class AttendanceSession extends Model
             'review_status' => AttendanceReviewStatus::class,
             'source' => AttendanceSource::class,
             'closed_by' => 'integer',
+            'correction_dm_sent_at' => 'immutable_datetime',
+            'long_reminder_sent_at' => 'immutable_datetime',
         ];
     }
 
@@ -67,6 +70,12 @@ class AttendanceSession extends Model
     public function breaks(): HasMany
     {
         return $this->hasMany(AttendanceBreak::class, 'session_id');
+    }
+
+    /** @return HasMany<CorrectionRequest, $this> */
+    public function correctionRequests(): HasMany
+    {
+        return $this->hasMany(CorrectionRequest::class, 'session_id');
     }
 
     /** @param Builder<static> $query */

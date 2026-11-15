@@ -51,6 +51,12 @@ class AttendanceSetting extends Model
 
     public static function current(): self
     {
-        return static::query()->firstOrCreate([]);
+        $setting = static::query()->first();
+
+        if ($setting !== null) {
+            return $setting;
+        }
+
+        return static::query()->create([])->refresh();
     }
 }

@@ -441,6 +441,7 @@ declare namespace App {
         export type ContractStatus = "active" | "paused" | "canceled";
         export type ContractType =
             "saas_renewal" | "custom_project" | "recurring_cost";
+        export type CorrectionStatus = "pending" | "approved" | "rejected";
         export type Cycle = "monthly" | "quarterly" | "yearly" | "once";
         export type Direction = "in" | "out";
         export type DueKind =

@@ -49,6 +49,56 @@ class DiscordClient
     }
 
     /**
+     * Open (or reuse) a DM channel and post a message to it. Discord requires
+     * two calls for this. Failures are logged and never thrown into a job that
+     * is also posting to a channel.
+     *
+     * @param  list<array<string, mixed>>  $components
+     */
+    public function sendDirectMessage(string $userId, string $content, array $components = []): bool
+    {
+        $channel = $this->request()->post('/users/@me/channels', ['recipient_id' => $userId]);
+
+        if (! $channel->successful()) {
+            Log::error('Discord DM channel could not be opened.', [
+                'user_id' => $userId,
+                'status' => $channel->status(),
+                'body' => $channel->body(),
+            ]);
+
+            return false;
+        }
+
+        $channelId = $channel->json('id');
+
+        if (! is_string($channelId) && ! is_int($channelId)) {
+            Log::error('Discord DM channel response had no usable id.', ['user_id' => $userId]);
+
+            return false;
+        }
+
+        $payload = ['content' => $content];
+
+        if ($components !== []) {
+            $payload['components'] = $components;
+        }
+
+        $message = $this->request()->post("/channels/{$channelId}/messages", $payload);
+
+        if (! $message->successful()) {
+            Log::error('Discord DM failed.', [
+                'user_id' => $userId,
+                'status' => $message->status(),
+                'body' => $message->body(),
+            ]);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Post a plain message to a channel. Rate-limit handling is added in the
      * reminders/digests section; this method only owns the HTTP call.
      *

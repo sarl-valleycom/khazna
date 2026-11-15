@@ -60,6 +60,26 @@ final class AttendanceException extends RuntimeException
         return new self('discord.errors.reason_required');
     }
 
+    public static function sessionNotFound(): self
+    {
+        return new self('discord.errors.session_not_found');
+    }
+
+    public static function notClosed(): self
+    {
+        return new self('discord.errors.not_closed');
+    }
+
+    public static function invalidEndTime(): self
+    {
+        return new self('discord.errors.invalid_end_time');
+    }
+
+    public static function invalidTimeFormat(): self
+    {
+        return new self('discord.errors.invalid_time_format');
+    }
+
     public function messageForEmployee(): string
     {
         return (string) __($this->translationKey, $this->parameters);
