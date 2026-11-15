@@ -58,8 +58,28 @@ final class WorkedTime
             ->with('breaks')
             ->get();
 
-        $grossSeconds = 0;
-        $breakSeconds = 0;
+        return self::minutesForSessions($sessions, $now, $paidBreakAllowanceMinutes);
+    }
+
+    /**
+     * Worked minutes for one employee's sessions. The paid break allowance is a
+     * per-day rule (BR-02): it is subtracted from each Algiers day's break time
+     * once, never once for the whole range.
+     *
+     * @param  iterable<AttendanceSession>  $sessions
+     */
+    public static function minutesForSessions(
+        iterable $sessions,
+        ?CarbonImmutable $at = null,
+        ?int $paidBreakAllowanceMinutes = null,
+    ): int {
+        $now = ($at ?? AlgerianDate::now())->utc();
+        $allowance = $paidBreakAllowanceMinutes
+            ?? AttendanceSetting::current()->paid_break_minutes;
+        $paidBreakSeconds = max(0, $allowance) * 60;
+
+        /** @var array<string, array{gross: int, breaks: int}> $days */
+        $days = [];
 
         foreach ($sessions as $session) {
             $end = self::effectiveEnd($session, $now);
@@ -68,17 +88,21 @@ final class WorkedTime
                 continue;
             }
 
-            $grossSeconds += $end->getTimestamp() - $session->started_at->getTimestamp();
-            $breakSeconds += self::breakSeconds($session, $end);
+            $day = $session->started_at->setTimezone(AlgerianDate::TZ)->toDateString();
+
+            $days[$day] ??= ['gross' => 0, 'breaks' => 0];
+            $days[$day]['gross'] += $end->getTimestamp() - $session->started_at->getTimestamp();
+            $days[$day]['breaks'] += self::breakSeconds($session, $end);
         }
 
-        $allowance = $paidBreakAllowanceMinutes
-            ?? AttendanceSetting::current()->paid_break_minutes;
+        $seconds = 0;
 
-        $paidBreakSeconds = max(0, $allowance) * 60;
-        $unpaidBreakSeconds = max(0, $breakSeconds - $paidBreakSeconds);
+        foreach ($days as $day) {
+            $unpaidBreakSeconds = max(0, $day['breaks'] - $paidBreakSeconds);
+            $seconds += max(0, $day['gross'] - $unpaidBreakSeconds);
+        }
 
-        return intdiv(max(0, $grossSeconds - $unpaidBreakSeconds), 60);
+        return intdiv($seconds, 60);
     }
 
     public static function format(int $minutes): string

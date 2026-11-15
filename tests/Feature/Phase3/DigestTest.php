@@ -175,3 +175,68 @@ test('the weekly digest compares worked and expected hours, lateness and overtim
             && str_contains($value, '<@111111111111111111> — 15h 40m / 40h 00m · late 1 · overtime 0m');
     });
 });
+
+test('the weekly digest counts Saturday work for an employee who works Saturdays', function () {
+    CarbonImmutable::setTestNow(digestAt('2026-11-22 08:00:00'));
+    digestConfig();
+    $office = Office::factory()->create(['name' => 'Algiers']);
+    $employee = Employee::factory()->forOffice($office)->linkedTo('222222222222222222')->scheduled('09:00:00', '17:00:00', 480, [0, 1, 2, 3, 4, 6])->create([
+        'name' => 'Sara',
+    ]);
+
+    // Saturday 21 Nov, eight hours.
+    AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => digestAt('2026-11-21 09:00:00')->utc(),
+        'ended_at' => digestAt('2026-11-21 17:00:00')->utc(),
+        'status' => AttendanceStatus::Closed,
+        'review_status' => AttendanceReviewStatus::Ok,
+    ]);
+
+    Http::fake(['discord.test/*' => Http::response([], 200)]);
+
+    $this->artisan('attendance:digest-weekly')->assertSuccessful();
+
+    Http::assertSent(function (Request $request): bool {
+        $embed = $request->data()['embeds'][0] ?? [];
+        $value = collect($embed['fields'] ?? [])->firstWhere('name', 'Algiers')['value'] ?? '';
+
+        // Six working days expected (48h), eight worked on the Saturday.
+        return str_contains($value, '<@222222222222222222> — 8h 00m / 48h 00m');
+    });
+});
+
+test('the weekly digest subtracts the paid break allowance per day', function () {
+    CarbonImmutable::setTestNow(digestAt('2026-11-22 08:00:00'));
+    digestConfig();
+    AttendanceSetting::current()->update(['paid_break_minutes' => 30]);
+    $office = Office::factory()->create(['name' => 'Algiers']);
+    $employee = digestEmployee($office, '333333333333333333', 'Omar');
+
+    foreach (['2026-11-15', '2026-11-16'] as $day) {
+        $session = AttendanceSession::factory()->create([
+            'employee_id' => $employee->id,
+            'started_at' => digestAt($day.' 09:00:00')->utc(),
+            'ended_at' => digestAt($day.' 17:00:00')->utc(),
+            'status' => AttendanceStatus::Closed,
+            'review_status' => AttendanceReviewStatus::Ok,
+        ]);
+        AttendanceBreak::factory()->create([
+            'session_id' => $session->id,
+            'started_at' => digestAt($day.' 12:00:00')->utc(),
+            'ended_at' => digestAt($day.' 12:30:00')->utc(),
+        ]);
+    }
+
+    Http::fake(['discord.test/*' => Http::response([], 200)]);
+
+    $this->artisan('attendance:digest-weekly')->assertSuccessful();
+
+    // 30 minute breaks are fully paid on both days: 2 x 8h.
+    Http::assertSent(function (Request $request): bool {
+        $embed = $request->data()['embeds'][0] ?? [];
+        $value = collect($embed['fields'] ?? [])->firstWhere('name', 'Algiers')['value'] ?? '';
+
+        return str_contains($value, '<@333333333333333333> — 16h 00m / 40h 00m');
+    });
+});

@@ -4,6 +4,7 @@ namespace App\Attendance;
 
 use App\Enums\EmployeeStatus;
 use App\Models\AttendanceSession;
+use App\Models\AttendanceSetting;
 use App\Models\Employee;
 use App\Models\Office;
 use App\Support\AlgerianDate;
@@ -12,8 +13,9 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 /**
- * Sunday morning summary of the previous Sunday-to-Thursday work week: worked
- * minutes against expected minutes, late sessions and overtime.
+ * Sunday morning summary of the previous week (Sunday to Saturday, so weekend
+ * work is counted): worked minutes against expected minutes, late sessions and
+ * overtime. Expected minutes follow each employee's own work days.
  */
 class WeeklyDigest
 {
@@ -28,7 +30,8 @@ class WeeklyDigest
             ->startOfWeek(CarbonInterface::SUNDAY)
             ->subWeek()
             ->startOfDay();
-        $end = $start->addDays(4)->endOfDay();
+        $end = $start->addDays(6)->endOfDay();
+        $allowance = AttendanceSetting::current()->paid_break_minutes;
 
         $sessions = AttendanceSession::query()
             ->whereBetween('started_at', [$start->utc(), $end->utc()])
@@ -50,7 +53,7 @@ class WeeklyDigest
 
             foreach ($employees->where('office_id', $office->id) as $employee) {
                 $employeeSessions = $sessions->get($employee->id, collect());
-                $worked = $this->workedMinutes($employeeSessions, $now);
+                $worked = $this->workedMinutes($employeeSessions, $now, $allowance);
                 $expected = $this->calendar->expectedMinutes($employee, $start, $end);
                 $late = $this->lateCount($employee, $employeeSessions);
                 $overtime = max(0, $worked - $expected);
@@ -88,9 +91,9 @@ class WeeklyDigest
     /**
      * @param  Collection<int, AttendanceSession>  $sessions
      */
-    private function workedMinutes(Collection $sessions, CarbonImmutable $now): int
+    private function workedMinutes(Collection $sessions, CarbonImmutable $now, int $allowance): int
     {
-        return $sessions->sum(fn (AttendanceSession $session): int => WorkedTime::sessionMinutes($session, $now->utc()));
+        return WorkedTime::minutesForSessions($sessions, $now->utc(), $allowance);
     }
 
     /**

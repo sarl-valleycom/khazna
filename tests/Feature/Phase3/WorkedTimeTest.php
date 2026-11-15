@@ -96,3 +96,66 @@ test('today totals use the Algiers day and subtract the paid break allowance onc
         ->and(WorkedTime::format(465))->toBe('7h 45m')
         ->and(WorkedTime::format(0))->toBe('0m');
 });
+
+test('the paid break allowance applies to each day, not once to the whole range', function () {
+    CarbonImmutable::setTestNow(algiers('2026-11-20 18:00:00'));
+
+    $employee = Employee::factory()->create();
+
+    foreach (['2026-11-15', '2026-11-16', '2026-11-17'] as $day) {
+        $session = AttendanceSession::factory()->create([
+            'employee_id' => $employee->id,
+            'started_at' => algiers($day.' 09:00:00'),
+            'ended_at' => algiers($day.' 17:00:00'),
+        ]);
+        AttendanceBreak::factory()->create([
+            'session_id' => $session->id,
+            'started_at' => algiers($day.' 12:00:00'),
+            'ended_at' => algiers($day.' 12:45:00'),
+        ]);
+    }
+
+    $from = algiers('2026-11-15 00:00:00');
+    $to = algiers('2026-11-17 23:59:59');
+
+    // 8h gross, 45 min break, 30 min paid each day: 15 min unpaid per day.
+    expect(WorkedTime::rangeMinutes($employee, $from, $to, paidBreakAllowanceMinutes: 30))->toBe(3 * 465)
+        ->and(WorkedTime::rangeMinutes($employee, $from, $to, paidBreakAllowanceMinutes: 0))->toBe(3 * 435)
+        ->and(WorkedTime::rangeMinutes($employee, $from, $to, paidBreakAllowanceMinutes: 60))->toBe(3 * 480);
+});
+
+test('unused paid break allowance on one day does not carry over to another', function () {
+    CarbonImmutable::setTestNow(algiers('2026-11-20 18:00:00'));
+
+    $employee = Employee::factory()->create();
+
+    $short = AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => algiers('2026-11-15 09:00:00'),
+        'ended_at' => algiers('2026-11-15 17:00:00'),
+    ]);
+    AttendanceBreak::factory()->create([
+        'session_id' => $short->id,
+        'started_at' => algiers('2026-11-15 12:00:00'),
+        'ended_at' => algiers('2026-11-15 12:10:00'),
+    ]);
+
+    $long = AttendanceSession::factory()->create([
+        'employee_id' => $employee->id,
+        'started_at' => algiers('2026-11-16 09:00:00'),
+        'ended_at' => algiers('2026-11-16 17:00:00'),
+    ]);
+    AttendanceBreak::factory()->create([
+        'session_id' => $long->id,
+        'started_at' => algiers('2026-11-16 12:00:00'),
+        'ended_at' => algiers('2026-11-16 13:00:00'),
+    ]);
+
+    // Day one: break fully paid (480). Day two: 60 min break, 30 paid (450).
+    expect(WorkedTime::rangeMinutes(
+        $employee,
+        algiers('2026-11-15 00:00:00'),
+        algiers('2026-11-16 23:59:59'),
+        paidBreakAllowanceMinutes: 30,
+    ))->toBe(480 + 450);
+});
