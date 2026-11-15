@@ -58,6 +58,7 @@ class AttendanceSetting extends Model
             return $setting;
         }
 
-        return static::query()->create([])->refresh();
+        // Employees fix their own forgotten check-out unless the owner turns it off.
+        return static::query()->create(['self_correction_enabled' => true])->refresh();
     }
 }

@@ -22,7 +22,7 @@ Do this per environment (local, staging, production each get their own applicati
 
 - [ ] Create the application in the Discord developer portal. Note the **Application ID**, **Public Key** and **Bot Token**.
 - [ ] Invite the bot to the company server with the `applications.commands` and `bot` scopes. Permissions: view channels, send messages. No privileged intents are needed because the app uses HTTP interactions and no gateway connection.
-- [ ] Note the **Guild ID** and create the channels: one attendance feed **per office**, and reports. Both offices share one Discord server (open question 4).
+- [ ] Note the **Guild ID** and create the channels: the attendance feed and the reports channel. Both offices share one Discord server and everything lives in one place (decision 4), so give both offices the same attendance channel ID. Every channel is visible to all employees (decision 2).
 - [ ] Store the values in `.env` and `config/discord.php`. Nothing about Discord is hardcoded.
 - [ ] Set the **Interactions Endpoint URL** to `https://<domain>/discord/interactions`. Discord verifies it by sending a signed ping and an invalid-signature probe, so the endpoint must already work.
 - [ ] For local work, expose the dev server with a tunnel such as `cloudflared`.
@@ -66,7 +66,7 @@ Tables: `attendance_sessions`, `attendance_breaks`, `attendance_settings` (annex
 
 - [ ] `attendance:auto-close`, scheduled at the configured time (default 23:59 Algiers).
 - [ ] Closing time: the employee's scheduled end if it exists, otherwise start plus expected daily minutes. If the session started **after** that time, close at the current time. Always mark `needs_review` and `status = auto_closed` (FR-AUTO-01, 02).
-- [ ] The next morning, DM the employee with a button to give the real end time. A short modal collects it. The change is saved as a **correction request** for the owner to approve, unless the owner allows self-correction. A correction is applied without the owner only when all of these hold: self-correction is enabled, the session is auto-closed and still waiting for review, the request is inside the self-correction window, and the proposed session is at most 12 hours long. A self-approval marks the session reviewed, so it cannot be repeated to push the end time forward. Anything else stays pending for the owner.
+- [ ] The next morning, DM the employee with a button to give the real end time. A short modal collects it. The change is saved as a **correction request** for the owner to approve, unless self-correction is on, which it is by default (decision 1; the owner can turn it off on the settings page). A correction is applied without the owner only when all of these hold: self-correction is enabled, the session is auto-closed and still waiting for review, the request is inside the self-correction window, and the proposed session is at most 12 hours long. A self-approval marks the session reviewed, so it cannot be repeated to push the end time forward. Anything else stays pending for the owner.
 - [ ] The correction DM goes to every auto-closed session that has not had one yet (`correction_dm_sent_at` is empty), including sessions closed after midnight, not only those that ended the day before.
 - [ ] "Over 10 hours" reminder to the employee (FR-AUTO-05).
 
@@ -147,9 +147,11 @@ This is a small change from the annex wording ("`/check-out` opens a modal"). Th
 | Staff see the system as surveillance | Record only the commands they send, explain it first, no extra monitoring |
 | DMs are closed | Channel fallback and a log of undelivered messages |
 
-## Open questions
+## Decisions
 
-1. May an employee fix their own forgotten check-out within 24 hours, or must the owner approve every correction?
-2. Which channels are visible to all employees, and which are owner-only?
-3. Auto-close time and late grace period (defaults: 23:59, 15 minutes).
-4. Do both offices share one Discord server (assumed), with a separate attendance feed per office? Do the offices have different working hours or work days? The employee schedule already supports this per person.
+These were open questions. They are now settled.
+
+1. **Employees fix their own forgotten check-out.** Self-correction is on by default, with a 24 hour window. The owner can turn it off, or change the window, on `/attendance/settings`. The limits in section 3.5 still apply: only an auto-closed session still waiting for review, at most 12 hours long, and only once. An existing database keeps its saved setting, so switch it on in settings there.
+2. **Every channel is visible to all employees.** There is no owner-only channel in this phase, which is also why the owner digest was dropped.
+3. **Defaults accepted:** auto-close at 23:59 and a 15 minute late grace period.
+4. **Everything in one place.** Both offices share one Discord server and one attendance channel. The per-office channel setting stays, so an office can get its own feed later. Working hours and work days are set per employee.

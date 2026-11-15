@@ -20,7 +20,7 @@ class AttendanceSettingFactory extends Factory
             'reminder_after_minutes' => 30,
             'away_limit_minutes' => 90,
             'paid_break_minutes' => 0,
-            'self_correction_enabled' => false,
+            'self_correction_enabled' => true,
             'self_correction_hours' => 24,
             'over_10h_reminder_enabled' => true,
         ];

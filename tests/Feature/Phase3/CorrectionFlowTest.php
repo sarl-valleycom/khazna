@@ -228,3 +228,16 @@ test('a self-correction that would make the session longer than 12 hours waits f
         ->and($session->refresh()->ended_at?->toDateTimeString())->toBe('2026-11-16 16:00:00')
         ->and($session->review_status)->toBe(AttendanceReviewStatus::NeedsReview);
 });
+
+test('self-correction is on by default for a fresh installation', function () {
+    CarbonImmutable::setTestNow(correctionAt('2026-11-17 08:00:00'));
+    $signer = SignedInteraction::make()->configure();
+    $employee = correctionEmployee('444444444444444444');
+    $session = autoClosedSession($employee);
+
+    expect(AttendanceSetting::current()->self_correction_enabled)->toBeTrue();
+
+    $signer->post($this, correctionModal('444444444444444444', $session->id, '18:30'))
+        ->assertOk()
+        ->assertJsonPath('data.content', 'End time corrected to 18:30. Thank you.');
+});
