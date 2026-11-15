@@ -28,21 +28,23 @@ The hours-to-make-up numbers on the employee page already subtract holidays and 
 
 Information only. It never changes a salary.
 
-- [ ] `MonthlySummary` for an employee and a month, built from the same day-by-day logic as `HoursBalance` (extend it, do not copy it), so the page and the documents agree:
+- [x] `MonthlySummary` for an employee, or for the whole team at once, and a month. It uses the same day-by-day logic as `HoursBalance` (both read `WorkCalendar`), so the page and the documents agree:
 
 | Field | Definition |
 |---|---|
 | Worked minutes | Sum of session time minus unpaid break time, with the paid break allowance applied per day |
-| Expected minutes | Work days minus holidays minus approved leave, times the employee's expected minutes per day |
+| Expected minutes | Work days minus holidays minus approved leave, times the employee's expected minutes per day. Only days between the hire date and the last day count |
 | To make up | `max(0, expected − worked)` |
 | Extra | `max(0, worked − expected)` |
 | Days worked | Days with at least one session |
-| Days off | Holidays and approved leave days that fell on a work day |
-| Not yet checked | Sessions auto-closed that the employee or owner has not corrected, shown as a note so a total is never presented as certain |
+| Days off | Work days that were a holiday or approved leave |
+| Not yet checked | Sessions auto-closed that nobody corrected, shown as a note so a total is never presented as certain |
 
-- [ ] All closed and open sessions count (there is no approval step). An open session counts up to now.
-- [ ] A screen per employee and month on the owner pages, with a link to every session behind a number.
-- [ ] Hand-computed test: November with 4 weekends, one holiday and 22 expected days gives 22 × 480 = 10 560 expected minutes; 10 080 worked leaves 480 to make up.
+- [x] For the **current month** the target runs through today only, so a month in progress is not shown as a debt. A future month is empty.
+- [x] All closed and open sessions count (there is no approval step). An open session counts up to now.
+- [x] An owner page, `/attendance/summary`, with one row per employee for a month, previous and next month buttons, and a link to the sessions list filtered to that person and month.
+- [x] The whole team costs the same few queries however many people there are (holidays and leave are loaded once).
+- [x] Hand-computed tests: November 2026 has 22 Sunday-to-Thursday days, so 22 × 480 = 10 560 expected minutes; 21 days worked (10 080) leaves 480 to make up. Holiday, leave, hire date, leaving date and paid break cases are tested the same way.
 
 ## 4.3 PDF spike (half a day)
 

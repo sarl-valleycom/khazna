@@ -407,6 +407,23 @@ declare namespace App {
             canDeliver: boolean;
             canRequest: boolean;
         };
+        export type MonthlySummaryRowData = {
+            employeeId: number;
+            name: string;
+            officeName: string;
+            expectedMinutes: number;
+            workedMinutes: number;
+            toMakeUpMinutes: number;
+            extraMinutes: number;
+            expectedFormatted: string;
+            workedFormatted: string;
+            toMakeUpFormatted: string;
+            extraFormatted: string;
+            daysWorked: number;
+            daysOff: number;
+            notChecked: number;
+            sessionsUrl: string;
+        };
         export type OfficeOptionData = {
             id: number;
             name: string;

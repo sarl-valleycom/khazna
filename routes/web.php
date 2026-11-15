@@ -9,6 +9,7 @@ use App\Http\Controllers\Attendance\AttendanceCorrectionController;
 use App\Http\Controllers\Attendance\AttendancePresenceController;
 use App\Http\Controllers\Attendance\AttendanceSessionController;
 use App\Http\Controllers\Attendance\AttendanceSettingsController;
+use App\Http\Controllers\Attendance\AttendanceSummaryController;
 use App\Http\Controllers\Attendance\HolidayController;
 use App\Http\Controllers\Attendance\LeaveController;
 use App\Http\Controllers\Categories\CategoryController;
@@ -120,6 +121,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('sessions/{attendanceSession}/approve', [AttendanceSessionController::class, 'approve'])->whereNumber('attendanceSession')->name('sessions.approve');
 
         Route::get('presence', AttendancePresenceController::class)->name('presence.index');
+
+        Route::get('summary', AttendanceSummaryController::class)->name('summary.index');
 
         Route::get('holidays', [HolidayController::class, 'index'])->name('holidays.index');
         Route::post('holidays', [HolidayController::class, 'store'])->name('holidays.store');
