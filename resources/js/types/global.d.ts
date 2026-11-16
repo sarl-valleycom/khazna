@@ -18,6 +18,7 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            company: string;
             auth: Auth;
             flash: App.Data.FlashData;
             settings: App.Data.SettingsData;

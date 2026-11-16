@@ -52,6 +52,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'company' => config('khazna.company'),
             'auth' => new AuthData(
                 user: $userData,
                 role: $userData?->role,

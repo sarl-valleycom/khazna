@@ -192,6 +192,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::put('users/{user}/password', [UserController::class, 'setPassword'])->name('users.password');
+    Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::post('users/{user}/password-reset', [UserController::class, 'resetPassword'])->name('users.password-reset');
 
     Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');

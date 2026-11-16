@@ -162,6 +162,40 @@ test('the owner can send a password reset link', function () {
         ->assertStatus(303);
 });
 
+test('the owner can set another user password', function () {
+    $this->actingAsRole(Role::Owner);
+    $user = User::factory()->create();
+
+    $this->put(route('users.password', $user), [
+        'password' => 'a-new-strong-pass-1',
+        'password_confirmation' => 'a-new-strong-pass-1',
+    ])->assertRedirect(route('users.index'))->assertStatus(303);
+
+    expect(Hash::check('a-new-strong-pass-1', $user->fresh()->password))->toBeTrue();
+});
+
+test('non-owners cannot set passwords or delete users', function () {
+    $this->actingAsRole(Role::Finance);
+    $user = User::factory()->create();
+
+    $this->put(route('users.password', $user), [
+        'password' => 'a-new-strong-pass-1',
+        'password_confirmation' => 'a-new-strong-pass-1',
+    ])->assertForbidden();
+    $this->delete(route('users.destroy', $user))->assertForbidden();
+});
+
+test('the owner can delete a user but not themselves', function () {
+    $owner = $this->actingAsRole(Role::Owner);
+    $user = User::factory()->create();
+
+    $this->delete(route('users.destroy', $user))->assertRedirect(route('users.index'));
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+
+    $this->delete(route('users.destroy', $owner))->assertForbidden();
+    $this->assertDatabaseHas('users', ['id' => $owner->id]);
+});
+
 test('the owner can change settings and the change is audited', function () {
     $this->actingAsRole(Role::Owner);
 

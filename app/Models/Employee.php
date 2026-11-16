@@ -38,6 +38,7 @@ use LogicException;
  * @property string|null $schedule_start
  * @property string|null $schedule_end
  * @property string|null $attendance_code_hash
+ * @property string|null $attendance_code_encrypted
  * @property CarbonImmutable|null $attendance_code_set_at
  */
 #[Fillable([
@@ -53,7 +54,7 @@ class Employee extends Model
     }
 
     /** @var list<string> */
-    protected $hidden = ['attendance_code_hash'];
+    protected $hidden = ['attendance_code_hash', 'attendance_code_encrypted'];
 
     protected function casts(): array
     {
@@ -78,7 +79,7 @@ class Employee extends Model
      */
     protected function auditSecurityAttributes(): array
     {
-        return [...$this->baseAuditSecurityAttributes(), 'attendance_code_hash'];
+        return [...$this->baseAuditSecurityAttributes(), 'attendance_code_hash', 'attendance_code_encrypted'];
     }
 
     public function hasAttendanceCode(): bool

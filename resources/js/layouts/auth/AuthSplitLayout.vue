@@ -7,6 +7,7 @@ import { home } from '@/routes';
 
 const page = usePage();
 const name = page.props.name;
+const company = page.props.company;
 
 defineProps<{
     title?: string;
@@ -87,7 +88,7 @@ const points = [
             </div>
 
             <p class="relative z-10 text-xs text-sidebar-foreground/45">
-                © {{ new Date().getFullYear() }} {{ name }}
+                © {{ new Date().getFullYear() }} {{ company }} · {{ name }}
             </p>
         </aside>
 

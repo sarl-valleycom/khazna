@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Actions\Payroll\SetSalary;
+use App\Attendance\AttendanceCode;
 use App\Data\EmployeeData;
 use App\Data\EmployeeWithSalaryData;
 use App\Data\OfficeOptionData;
@@ -65,7 +66,7 @@ class EmployeeController extends Controller
         ]);
     }
 
-    public function show(Request $request, Employee $employee): Response
+    public function show(Request $request, Employee $employee, AttendanceCode $codes): Response
     {
         $this->authorize('view', $employee);
 
@@ -73,8 +74,8 @@ class EmployeeController extends Controller
         $employee->load('office:id,name');
 
         return Inertia::render('employees/Show', [
-            // Flashed by AttendanceCodeController: shown once, then gone.
-            'newAttendanceCode' => $actor->can('manage-attendance-codes') ? $request->session()->get('attendance_code') : null,
+            // Owner only: the personal code, so it can be read out again.
+            'attendanceCode' => $actor->can('manage-attendance-codes') ? $codes->reveal($employee) : null,
             'canManageAttendanceCode' => $actor->can('manage-attendance-codes'),
             'employee' => $actor->can('view-salaries')
                 ? EmployeeWithSalaryData::fromEmployee($employee, withHistory: true)

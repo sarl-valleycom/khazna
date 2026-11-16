@@ -8,7 +8,7 @@ import {
     usePage,
     setLayoutProps,
 } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { ArrowLeft, Eye, EyeOff } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -28,11 +28,10 @@ defineOptions({
 });
 
 type Props = {
-    newAttendanceCode?: string | null;
+    attendanceCode?: string | null;
     canManageAttendanceCode?: boolean;
     employee:
-        | App.Data.EmployeeWithSalaryData
-        | { employee: App.Data.EmployeeData };
+        App.Data.EmployeeWithSalaryData | { employee: App.Data.EmployeeData };
     canSeeSalaries: boolean;
     offices: App.Data.OfficeOptionData[];
     statuses: Array<{ value: string; label: string }>;
@@ -43,6 +42,7 @@ type Props = {
 const props = defineProps<Props>();
 const page = usePage();
 
+const codeVisible = ref(false);
 const editOpen = ref(false);
 const salaryOpen = ref(false);
 const advanceOpen = ref(false);
@@ -155,25 +155,6 @@ function saveSalary() {
             </CardContent>
         </Card>
 
-        <Card v-if="props.newAttendanceCode" class="border-primary">
-            <CardHeader>
-                <CardTitle>New attendance code for {{ person.name }}</CardTitle>
-            </CardHeader>
-            <CardContent class="space-y-2">
-                <p
-                    class="text-4xl font-semibold tracking-[0.4em] tabular-nums"
-                    data-testid="attendance-code"
-                >
-                    {{ props.newAttendanceCode }}
-                </p>
-                <p class="text-sm text-muted-foreground">
-                    Give it to {{ person.name }} now. It is not shown again, and
-                    an older code stops working. They enter it at
-                    <span class="font-medium">/work</span>.
-                </p>
-            </CardContent>
-        </Card>
-
         <Card>
             <CardHeader>
                 <CardTitle>Attendance</CardTitle>
@@ -181,12 +162,43 @@ function saveSalary() {
             <CardContent class="grid gap-4 pt-0 sm:grid-cols-3">
                 <div>
                     <p class="text-xs text-muted-foreground">Attendance code</p>
-                    <p class="font-medium">
+                    <div
+                        v-if="props.attendanceCode"
+                        class="flex items-center gap-2"
+                    >
+                        <p
+                            class="text-2xl font-semibold tracking-[0.3em] tabular-nums"
+                            data-testid="attendance-code"
+                        >
+                            {{ codeVisible ? props.attendanceCode : '••••••' }}
+                        </p>
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            :title="codeVisible ? 'Hide code' : 'Show code'"
+                            @click="codeVisible = !codeVisible"
+                        >
+                            <EyeOff v-if="codeVisible" class="size-4" />
+                            <Eye v-else class="size-4" />
+                        </Button>
+                    </div>
+                    <p class="text-sm text-muted-foreground">
                         {{
                             person.hasAttendanceCode
                                 ? `Set on ${formatDate(person.attendanceCodeSetAt ?? '')}`
                                 : 'No code yet'
                         }}
+                    </p>
+                    <p
+                        v-if="
+                            person.hasAttendanceCode &&
+                            props.canManageAttendanceCode &&
+                            !props.attendanceCode
+                        "
+                        class="text-xs text-muted-foreground"
+                    >
+                        Made before codes could be viewed. Make a new code to
+                        see it here.
                     </p>
                     <div
                         v-if="

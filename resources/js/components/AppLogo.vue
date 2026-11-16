@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 
 const name = usePage().props.name;
+const company = usePage().props.company;
 </script>
 
 <template>
@@ -18,7 +19,7 @@ const name = usePage().props.name;
         >
         <span
             class="truncate text-[0.7rem] leading-tight text-sidebar-foreground/60"
-            ><span lang="ar" dir="rtl">خزنة</span> · Treasury</span
+            >{{ company }} · <span lang="ar" dir="rtl">خزنة</span></span
         >
     </div>
 </template>

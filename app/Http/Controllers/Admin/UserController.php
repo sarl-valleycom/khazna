@@ -10,9 +10,11 @@ use App\Http\Requests\Admin\UserStoreRequest;
 use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\Office;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -114,5 +116,46 @@ class UserController extends Controller
         return $status === Password::RESET_LINK_SENT
             ? to_route('users.index', [], 303)->with('success', __('Password reset link sent.'))
             : to_route('users.index', [], 303)->with('error', __($status));
+    }
+
+    public function setPassword(Request $request, User $user): RedirectResponse
+    {
+        $this->authorize('setPassword', $user);
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', PasswordRule::defaults(), 'confirmed'],
+        ]);
+
+        $user->forceFill(['password' => $validated['password']])->save();
+
+        return to_route('users.index', [], 303)->with('success', __('Password updated.'));
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        $this->authorize('delete', $user);
+
+        abort_if($request->user()?->is($user), 403, __('You cannot delete your own account.'));
+
+        if ($user->role === Role::Owner
+            && $user->active
+            && ! User::query()
+                ->whereKeyNot($user->id)
+                ->where('role', Role::Owner)
+                ->where('active', true)
+                ->exists()) {
+            return to_route('users.index', [], 303)->with('error', __('At least one active owner is required.'));
+        }
+
+        try {
+            $user->delete();
+        } catch (QueryException) {
+            return to_route('users.index', [], 303)->with(
+                'error',
+                __('This user is linked to clients or other records and cannot be deleted. Deactivate the account instead.'),
+            );
+        }
+
+        return to_route('users.index', [], 303)->with('success', __('User deleted.'));
     }
 }

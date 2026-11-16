@@ -25,4 +25,14 @@ class UserPolicy extends BasePolicy
     {
         return $user->isOwner();
     }
+
+    public function setPassword(User $user, User $model): bool
+    {
+        return $user->isOwner();
+    }
+
+    public function delete(User $user, User $model): bool
+    {
+        return $user->isOwner() && ! $user->is($model);
+    }
 }

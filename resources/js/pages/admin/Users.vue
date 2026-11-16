@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { KeyRound, Plus } from '@lucide/vue';
+import { KeyRound, LockKeyhole, Plus, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -88,6 +88,59 @@ function submit() {
     });
 }
 
+const passwordDialogOpen = ref(false);
+const passwordTarget = ref<App.Data.UserRowData | null>(null);
+const showPassword = ref(false);
+const passwordForm = useForm({
+    password: '',
+    password_confirmation: '',
+});
+
+function openSetPassword(user: App.Data.UserRowData) {
+    passwordTarget.value = user;
+    passwordForm.reset();
+    passwordForm.clearErrors();
+    showPassword.value = false;
+    passwordDialogOpen.value = true;
+}
+
+function generatePassword() {
+    const alphabet =
+        'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    const bytes = crypto.getRandomValues(new Uint32Array(16));
+    const value = Array.from(
+        bytes,
+        (byte) => alphabet[byte % alphabet.length],
+    ).join('');
+
+    passwordForm.password = value;
+    passwordForm.password_confirmation = value;
+    showPassword.value = true;
+}
+
+function submitPassword() {
+    if (!passwordTarget.value) {
+        return;
+    }
+
+    passwordForm.put(`/users/${passwordTarget.value.id}/password`, {
+        preserveScroll: true,
+        onSuccess: () => (passwordDialogOpen.value = false),
+    });
+}
+
+function deleteUser(user: App.Data.UserRowData) {
+    if (
+        !window.confirm(
+            `Delete ${user.name} (${user.email})? This cannot be undone.`,
+        )
+    ) {
+        return;
+    }
+
+    router.delete(`/users/${user.id}`, { preserveScroll: true });
+}
+
 function resetPassword(user: App.Data.UserRowData) {
     if (!window.confirm(`Send a password reset link to ${user.email}?`)) {
         return;
@@ -137,6 +190,26 @@ function resetPassword(user: App.Data.UserRowData) {
                             @click="resetPassword(row as App.Data.UserRowData)"
                         >
                             <KeyRound class="size-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            :title="`Set a new password for ${row.name}`"
+                            @click="
+                                openSetPassword(row as App.Data.UserRowData)
+                            "
+                        >
+                            <LockKeyhole class="size-4" />
+                        </Button>
+                        <Button
+                            v-if="!(row as App.Data.UserRowData).isSelf"
+                            variant="ghost"
+                            size="sm"
+                            class="text-destructive"
+                            :title="`Delete ${row.name}`"
+                            @click="deleteUser(row as App.Data.UserRowData)"
+                        >
+                            <Trash2 class="size-4" />
                         </Button>
                     </div>
                 </template>
@@ -229,5 +302,41 @@ function resetPassword(user: App.Data.UserRowData) {
             <Checkbox id="user-active" v-model="form.active" />
             <Label for="user-active">Active</Label>
         </div>
+    </FormDialog>
+
+    <FormDialog
+        v-model:open="passwordDialogOpen"
+        :title="`Set password for ${passwordTarget?.name ?? ''}`"
+        description="Passwords are stored hashed and can never be viewed. Set a new one and share it with the user."
+        :processing="passwordForm.processing"
+        :errors="passwordForm.errors"
+        @submit="submitPassword"
+    >
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+                <Label for="set-password">New password</Label>
+                <Input
+                    id="set-password"
+                    v-model="passwordForm.password"
+                    :type="showPassword ? 'text' : 'password'"
+                />
+            </div>
+            <div class="space-y-2">
+                <Label for="set-password-confirmation">Confirm</Label>
+                <Input
+                    id="set-password-confirmation"
+                    v-model="passwordForm.password_confirmation"
+                    :type="showPassword ? 'text' : 'password'"
+                />
+            </div>
+        </div>
+        <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            @click="generatePassword"
+        >
+            Generate a strong password
+        </Button>
     </FormDialog>
 </template>

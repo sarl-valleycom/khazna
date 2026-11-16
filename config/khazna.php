@@ -63,4 +63,7 @@ return [
 
     'salary_due_day' => 5,
 
+    // The company that owns and runs this workspace (Khazna is the product name).
+    'company' => env('KHAZNA_COMPANY', 'Valleycom'),
+
 ];

@@ -5,18 +5,21 @@ namespace App\Attendance;
 use App\Enums\EmployeeStatus;
 use App\Models\Employee;
 use App\Support\AlgerianDate;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The personal code an employee types on the attendance page. Only a keyed
- * hash is stored (HMAC with the app key), so a database copy alone does not
- * reveal the codes, and the same hash makes a code unique and easy to look up.
+ * The personal code an employee types on the attendance page. Lookups use a
+ * keyed hash (HMAC with the app key), which also keeps a code unique. The code
+ * itself is kept encrypted with the app key so the owner can read it again; a
+ * database copy alone does not reveal it.
  */
 final class AttendanceCode
 {
     public const LENGTH = 6;
 
-    /** Returns the new code. It is shown once and cannot be read back. */
+    /** Makes a new code and returns it. */
     public function generate(Employee $employee): string
     {
         return DB::transaction(function () use ($employee): string {
@@ -27,6 +30,7 @@ final class AttendanceCode
 
             $employee->forceFill([
                 'attendance_code_hash' => $hash,
+                'attendance_code_encrypted' => Crypt::encryptString($code),
                 'attendance_code_set_at' => AlgerianDate::now()->utc(),
             ])->save();
 
@@ -38,8 +42,23 @@ final class AttendanceCode
     {
         $employee->forceFill([
             'attendance_code_hash' => null,
+            'attendance_code_encrypted' => null,
             'attendance_code_set_at' => null,
         ])->save();
+    }
+
+    /** The current code, or null when none is set or it was made before codes could be read back. */
+    public function reveal(Employee $employee): ?string
+    {
+        if ($employee->attendance_code_encrypted === null) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($employee->attendance_code_encrypted);
+        } catch (DecryptException) {
+            return null;
+        }
     }
 
     /** The active employee who owns this code, if any. */

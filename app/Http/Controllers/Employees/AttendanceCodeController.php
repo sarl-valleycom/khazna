@@ -8,9 +8,9 @@ use App\Models\Employee;
 use Illuminate\Http\RedirectResponse;
 
 /**
- * Only the owner gives an employee a personal attendance code: whoever holds it can act as that employee on the attendance page. The code is shown
- * once, right after it is made, and cannot be read back: a lost code is
- * replaced by making a new one.
+ * Only the owner gives an employee a personal attendance code (whoever holds
+ * it can act as that employee on the attendance page) and can read it again
+ * on the employee page.
  */
 class AttendanceCodeController extends Controller
 {
@@ -20,9 +20,9 @@ class AttendanceCodeController extends Controller
 
         abort_unless($employee->isActive(), 422);
 
-        return back(303)
-            ->with('attendance_code', $codes->generate($employee))
-            ->with('success', __('New attendance code made. Give it to :name now; it is not shown again.', ['name' => $employee->name]));
+        $codes->generate($employee);
+
+        return back(303)->with('success', __('New attendance code made for :name.', ['name' => $employee->name]));
     }
 
     public function destroy(Employee $employee, AttendanceCode $codes): RedirectResponse

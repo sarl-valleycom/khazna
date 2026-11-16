@@ -341,7 +341,7 @@ test('a malformed correction time is refused', function () {
     $this->post(route('work.correct', $session), ['ended_at' => '25:99'])->assertSessionHas('error');
 });
 
-test('the owner makes a code, sees it once and can remove it', function () {
+test('the owner makes a code, can read it again and can remove it', function () {
     $employee = Employee::factory()->forOffice(Office::factory()->create())->create();
     $this->actingAsRole(Role::Owner);
 
@@ -351,15 +351,25 @@ test('the owner makes a code, sees it once and can remove it', function () {
     expect($employee->hasAttendanceCode())->toBeTrue();
 
     $this->get(route('employees.show', $employee))
-        ->assertInertia(fn ($page) => $page->where('newAttendanceCode', fn ($code) => preg_match('/^\d{6}$/', (string) $code) === 1));
+        ->assertInertia(fn ($page) => $page->where('attendanceCode', fn ($code) => preg_match('/^\d{6}$/', (string) $code) === 1));
 
-    // Shown once: a second visit has no code.
+    // Still readable on a later visit.
     $this->get(route('employees.show', $employee))
-        ->assertInertia(fn ($page) => $page->where('newAttendanceCode', null));
+        ->assertInertia(fn ($page) => $page->where('attendanceCode', fn ($code) => preg_match('/^\d{6}$/', (string) $code) === 1));
 
     $this->delete(route('employees.attendance-code.destroy', $employee))->assertStatus(303);
 
     expect($employee->refresh()->hasAttendanceCode())->toBeFalse();
+});
+
+test('only the owner can read an attendance code', function () {
+    $employee = Employee::factory()->forOffice(Office::factory()->create())->create();
+    app(AttendanceCode::class)->generate($employee);
+
+    $this->actingAsRole(Role::Finance);
+
+    $this->get(route('employees.show', $employee))
+        ->assertInertia(fn ($page) => $page->where('attendanceCode', null));
 });
 
 test('a new code replaces the old one', function () {
