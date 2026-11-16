@@ -1,0 +1,1 @@
+import{gr as e}from"./dist-DFioHTPz.js";function t(t,n=[]){if(typeof window>`u`)return;let r=new URL(window.location.href);for(let[e,n]of Object.entries(t))n==null||n===``?r.searchParams.delete(e):r.searchParams.set(e,String(n));e.get(`${r.pathname}${r.search}`,{},{preserveScroll:!0,preserveState:!0,replace:!0,...n.length>0?{only:n}:{}})}export{t};
