@@ -1,1 +1,0 @@
-import{Sn as e}from"./dist-DFioHTPz.js";function t(t){e(()=>({...t.data()}),(e,n)=>{for(let r of Object.keys(e))e[r]!==n[r]&&r in t.errors&&t.clearErrors(r)})}export{t};

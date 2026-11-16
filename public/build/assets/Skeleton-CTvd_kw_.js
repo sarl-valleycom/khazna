@@ -1,1 +1,0 @@
-import{Jt as e,cr as t,dr as n,et as r,lt as i}from"./dist-DFioHTPz.js";import{t as a}from"./utils-DYzlwYuv.js";var o=i({__name:`Skeleton`,props:{class:{type:[Boolean,null,String,Object,Array]}},setup(i){let o=i;return(i,s)=>(e(),r(`div`,{"data-slot":`skeleton`,class:n(t(a)(`animate-pulse rounded-md bg-primary/10`,o.class))},null,2))}});export{o as t};
