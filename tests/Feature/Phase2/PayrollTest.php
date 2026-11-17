@@ -292,6 +292,84 @@ test('an advance needs its account, method and date, and the usual ledger rules 
     expect(SalaryAdjustment::query()->count())->toBe(0)->and(AccountEntry::query()->count())->toBe(0);
 });
 
+test('a bonus sent with empty payment fields, as the form does, is accepted', function () {
+    ['office' => $office, 'owner' => $owner] = payrollWorld();
+    $employee = payrollEmployee($office, 6_000_000);
+    $this->actingAs($owner);
+
+    $this->post(route('payroll.adjustments.store'), adjustmentPayload($employee, [
+        'paid_on' => null,
+        'method' => null,
+        'account_id' => null,
+    ]))->assertSessionHasNoErrors();
+
+    expect(SalaryAdjustment::query()->count())->toBe(1);
+});
+
+test('the owner can type a different amount for a salary due when closing', function () {
+    ['office' => $office, 'owner' => $owner] = payrollWorld();
+    $edited = payrollEmployee($office, 6_000_000);
+    $plain = payrollEmployee($office, 4_000_000);
+    $this->actingAs($owner);
+
+    $this->post(route('payroll.close.store'), [
+        'month' => '2026-03',
+        'amounts' => [$edited->id => 5_500_000],
+    ])->assertSessionHasNoErrors();
+
+    expect(Due::query()->where('employee_id', $edited->id)->value('amount_due_cents'))->toBe(5_500_000)
+        ->and(Due::query()->where('employee_id', $plain->id)->value('amount_due_cents'))->toBe(4_000_000);
+});
+
+test('closing can also pay each salary from the chosen account', function () {
+    ['office' => $office, 'owner' => $owner, 'account' => $account] = payrollWorld();
+    $employee = payrollEmployee($office, 6_000_000);
+    $this->actingAs($owner);
+
+    $this->post(route('payroll.close.store'), [
+        'month' => '2026-03',
+        'pay' => ['accounts' => [$employee->id => $account->id], 'method' => 'cash', 'paid_on' => '2026-04-02'],
+    ])->assertSessionHasNoErrors();
+
+    $due = Due::query()->where('employee_id', $employee->id)->firstOrFail();
+
+    expect($due->amount_paid_cents)->toBe(6_000_000)
+        ->and($due->status)->toBe(DueStatus::Paid)
+        ->and(AccountEntry::query()->where('account_id', $account->id)->where('amount_cents', 6_000_000)->exists())->toBeTrue();
+});
+
+test('a refused payment while closing leaves the month open', function () {
+    ['office' => $office, 'owner' => $owner, 'account' => $account] = payrollWorld();
+    $employee = payrollEmployee($office, 6_000_000);
+    $this->actingAs($owner);
+
+    $this->post(route('payroll.close.store'), [
+        'month' => '2026-03',
+        'pay' => ['accounts' => [$employee->id => $account->id + 999], 'method' => 'cash', 'paid_on' => '2026-04-02'],
+    ])->assertSessionHasErrors('account_id');
+
+    // An employee with no account chosen refuses the whole close too.
+    $this->post(route('payroll.close.store'), [
+        'month' => '2026-03',
+        'pay' => ['accounts' => [], 'method' => 'cash', 'paid_on' => '2026-04-02'],
+    ])->assertSessionHasErrors();
+
+    expect(Due::query()->count())->toBe(0);
+});
+
+test('a typed salary amount must be a positive whole number', function () {
+    ['office' => $office, 'owner' => $owner] = payrollWorld();
+    $employee = payrollEmployee($office, 6_000_000);
+    $this->actingAs($owner);
+
+    $this->post(route('payroll.close.store'), ['month' => '2026-03', 'amounts' => [$employee->id => 0]])
+        ->assertSessionHasErrors('amounts.'.$employee->id);
+    $this->post(route('payroll.close.store'), ['month' => '2026-03', 'amounts' => [$employee->id => 'abc']])
+        ->assertSessionHasErrors('amounts.'.$employee->id);
+
+    expect(Due::query()->count())->toBe(0);
+});
+
 test('adjustments need a reason, a positive amount and a real month', function () {
     ['office' => $office, 'owner' => $owner] = payrollWorld();
     $employee = payrollEmployee($office, 6_000_000);

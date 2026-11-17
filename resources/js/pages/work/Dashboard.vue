@@ -373,18 +373,6 @@ const textarea =
             </CardHeader>
             <CardContent class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-muted-foreground">Worked</span>
-                    <span class="font-medium tabular-nums">
-                        {{ period.data.workedFormatted }}
-                    </span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-muted-foreground">Target so far</span>
-                    <span class="font-medium tabular-nums">
-                        {{ period.data.expectedFormatted }}
-                    </span>
-                </div>
-                <div class="flex justify-between border-t pt-2">
                     <span class="text-muted-foreground">To make up</span>
                     <span
                         class="font-semibold tabular-nums"

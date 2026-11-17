@@ -2,10 +2,13 @@
 
 namespace App\Actions\Payroll;
 
+use App\Actions\Payments\RecordPayment;
+use App\Data\PaymentInput;
 use App\Data\PayrollLineData;
 use App\Enums\Direction;
 use App\Enums\DueKind;
 use App\Enums\DueStatus;
+use App\Enums\PaymentMethod;
 use App\Models\Category;
 use App\Models\Due;
 use App\Models\Employee;
@@ -16,6 +19,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CloseMonth
 {
@@ -38,16 +42,25 @@ class CloseMonth
      * Create one salary due per employee for the month, in one transaction. Safe to
      * run twice: an employee who already has a due for the month is skipped (FR-SAL-04).
      *
+     * An amount typed by the owner for an employee replaces the worked-out net for that
+     * employee's due; everyone else gets the worked-out net.
+     *
+     * With `$pay`, each due that is created is also paid in full, from that employee's own
+     * account on the given date, in the same transaction: if any payment is refused (or an
+     * employee has no account), nothing is closed.
+     *
+     * @param  array<int|string, int>  $amounts  Amount in cents to use instead of the net, keyed by employee id.
+     * @param  array{accounts: array<int|string, int|string>, method: string, paid_on: string}|null  $pay
      * @return array{created: array<int, PayrollLineData>, existing: array<int, PayrollLineData>, skipped: array<int, PayrollLineData>}
      */
-    public function handle(CarbonImmutable $month, ?User $actor = null): array
+    public function handle(CarbonImmutable $month, ?User $actor = null, array $amounts = [], ?array $pay = null): array
     {
         $first = $month->startOfMonth();
         $dueDay = max(1, min(28, (int) Setting::current(Setting::SALARY_DUE_DAY, (string) config('khazna.salary_due_day'))));
         $dueOn = $first->addMonthNoOverflow()->day($dueDay)->toDateString();
         $category = Category::named(Category::SALARIES);
 
-        return DB::transaction(function () use ($first, $dueOn, $category, $actor): array {
+        return DB::transaction(function () use ($first, $dueOn, $category, $actor, $amounts, $pay): array {
             $result = ['created' => [], 'existing' => [], 'skipped' => []];
 
             // Lock the people first, then read their salaries. A raise being saved at this moment
@@ -71,7 +84,7 @@ class CloseMonth
                 // The unique (employee_id, period) key is the real guard against a double close,
                 // even if two people press the button at the same moment.
                 try {
-                    Due::query()->create([
+                    $due = Due::query()->create([
                         'kind' => DueKind::Salary,
                         'direction' => Direction::Out,
                         'employee_id' => $employee->id,
@@ -79,11 +92,32 @@ class CloseMonth
                         'category_id' => $category->id,
                         'period' => $first->toDateString(),
                         'due_on' => $dueOn,
-                        'amount_due_cents' => $line->netCents,
+                        'amount_due_cents' => (int) ($amounts[$line->employeeId] ?? $line->netCents),
                         'amount_paid_cents' => 0,
                         'status' => DueStatus::Pending,
                         'description' => __('Salary :month', ['month' => $first->format('F Y')]),
                     ]);
+
+                    if ($pay !== null && $actor !== null) {
+                        $accountId = $pay['accounts'][$employee->id] ?? null;
+
+                        if ($accountId === null || $accountId === '') {
+                            throw ValidationException::withMessages([
+                                'pay.accounts.'.$employee->id => __('Choose the account that pays :name.', ['name' => $employee->name]),
+                            ]);
+                        }
+
+                        app(RecordPayment::class)->handle($actor, $due, new PaymentInput(
+                            amountCents: $due->amount_due_cents,
+                            accountId: (int) $accountId,
+                            method: PaymentMethod::from($pay['method']),
+                            paidOn: $pay['paid_on'],
+                            reference: null,
+                            notes: null,
+                            receipt: null,
+                            confirmOverpayment: false,
+                        ));
+                    }
 
                     $result['created'][] = $line;
                 } catch (UniqueConstraintViolationException) {

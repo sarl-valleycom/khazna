@@ -27,10 +27,11 @@ class AdjustmentRequest extends FormRequest
             'month' => ['required', 'date_format:Y-m'],
             'amount_cents' => ['required', 'integer', 'min:1', 'max:99999999999999'],
             'reason' => ['required', 'string', 'max:255'],
-            // Only an advance moves money today.
-            'paid_on' => [$isAdvance ? 'required' : 'prohibited', 'date_format:Y-m-d'],
-            'method' => [$isAdvance ? 'required' : 'prohibited', Rule::enum(PaymentMethod::class)],
-            'account_id' => [$isAdvance ? 'required' : 'prohibited', 'integer'],
+            // Only an advance moves money today. Other types may send these as
+            // null (the form does), so they are only checked for an advance.
+            'paid_on' => $isAdvance ? ['required', 'date_format:Y-m-d'] : ['prohibited'],
+            'method' => $isAdvance ? ['required', Rule::enum(PaymentMethod::class)] : ['prohibited'],
+            'account_id' => $isAdvance ? ['required', 'integer'] : ['prohibited'],
             // Needed only when the month's salary has already been paid, in whole or in part.
             'correction_reason' => ['nullable', 'string', 'max:500'],
         ];
