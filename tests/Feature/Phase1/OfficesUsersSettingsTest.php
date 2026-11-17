@@ -2,6 +2,7 @@
 
 use App\Enums\Role;
 use App\Models\Activity;
+use App\Models\Client;
 use App\Models\Office;
 use App\Models\Setting;
 use App\Models\User;
@@ -194,6 +195,18 @@ test('the owner can delete a user but not themselves', function () {
 
     $this->delete(route('users.destroy', $owner))->assertForbidden();
     $this->assertDatabaseHas('users', ['id' => $owner->id]);
+});
+
+test('a user that clients still depend on is not deleted', function () {
+    $this->actingAsRole(Role::Owner);
+    $manager = User::factory()->create(['role' => Role::AccountManager]);
+    Client::factory()->create(['account_manager_id' => $manager->id]);
+
+    $this->delete(route('users.destroy', $manager))
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('error');
+
+    $this->assertDatabaseHas('users', ['id' => $manager->id]);
 });
 
 test('the owner can change settings and the change is audited', function () {

@@ -56,7 +56,7 @@ class AttendanceSessionRequest extends FormRequest
 
             $moment = CarbonImmutable::createFromFormat('!Y-m-d\TH:i', $value, AlgerianDate::TZ);
 
-            if ($moment !== false && $moment->gt(AlgerianDate::now())) {
+            if ($moment instanceof CarbonImmutable && $moment->gt(AlgerianDate::now())) {
                 $fail($message);
             }
         };

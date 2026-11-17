@@ -135,7 +135,7 @@ class UserController extends Controller
     {
         $this->authorize('delete', $user);
 
-        abort_if($request->user()?->is($user), 403, __('You cannot delete your own account.'));
+        abort_if($this->actor($request)->is($user), 403, __('You cannot delete your own account.'));
 
         if ($user->role === Role::Owner
             && $user->active
@@ -149,6 +149,8 @@ class UserController extends Controller
 
         try {
             $user->delete();
+            // The database refuses to delete a user that clients or postponements still point to.
+            // @phpstan-ignore catch.neverThrown
         } catch (QueryException) {
             return to_route('users.index', [], 303)->with(
                 'error',

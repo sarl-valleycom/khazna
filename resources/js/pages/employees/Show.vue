@@ -31,7 +31,8 @@ type Props = {
     attendanceCode?: string | null;
     canManageAttendanceCode?: boolean;
     employee:
-        App.Data.EmployeeWithSalaryData | { employee: App.Data.EmployeeData };
+        | App.Data.EmployeeWithSalaryData
+        | { employee: App.Data.EmployeeData };
     canSeeSalaries: boolean;
     offices: App.Data.OfficeOptionData[];
     statuses: Array<{ value: string; label: string }>;
